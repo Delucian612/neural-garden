@@ -55,13 +55,13 @@ var ENERGY_STOPS = [
 var BREAK_MESSAGES = [
   "Have a break, have a kitkat.",
   "Breathe and reset.",
-  "Your energy matters.",
-  "Pause now, return stronger.",
+  "Do something just for you.",
+  "Your energy matters, so preserve it now.",
   "Take a deep breath.",
-  "Take A couple of steps away from the screen.",
+  "Take a couple of steps away from the screen.",
   "Relax your jaw, lower your shoulders, and soften your focus.",
   "Let the next three breaths be your full attention.",
-  "Be kind to your mind",
+  "Be kind to your mind.",
   "Go on with the day with a smile on your mind."
 ];
 var DEFAULT_STATE = {
@@ -484,9 +484,24 @@ function injectNeuralGardenStyles() {
     .ng-break-button {
       border: 1px solid #ec9a63;
       border-radius: 10px;
-      padding: 8px 14px;
+      padding: 17px 29px;
       background: transparent;
       cursor: pointer;
+    }
+    .ng-break-intro-title,
+    .ng-break-intro-copy,
+    .ng-break-intro-button {
+      opacity: 0;
+      animation-fill-mode: forwards;
+    }
+    .ng-break-intro-title {
+      animation: ng-break-intro-fade 1s ease-out forwards;
+    }
+    .ng-break-intro-copy {
+      animation: ng-break-intro-fade 2s ease-out 1s forwards;
+    }
+    .ng-break-intro-button {
+      animation: ng-break-intro-fade 1s ease-out 2.1s forwards;
     }
     .ng-break-timer {
       font-size: 38px;
@@ -547,6 +562,10 @@ function injectNeuralGardenStyles() {
     @keyframes ng-fade-out {
       0% { opacity: 1; transform: translateY(0); }
       100% { opacity: 0; transform: translateY(-6px); }
+    }
+    @keyframes ng-break-intro-fade {
+      0% { opacity: 0; }
+      100% { opacity: 1; }
     }
     @keyframes ng-break-message {
       0% { opacity: 0; }
@@ -892,15 +911,17 @@ var NeuralGardenHomeView = class extends import_obsidian.ItemView {
   renderForcedBreakPanel(container) {
     var _a;
     const panel = container.createDiv({ cls: "ng-break-panel" });
-    panel.createEl("h4", { text: "Forced Break" });
+    const title = panel.createEl("h4", { text: "Forced Break" });
     if (!this.state.resting) {
       this.breakTimerEl = null;
       this.breakMessageEl = null;
       this.lastBreakMessageIndex = null;
+      title.addClass("ng-break-intro-title");
       const minutes = this.getCalculatedBreakTimeMinutes();
-      panel.createDiv({ cls: "ng-break-copy", text: `Wind-down needed: ${minutes} min` });
+      const windDown = panel.createDiv({ cls: "ng-break-copy", text: `Wind-down needed: ${minutes} min` });
+      windDown.addClass("ng-break-intro-copy");
       const breakButton = panel.createEl("button", { text: "Break Mode" });
-      breakButton.addClass("ng-break-button");
+      breakButton.addClass("ng-break-button", "ng-break-intro-button");
       breakButton.addEventListener("click", async () => {
         const durationMinutes = this.getCalculatedBreakTimeMinutes();
         this.state.resting = true;

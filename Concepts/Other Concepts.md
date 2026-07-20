@@ -14,6 +14,8 @@ Ideas and thoughts
 #### Considered Ideas / Categories / Topics (Buttons)
 
 - Stats (Being able to see the stats of the last x days)
+    - Graphical Feedback about all symptoms of the last 30 days
+    
 
 - Levelup system / Stats (in case I want to connect RPG elements into the plugin) sort of gamification
 

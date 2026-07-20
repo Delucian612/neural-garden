@@ -397,16 +397,18 @@ export class NeuralGardenHomeView extends ItemView {
 
   private renderForcedBreakPanel(container: HTMLElement): void {
     const panel = container.createDiv({ cls: "ng-break-panel" });
-    panel.createEl("h4", { text: "Forced Break" });
+    const title = panel.createEl("h4", { text: "Forced Break" });
 
     if (!this.state.resting) {
       this.breakTimerEl = null;
       this.breakMessageEl = null;
       this.lastBreakMessageIndex = null;
+      title.addClass("ng-break-intro-title");
       const minutes = this.getCalculatedBreakTimeMinutes();
-      panel.createDiv({ cls: "ng-break-copy", text: `Wind-down needed: ${minutes} min` });
+      const windDown = panel.createDiv({ cls: "ng-break-copy", text: `Wind-down needed: ${minutes} min` });
+      windDown.addClass("ng-break-intro-copy");
       const breakButton = panel.createEl("button", { text: "Break Mode" });
-      breakButton.addClass("ng-break-button");
+      breakButton.addClass("ng-break-button", "ng-break-intro-button");
       breakButton.addEventListener("click", async () => {
         const durationMinutes = this.getCalculatedBreakTimeMinutes();
         this.state.resting = true;

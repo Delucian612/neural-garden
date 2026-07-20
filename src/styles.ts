@@ -282,9 +282,24 @@ export function injectNeuralGardenStyles(): void {
     .ng-break-button {
       border: 1px solid #ec9a63;
       border-radius: 10px;
-      padding: 8px 14px;
+      padding: 17px 29px;
       background: transparent;
       cursor: pointer;
+    }
+    .ng-break-intro-title,
+    .ng-break-intro-copy,
+    .ng-break-intro-button {
+      opacity: 0;
+      animation-fill-mode: forwards;
+    }
+    .ng-break-intro-title {
+      animation: ng-break-intro-fade 1s ease-out forwards;
+    }
+    .ng-break-intro-copy {
+      animation: ng-break-intro-fade 2s ease-out 1s forwards;
+    }
+    .ng-break-intro-button {
+      animation: ng-break-intro-fade 1s ease-out 2.1s forwards;
     }
     .ng-break-timer {
       font-size: 38px;
@@ -345,6 +360,10 @@ export function injectNeuralGardenStyles(): void {
     @keyframes ng-fade-out {
       0% { opacity: 1; transform: translateY(0); }
       100% { opacity: 0; transform: translateY(-6px); }
+    }
+    @keyframes ng-break-intro-fade {
+      0% { opacity: 0; }
+      100% { opacity: 1; }
     }
     @keyframes ng-break-message {
       0% { opacity: 0; }
