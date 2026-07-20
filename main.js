@@ -790,9 +790,9 @@ var NeuralGardenHomeView = class extends import_obsidian.ItemView {
     const barOuter = progressWrap.createDiv({ cls: "ng-progress" });
     const barInner = barOuter.createDiv({ cls: "ng-progress-fill" });
     barInner.style.width = `${Math.max(0, Math.min(currentPercent, 130))}%`;
-    const pair = getEnergyStopGradientPair(currentPercent);
-    const secondaryDarkened = darkenColor(pair.secondary, 0.7);
-    barInner.style.background = `linear-gradient(120deg, ${pair.primary}, ${secondaryDarkened}, ${pair.primary})`;
+    const pair = this.state.overdriveMode ? { primary: "#32fbff", secondary: "#87fdff" } : getEnergyStopGradientPair(currentPercent);
+    const secondaryColor = this.state.overdriveMode ? pair.secondary : darkenColor(pair.secondary, 0.7);
+    barInner.style.background = `linear-gradient(120deg, ${pair.primary}, ${secondaryColor}, ${pair.primary})`;
     barInner.style.backgroundSize = "200% 100%";
     const effortButtons = form.createDiv({ cls: "ng-effort-buttons" });
     for (const effort of EFFORTS) {
