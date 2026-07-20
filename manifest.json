@@ -1,0 +1,10 @@
+{
+  "id": "neural-garden",
+  "name": "Neural Garden",
+  "version": "1.0.0",
+  "minAppVersion": "1.0.0",
+  "description": "Neural Garden Obsidian plugin.",
+  "author": "Delucian612",
+  "authorUrl": "https://github.com/Delucian612",
+  "isDesktopOnly": false
+}
