@@ -58,7 +58,7 @@ Pressing it will highlight the affected Task in Red, display a message "delete?"
 ___
 ### Technological / Mathematical / Programming Built up
 Below describes the way the Taskmanager operates and is built up.
-All Data Will be Stored, Read And written inside the frontmatter of the file "TaskManager" in the Folder "Mainentance/TaskManager".
+All Data Will be Stored, Read And written inside the frontmatter of the file "TaskManager.md" in the Folder "Mainentance/TaskManager". If the file/folder does not exist, it will be created
 
 #### Variables in use
 ##### Base Variables
