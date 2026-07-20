@@ -45,20 +45,8 @@ export default class NeuralGardenPlugin extends Plugin {
   }
 
   private async openHomeOnStartup(): Promise<void> {
-    const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_NEURAL_GARDEN_HOME);
-    if (leaves.length > 0) {
-      return;
-    }
-
-    const activeLeaf = this.app.workspace.getMostRecentLeaf();
-    if (activeLeaf && activeLeaf.getViewState().type === "empty") {
-      await this.openHomeView(false, activeLeaf);
-      return;
-    }
-
-    if (!activeLeaf) {
-      await this.openHomeView(false);
-    }
+    const targetLeaf = this.app.workspace.getMostRecentLeaf() ?? this.app.workspace.getLeaf(true);
+    await this.openHomeView(true, targetLeaf);
   }
 
   private async openHomeView(makeActive: boolean, targetLeaf?: WorkspaceLeaf): Promise<void> {

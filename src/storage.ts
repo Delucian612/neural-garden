@@ -13,12 +13,20 @@ export class TaskManagerStorage {
     }
 
     const folderPath = TASK_MANAGER_FILE_PATH.split("/").slice(0, -1).join("/");
-    if (folderPath && !this.app.vault.getAbstractFileByPath(folderPath)) {
-      await this.app.vault.createFolder(folderPath);
+    if (folderPath) {
+      await this.ensureFolderExists(folderPath);
     }
 
     const fileContent = `${this.serializeFrontmatter(DEFAULT_STATE)}\n# Task Manager\n`;
-    return this.app.vault.create(TASK_MANAGER_FILE_PATH, fileContent);
+    try {
+      return await this.app.vault.create(TASK_MANAGER_FILE_PATH, fileContent);
+    } catch {
+      const createdByOtherCall = this.app.vault.getAbstractFileByPath(TASK_MANAGER_FILE_PATH);
+      if (createdByOtherCall instanceof TFile) {
+        return createdByOtherCall;
+      }
+      throw new Error(`Failed to create task manager file at ${TASK_MANAGER_FILE_PATH}`);
+    }
   }
 
   async loadTaskManagerState(): Promise<TaskManagerState> {
@@ -38,8 +46,36 @@ export class TaskManagerStorage {
   }
 
   async ensureNotesFolder(): Promise<void> {
-    if (!this.app.vault.getAbstractFileByPath(NOTES_FOLDER)) {
-      await this.app.vault.createFolder(NOTES_FOLDER);
+    await this.ensureFolderExists(NOTES_FOLDER);
+  }
+
+  private async ensureFolderExists(path: string): Promise<void> {
+    const segments = path.split("/").filter(Boolean);
+    let currentPath = "";
+
+    for (const segment of segments) {
+      currentPath = currentPath ? `${currentPath}/${segment}` : segment;
+      if (this.app.vault.getAbstractFileByPath(currentPath)) {
+        continue;
+      }
+
+      try {
+        await this.app.vault.createFolder(currentPath);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        const lower = message.toLowerCase();
+        if (lower.includes("already exists")) {
+          continue;
+        }
+        if (this.app.vault.getAbstractFileByPath(currentPath)) {
+          continue;
+        }
+        const existsOnDisk = await this.app.vault.adapter.exists(currentPath);
+        if (existsOnDisk) {
+          continue;
+        }
+        throw new Error(`Failed to create folder at ${currentPath}: ${message}`);
+      }
     }
   }
 

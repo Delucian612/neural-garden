@@ -26,11 +26,16 @@ export const ENERGY_STOPS = [
 ];
 
 export const BREAK_MESSAGES = [
-  "Have a break.",
-  "Get some rest.",
+  "Have a break, have a kitkat.",
   "Breathe and reset.",
-  "Your energy matters.",
-  "Pause now, return stronger.",
+  "Do something just for you.",
+  "Your energy matters, so preserve it now.",
+  "Take a deep breath.",
+  "Take a couple of steps away from the screen.",
+  "Relax your jaw, lower your shoulders, and soften your focus.",
+  "Let the next three breaths be your full attention.",
+  "Be kind to your mind.",
+  "Go on with the day with a smile on your mind.",
 ];
 
 export const DEFAULT_STATE: TaskManagerState = {

@@ -53,11 +53,16 @@ var ENERGY_STOPS = [
   { percent: 115, color: [255, 0, 0] }
 ];
 var BREAK_MESSAGES = [
-  "Have a break.",
-  "Get some rest.",
+  "Have a break, have a kitkat.",
   "Breathe and reset.",
   "Your energy matters.",
-  "Pause now, return stronger."
+  "Pause now, return stronger.",
+  "Take a deep breath.",
+  "Take A couple of steps away from the screen.",
+  "Relax your jaw, lower your shoulders, and soften your focus.",
+  "Let the next three breaths be your full attention.",
+  "Be kind to your mind",
+  "Go on with the day with a smile on your mind."
 ];
 var DEFAULT_STATE = {
   maxEnergy: 100,
@@ -484,16 +489,20 @@ function injectNeuralGardenStyles() {
       cursor: pointer;
     }
     .ng-break-timer {
-      font-size: 28px;
+      font-size: 38px;
       line-height: 1;
       font-weight: 700;
     }
     .ng-break-copy {
       text-align: center;
       color: var(--text-muted);
+      font-size: 0.97em;
     }
     .ng-break-copy-animated {
-      animation: ng-break-message 7s ease-in-out;
+      animation: ng-break-message 12s ease-out;
+      font-size: 0.97em;
+      color: color-mix(in srgb, var(--text-normal) 88%, white);
+      font-weight: 600;
     }
     .ng-resting {
       filter: saturate(0.1);
@@ -541,8 +550,8 @@ function injectNeuralGardenStyles() {
     }
     @keyframes ng-break-message {
       0% { opacity: 0; }
-      14% { opacity: 1; }
-      86% { opacity: 1; }
+      25% { opacity: 1; }
+      75% { opacity: 1; }
       100% { opacity: 0; }
     }
     @media (max-width: 680px) {
@@ -572,6 +581,7 @@ var NeuralGardenHomeView = class extends import_obsidian.ItemView {
     this.breakMessageTimer = null;
     this.breakTimerEl = null;
     this.breakMessageEl = null;
+    this.lastBreakMessageIndex = null;
     this.refocusTaskInputAfterRender = false;
   }
   getViewType() {
@@ -606,6 +616,7 @@ var NeuralGardenHomeView = class extends import_obsidian.ItemView {
       window.clearInterval(this.breakMessageTimer);
       this.breakMessageTimer = null;
     }
+    this.lastBreakMessageIndex = null;
   }
   startBreakTicker() {
     this.syncBreakLiveUpdates();
@@ -761,7 +772,8 @@ var NeuralGardenHomeView = class extends import_obsidian.ItemView {
     const barInner = barOuter.createDiv({ cls: "ng-progress-fill" });
     barInner.style.width = `${Math.max(0, Math.min(currentPercent, 130))}%`;
     const pair = getEnergyStopGradientPair(currentPercent);
-    barInner.style.background = `linear-gradient(120deg, ${pair.primary}, ${pair.secondary}, ${pair.primary})`;
+    const secondaryDarkened = darkenColor(pair.secondary, 0.7);
+    barInner.style.background = `linear-gradient(120deg, ${pair.primary}, ${secondaryDarkened}, ${pair.primary})`;
     barInner.style.backgroundSize = "200% 100%";
     const effortButtons = form.createDiv({ cls: "ng-effort-buttons" });
     for (const effort of EFFORTS) {
@@ -884,6 +896,7 @@ var NeuralGardenHomeView = class extends import_obsidian.ItemView {
     if (!this.state.resting) {
       this.breakTimerEl = null;
       this.breakMessageEl = null;
+      this.lastBreakMessageIndex = null;
       const minutes = this.getCalculatedBreakTimeMinutes();
       panel.createDiv({ cls: "ng-break-copy", text: `Wind-down needed: ${minutes} min` });
       const breakButton = panel.createEl("button", { text: "Break Mode" });
@@ -906,7 +919,7 @@ var NeuralGardenHomeView = class extends import_obsidian.ItemView {
     timer.textContent = `${String(remainingMinutes).padStart(2, "0")}:${String(remainingSeconds).padStart(2, "0")}`;
     this.breakTimerEl = timer;
     const message = panel.createDiv({ cls: "ng-break-copy ng-break-copy-animated" });
-    message.textContent = BREAK_MESSAGES[Math.floor(Math.random() * BREAK_MESSAGES.length)];
+    message.textContent = this.getNextBreakMessage();
     this.breakMessageEl = message;
   }
   syncBreakLiveUpdates() {
@@ -955,12 +968,27 @@ var NeuralGardenHomeView = class extends import_obsidian.ItemView {
         if (!this.breakMessageEl) {
           return;
         }
-        this.breakMessageEl.textContent = BREAK_MESSAGES[Math.floor(Math.random() * BREAK_MESSAGES.length)];
+        this.breakMessageEl.textContent = this.getNextBreakMessage();
         this.breakMessageEl.classList.remove("ng-break-copy-animated");
         void this.breakMessageEl.offsetWidth;
         this.breakMessageEl.classList.add("ng-break-copy-animated");
-      }, 7e3);
+      }, 12e3);
     }
+  }
+  getNextBreakMessage() {
+    if (BREAK_MESSAGES.length === 0) {
+      return "Take a short break.";
+    }
+    if (BREAK_MESSAGES.length === 1) {
+      this.lastBreakMessageIndex = 0;
+      return BREAK_MESSAGES[0];
+    }
+    let nextIndex = Math.floor(Math.random() * BREAK_MESSAGES.length);
+    if (this.lastBreakMessageIndex !== null && nextIndex === this.lastBreakMessageIndex) {
+      nextIndex = (nextIndex + 1 + Math.floor(Math.random() * (BREAK_MESSAGES.length - 1))) % BREAK_MESSAGES.length;
+    }
+    this.lastBreakMessageIndex = nextIndex;
+    return BREAK_MESSAGES[nextIndex];
   }
   updateForcedBreakValues() {
     const effectiveThreshold = getEffectiveForcedBreakThreshold(this.state);
@@ -1107,6 +1135,16 @@ function toMutedButtonColor(hex, saturationFactor = 0.7, lightnessFactor = 0.6, 
   }
   return `rgb(${outR}, ${outG}, ${outB})`;
 }
+function darkenColor(color, lightnessFactor) {
+  const rgb = parseCssColor(color);
+  if (!rgb) {
+    return color;
+  }
+  const { h, s, l } = rgbToHsl(rgb.r, rgb.g, rgb.b);
+  const nextL = Math.max(0, Math.min(1, l * lightnessFactor));
+  const nextRgb = hslToRgb(h, s, nextL);
+  return `rgb(${nextRgb.r}, ${nextRgb.g}, ${nextRgb.b})`;
+}
 function getEnergyStopGradientPair(percent) {
   var _a, _b;
   const stops = ENERGY_STOPS.filter((stop) => stop.percent <= 100);
@@ -1134,6 +1172,84 @@ function getEnergyStopGradientPair(percent) {
 function stopToCss(rgb) {
   return `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`;
 }
+function parseCssColor(color) {
+  const hex = color.trim().match(/^#([0-9a-fA-F]{6})$/);
+  if (hex) {
+    return {
+      r: parseInt(hex[1].slice(0, 2), 16),
+      g: parseInt(hex[1].slice(2, 4), 16),
+      b: parseInt(hex[1].slice(4, 6), 16)
+    };
+  }
+  const rgb = color.trim().match(/^rgb\(\s*([0-9]+)\s*,\s*([0-9]+)\s*,\s*([0-9]+)\s*\)$/i);
+  if (rgb) {
+    return {
+      r: Math.max(0, Math.min(255, Number(rgb[1]))),
+      g: Math.max(0, Math.min(255, Number(rgb[2]))),
+      b: Math.max(0, Math.min(255, Number(rgb[3])))
+    };
+  }
+  return null;
+}
+function rgbToHsl(r, g, b) {
+  const rr = r / 255;
+  const gg = g / 255;
+  const bb = b / 255;
+  const max = Math.max(rr, gg, bb);
+  const min = Math.min(rr, gg, bb);
+  const l = (max + min) / 2;
+  if (max === min) {
+    return { h: 0, s: 0, l };
+  }
+  const d = max - min;
+  const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+  let h = 0;
+  switch (max) {
+    case rr:
+      h = (gg - bb) / d + (gg < bb ? 6 : 0);
+      break;
+    case gg:
+      h = (bb - rr) / d + 2;
+      break;
+    default:
+      h = (rr - gg) / d + 4;
+      break;
+  }
+  h /= 6;
+  return { h, s, l };
+}
+function hslToRgb(h, s, l) {
+  if (s === 0) {
+    const gray = Math.round(l * 255);
+    return { r: gray, g: gray, b: gray };
+  }
+  const hueToRgb = (p2, q2, t) => {
+    let tt = t;
+    if (tt < 0) {
+      tt += 1;
+    }
+    if (tt > 1) {
+      tt -= 1;
+    }
+    if (tt < 1 / 6) {
+      return p2 + (q2 - p2) * 6 * tt;
+    }
+    if (tt < 1 / 2) {
+      return q2;
+    }
+    if (tt < 2 / 3) {
+      return p2 + (q2 - p2) * (2 / 3 - tt) * 6;
+    }
+    return p2;
+  };
+  const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+  const p = 2 * l - q;
+  return {
+    r: Math.round(hueToRgb(p, q, h + 1 / 3) * 255),
+    g: Math.round(hueToRgb(p, q, h) * 255),
+    b: Math.round(hueToRgb(p, q, h - 1 / 3) * 255)
+  };
+}
 
 // src/storage.ts
 var import_obsidian2 = require("obsidian");
@@ -1147,13 +1263,21 @@ var TaskManagerStorage = class {
       return existing;
     }
     const folderPath = TASK_MANAGER_FILE_PATH.split("/").slice(0, -1).join("/");
-    if (folderPath && !this.app.vault.getAbstractFileByPath(folderPath)) {
-      await this.app.vault.createFolder(folderPath);
+    if (folderPath) {
+      await this.ensureFolderExists(folderPath);
     }
     const fileContent = `${this.serializeFrontmatter(DEFAULT_STATE)}
 # Task Manager
 `;
-    return this.app.vault.create(TASK_MANAGER_FILE_PATH, fileContent);
+    try {
+      return await this.app.vault.create(TASK_MANAGER_FILE_PATH, fileContent);
+    } catch (e) {
+      const createdByOtherCall = this.app.vault.getAbstractFileByPath(TASK_MANAGER_FILE_PATH);
+      if (createdByOtherCall instanceof import_obsidian2.TFile) {
+        return createdByOtherCall;
+      }
+      throw new Error(`Failed to create task manager file at ${TASK_MANAGER_FILE_PATH}`);
+    }
   }
   async loadTaskManagerState() {
     const file = await this.ensureTaskManagerFile();
@@ -1172,8 +1296,33 @@ ${content}`;
     await this.app.vault.modify(file, next);
   }
   async ensureNotesFolder() {
-    if (!this.app.vault.getAbstractFileByPath(NOTES_FOLDER)) {
-      await this.app.vault.createFolder(NOTES_FOLDER);
+    await this.ensureFolderExists(NOTES_FOLDER);
+  }
+  async ensureFolderExists(path) {
+    const segments = path.split("/").filter(Boolean);
+    let currentPath = "";
+    for (const segment of segments) {
+      currentPath = currentPath ? `${currentPath}/${segment}` : segment;
+      if (this.app.vault.getAbstractFileByPath(currentPath)) {
+        continue;
+      }
+      try {
+        await this.app.vault.createFolder(currentPath);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        const lower = message.toLowerCase();
+        if (lower.includes("already exists")) {
+          continue;
+        }
+        if (this.app.vault.getAbstractFileByPath(currentPath)) {
+          continue;
+        }
+        const existsOnDisk = await this.app.vault.adapter.exists(currentPath);
+        if (existsOnDisk) {
+          continue;
+        }
+        throw new Error(`Failed to create folder at ${currentPath}: ${message}`);
+      }
     }
   }
   extractFrontmatter(content) {
@@ -1226,18 +1375,9 @@ var NeuralGardenPlugin = class extends import_obsidian3.Plugin {
     this.app.workspace.detachLeavesOfType(VIEW_TYPE_NEURAL_GARDEN_HOME);
   }
   async openHomeOnStartup() {
-    const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_NEURAL_GARDEN_HOME);
-    if (leaves.length > 0) {
-      return;
-    }
-    const activeLeaf = this.app.workspace.getMostRecentLeaf();
-    if (activeLeaf && activeLeaf.getViewState().type === "empty") {
-      await this.openHomeView(false, activeLeaf);
-      return;
-    }
-    if (!activeLeaf) {
-      await this.openHomeView(false);
-    }
+    var _a;
+    const targetLeaf = (_a = this.app.workspace.getMostRecentLeaf()) != null ? _a : this.app.workspace.getLeaf(true);
+    await this.openHomeView(true, targetLeaf);
   }
   async openHomeView(makeActive, targetLeaf) {
     const leaf = targetLeaf != null ? targetLeaf : this.app.workspace.getLeaf(true);

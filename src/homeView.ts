@@ -29,6 +29,7 @@ export class NeuralGardenHomeView extends ItemView {
   breakMessageTimer: number | null = null;
   breakTimerEl: HTMLElement | null = null;
   breakMessageEl: HTMLElement | null = null;
+  lastBreakMessageIndex: number | null = null;
   refocusTaskInputAfterRender = false;
 
   constructor(leaf: WorkspaceLeaf, private readonly storage: TaskManagerStorage) {
@@ -71,6 +72,7 @@ export class NeuralGardenHomeView extends ItemView {
       window.clearInterval(this.breakMessageTimer);
       this.breakMessageTimer = null;
     }
+    this.lastBreakMessageIndex = null;
   }
 
   private startBreakTicker(): void {
@@ -255,7 +257,8 @@ export class NeuralGardenHomeView extends ItemView {
 
     barInner.style.width = `${Math.max(0, Math.min(currentPercent, 130))}%`;
     const pair = getEnergyStopGradientPair(currentPercent);
-    barInner.style.background = `linear-gradient(120deg, ${pair.primary}, ${pair.secondary}, ${pair.primary})`;
+    const secondaryDarkened = darkenColor(pair.secondary, 0.7);
+    barInner.style.background = `linear-gradient(120deg, ${pair.primary}, ${secondaryDarkened}, ${pair.primary})`;
     barInner.style.backgroundSize = "200% 100%";
 
     const effortButtons = form.createDiv({ cls: "ng-effort-buttons" });
@@ -399,6 +402,7 @@ export class NeuralGardenHomeView extends ItemView {
     if (!this.state.resting) {
       this.breakTimerEl = null;
       this.breakMessageEl = null;
+      this.lastBreakMessageIndex = null;
       const minutes = this.getCalculatedBreakTimeMinutes();
       panel.createDiv({ cls: "ng-break-copy", text: `Wind-down needed: ${minutes} min` });
       const breakButton = panel.createEl("button", { text: "Break Mode" });
@@ -424,7 +428,7 @@ export class NeuralGardenHomeView extends ItemView {
     this.breakTimerEl = timer;
 
     const message = panel.createDiv({ cls: "ng-break-copy ng-break-copy-animated" });
-    message.textContent = BREAK_MESSAGES[Math.floor(Math.random() * BREAK_MESSAGES.length)];
+    message.textContent = this.getNextBreakMessage();
     this.breakMessageEl = message;
   }
 
@@ -477,12 +481,30 @@ export class NeuralGardenHomeView extends ItemView {
         if (!this.breakMessageEl) {
           return;
         }
-        this.breakMessageEl.textContent = BREAK_MESSAGES[Math.floor(Math.random() * BREAK_MESSAGES.length)];
+        this.breakMessageEl.textContent = this.getNextBreakMessage();
         this.breakMessageEl.classList.remove("ng-break-copy-animated");
         void this.breakMessageEl.offsetWidth;
         this.breakMessageEl.classList.add("ng-break-copy-animated");
-      }, 7000);
+        }, 12000);
     }
+  }
+
+  private getNextBreakMessage(): string {
+    if (BREAK_MESSAGES.length === 0) {
+      return "Take a short break.";
+    }
+    if (BREAK_MESSAGES.length === 1) {
+      this.lastBreakMessageIndex = 0;
+      return BREAK_MESSAGES[0];
+    }
+
+    let nextIndex = Math.floor(Math.random() * BREAK_MESSAGES.length);
+    if (this.lastBreakMessageIndex !== null && nextIndex === this.lastBreakMessageIndex) {
+      nextIndex = (nextIndex + 1 + Math.floor(Math.random() * (BREAK_MESSAGES.length - 1))) % BREAK_MESSAGES.length;
+    }
+
+    this.lastBreakMessageIndex = nextIndex;
+    return BREAK_MESSAGES[nextIndex];
   }
 
   private updateForcedBreakValues(): void {
@@ -660,6 +682,18 @@ function reduceSaturation(color: string, saturationFactor: number): string {
   const { h, s, l } = rgbToHsl(rgb.r, rgb.g, rgb.b);
   const nextS = Math.max(0, Math.min(1, s * saturationFactor));
   const nextRgb = hslToRgb(h, nextS, l);
+  return `rgb(${nextRgb.r}, ${nextRgb.g}, ${nextRgb.b})`;
+}
+
+function darkenColor(color: string, lightnessFactor: number): string {
+  const rgb = parseCssColor(color);
+  if (!rgb) {
+    return color;
+  }
+
+  const { h, s, l } = rgbToHsl(rgb.r, rgb.g, rgb.b);
+  const nextL = Math.max(0, Math.min(1, l * lightnessFactor));
+  const nextRgb = hslToRgb(h, s, nextL);
   return `rgb(${nextRgb.r}, ${nextRgb.g}, ${nextRgb.b})`;
 }
 

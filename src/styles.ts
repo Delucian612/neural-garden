@@ -287,16 +287,20 @@ export function injectNeuralGardenStyles(): void {
       cursor: pointer;
     }
     .ng-break-timer {
-      font-size: 28px;
+      font-size: 38px;
       line-height: 1;
       font-weight: 700;
     }
     .ng-break-copy {
       text-align: center;
       color: var(--text-muted);
+      font-size: 0.97em;
     }
     .ng-break-copy-animated {
-      animation: ng-break-message 7s ease-in-out;
+      animation: ng-break-message 12s ease-out;
+      font-size: 0.97em;
+      color: color-mix(in srgb, var(--text-normal) 88%, white);
+      font-weight: 600;
     }
     .ng-resting {
       filter: saturate(0.1);
@@ -344,8 +348,8 @@ export function injectNeuralGardenStyles(): void {
     }
     @keyframes ng-break-message {
       0% { opacity: 0; }
-      14% { opacity: 1; }
-      86% { opacity: 1; }
+      25% { opacity: 1; }
+      75% { opacity: 1; }
       100% { opacity: 0; }
     }
     @media (max-width: 680px) {
