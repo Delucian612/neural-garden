@@ -575,14 +575,13 @@ function injectNeuralGardenStyles() {
     }
     @media (max-width: 680px) {
       .ng-category-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
       }
       .ng-task-row {
-        grid-template-columns: minmax(0, 1fr) auto;
-        grid-auto-rows: auto;
+        grid-template-columns: minmax(0, 1fr) auto auto auto;
       }
       .ng-effort-buttons {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
       }
     }
   `;
