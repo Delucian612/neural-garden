@@ -58,7 +58,7 @@ Pressing it will highlight the affected Task in Red, display a message "delete?"
 ___
 ### Technological / Mathematical / Programming Built up
 Below describes the way the Taskmanager operates and is built up.
-All Data Will be Stored, Read And written inside the frontmatter of the file "TaskManager.md" in the Folder "Mainentance/TaskManager". If the file/folder does not exist, it will be created
+All Data Will be Stored, Read And written inside the frontmatter of the file "TaskManager.md" in the Folder "Maintenance/TaskManager". If the file/folder does not exist, it will be created
 
 #### Variables in use
 ##### Base Variables
@@ -130,7 +130,7 @@ We need some calculations before doing the main calculation before:
 **ForcedBreakEnergyEx** = **ForcedBreakenergy** - **ForcedBreakThreshold** (this is to calculate the "Excess Energy" going above the Treshold)
 **ForcedBreakAdd** = **ForcedBreakEnergyEx** / **ForcedBreakThreshold** (This will calculate a factor, to increase the breaks length by the amount over the Treshold)
 And then finally the Time Calculation
-**ForcedBreaktime** = **ForcedBreakLength** + **ForcedBreakLength** + **ForcedBreakAdd**
+**ForcedBreaktime** = **ForcedBreakLength** + **ForcedBreakLength** x **ForcedBreakAdd**
 
 
 - **Example calculation**
