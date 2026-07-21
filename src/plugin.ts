@@ -1,22 +1,48 @@
 import { Plugin, WorkspaceLeaf } from "obsidian";
 import { NeuralGardenHomeView } from "./homeView";
+import { NeuralGardenJournalEntryView } from "./journalingEntryView";
+import { NeuralGardenJournalingView } from "./journalingView";
+import { JournalingStorage } from "./journalingStorage";
 import { TaskManagerStorage } from "./storage";
-import { VIEW_TYPE_NEURAL_GARDEN_HOME } from "./constants";
+import {
+  VIEW_TYPE_NEURAL_GARDEN_HOME,
+  VIEW_TYPE_NEURAL_GARDEN_JOURNALING,
+  VIEW_TYPE_NEURAL_GARDEN_JOURNAL_ENTRY,
+} from "./constants";
 
 export default class NeuralGardenPlugin extends Plugin {
   private storage!: TaskManagerStorage;
+  private journalingStorage!: JournalingStorage;
 
   async onload() {
     this.storage = new TaskManagerStorage(this.app);
+    this.journalingStorage = new JournalingStorage(this.app);
     await this.storage.ensureNotesFolder();
+    await this.journalingStorage.ensureJournalFolders();
 
-    this.registerView(VIEW_TYPE_NEURAL_GARDEN_HOME, (leaf) => new NeuralGardenHomeView(leaf, this.storage));
+    this.registerView(VIEW_TYPE_NEURAL_GARDEN_HOME, (leaf) =>
+      new NeuralGardenHomeView(leaf, this.storage, this.openJournalingView),
+    );
+    this.registerView(VIEW_TYPE_NEURAL_GARDEN_JOURNALING, (leaf) =>
+      new NeuralGardenJournalingView(leaf, this.storage, this.journalingStorage, this.openHomeView, this.openJournalEntryView),
+    );
+    this.registerView(VIEW_TYPE_NEURAL_GARDEN_JOURNAL_ENTRY, (leaf) =>
+      new NeuralGardenJournalEntryView(leaf, this.storage, this.journalingStorage, this.openHomeView, this.openJournalingView),
+    );
 
     this.addCommand({
       id: "open-neural-garden-home",
       name: "Open Neural Garden Home",
       callback: async () => {
         await this.openHomeView(true);
+      },
+    });
+
+    this.addCommand({
+      id: "open-neural-garden-journaling",
+      name: "Open Neural Garden Journaling",
+      callback: async () => {
+        await this.openJournalingView(true);
       },
     });
 
@@ -42,6 +68,8 @@ export default class NeuralGardenPlugin extends Plugin {
 
   onunload() {
     this.app.workspace.detachLeavesOfType(VIEW_TYPE_NEURAL_GARDEN_HOME);
+    this.app.workspace.detachLeavesOfType(VIEW_TYPE_NEURAL_GARDEN_JOURNALING);
+    this.app.workspace.detachLeavesOfType(VIEW_TYPE_NEURAL_GARDEN_JOURNAL_ENTRY);
   }
 
   private async openHomeOnStartup(): Promise<void> {
@@ -55,5 +83,23 @@ export default class NeuralGardenPlugin extends Plugin {
     if (makeActive) {
       this.app.workspace.revealLeaf(leaf);
     }
+  }
+
+  private async openJournalingView(makeActive: boolean, targetLeaf?: WorkspaceLeaf): Promise<void> {
+    const leaf = targetLeaf ?? this.app.workspace.getLeaf(true);
+    await leaf.setViewState({ type: VIEW_TYPE_NEURAL_GARDEN_JOURNALING, active: makeActive });
+    if (makeActive) {
+      this.app.workspace.revealLeaf(leaf);
+    }
+  }
+
+  private async openJournalEntryView(dateKey: string, editable: boolean, targetLeaf?: WorkspaceLeaf): Promise<void> {
+    const leaf = targetLeaf ?? this.app.workspace.getLeaf(true);
+    await leaf.setViewState({ type: VIEW_TYPE_NEURAL_GARDEN_JOURNAL_ENTRY, active: true });
+    const view = leaf.view;
+    if (view instanceof NeuralGardenJournalEntryView) {
+      await view.openForDate(dateKey, editable);
+    }
+    this.app.workspace.revealLeaf(leaf);
   }
 }

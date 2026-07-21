@@ -339,8 +339,624 @@ export function injectNeuralGardenStyles(): void {
       font-style: italic;
       padding: 8px 0;
     }
+    .ng-home-category-button,
+    .ng-journal-nav-button,
+    .ng-journal-mode-button,
+    .ng-journal-create-button,
+    .ng-journal-tracker-add {
+      padding: 16px;
+      border-radius: 10px;
+      border: 1px solid #ec9a63;
+      background: transparent;
+      font-size: 14px;
+      width: 100%;
+      cursor: pointer;
+      color: var(--text-normal);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.15s ease;
+    }
+    .ng-journal-nav-button,
+    .ng-journal-mode-button,
+    .ng-journal-create-button,
+    .ng-journal-tracker-add {
+      width: auto;
+    }
+    .ng-home-category-button:hover,
+    .ng-journal-nav-button:hover,
+    .ng-journal-mode-button:hover,
+    .ng-journal-create-button:hover,
+    .ng-journal-tracker-add:hover {
+      border-color: #ffd2b0;
+      box-shadow: 0 0 0 2px rgba(236, 154, 99, 0.25);
+    }
+    .ng-journal-create-button {
+      width: auto;
+    }
+    .ng-journal-mode-button {
+      width: auto;
+    }
+    .ng-journaling {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      padding: 8px 0 24px;
+      max-width: 720px;
+      margin: 0 auto;
+    }
+    .ng-journal-topbar,
+    .ng-journal-daily-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      justify-content: flex-start;
+      flex-wrap: wrap;
+    }
+    .ng-journal-month-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+      margin-top: 8px;
+      margin-bottom: 8px;
+    }
+    .ng-journal-topbar {
+      align-items: flex-start;
+    }
+    .ng-journal-title-wrap {
+      flex: 1;
+      text-align: center;
+    }
+    .ng-journaling .ng-journal-title-wrap {
+      flex-basis: 100%;
+      order: 2;
+      width: 100%;
+      text-align: center;
+      margin-top: -2px;
+    }
+    .ng-journaling .ng-journal-topbar {
+      flex-wrap: wrap;
+    }
+    .ng-journal-entry-page .ng-journal-title-wrap {
+      flex-basis: 100%;
+      order: 2;
+      width: 100%;
+      text-align: center;
+      margin-top: -2px;
+    }
+    .ng-journal-entry-page .ng-journal-topbar {
+      flex-wrap: wrap;
+    }
+    .ng-journal-title-wrap h2,
+    .ng-journal-title-wrap h3,
+    .ng-journal-placeholder h3,
+    .ng-journal-entry-card h3,
+    .ng-journal-trackers h3,
+    .ng-journal-daily-header h3 {
+      margin: 0;
+    }
+    .ng-journal-entry-page .ng-journal-title-wrap h3 {
+      color: var(--text-normal);
+      text-align: center;
+      font-weight: 500;
+      font-size: 1.5rem;
+      margin-top: 12px;
+    }
+    .ng-journal-entry-page .ng-journal-title-wrap h2 {
+      margin-bottom: 0;
+    }
+    .ng-journal-entry-card h3 {
+      color: var(--text-normal);
+    }
+    .ng-journal-readonly-note,
+    .ng-journal-metric-feedback,
+    .ng-journal-metric-explain,
+    .ng-journal-body-copy {
+      color: var(--text-muted);
+    }
+    .ng-journal-tracker-cell {
+      border: 1px solid var(--background-modifier-border);
+      background: transparent;
+      color: var(--text-normal);
+      cursor: pointer;
+      border-radius: 10px;
+    }
+    .ng-journal-modebar {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .ng-journal-mode-button.is-active {
+      border-color: #ec9a63;
+      box-shadow: 0 0 0 2px rgba(236, 154, 99, 0.18);
+    }
+    .ng-journal-create-button.is-highlighted {
+      border-color: #00f0ff;
+      box-shadow: 0 0 0 2px rgba(0, 240, 255, 0.18);
+    }
+    .ng-journal-create-button:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+    .ng-journal-layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+      align-items: start;
+    }
+    .ng-journal-calendar-panel,
+    .ng-journal-detail-panel,
+    .ng-journal-trackers,
+    .ng-journal-placeholder,
+    .ng-journal-entry-card {
+      border: 1px solid var(--background-modifier-border);
+      border-radius: 14px;
+      padding: 14px;
+      background: color-mix(in srgb, var(--background-primary) 84%, transparent);
+    }
+    .ng-journal-calendar-panel,
+    .ng-journal-detail-panel,
+    .ng-journal-trackers,
+    .ng-journal-entry-card {
+      background: color-mix(in srgb, var(--background-primary) 36%, transparent);
+    }
+    .ng-journal-calendar-panel {
+      width: 100%;
+      padding-top: 8px;
+      margin-top: 10px;
+    }
+    .ng-journal-calendar-panel h3 {
+      color: var(--text-normal);
+      text-align: center;
+    }
+    .ng-journal-month-label {
+      font-size: 1.2rem;
+      font-weight: 600;
+      line-height: 1;
+    }
+    .ng-journal-trackers h3 {
+      color: var(--text-normal);
+    }
+    .ng-journal-detail-panel {
+      margin-top: 18px;
+    }
+    .ng-journal-calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 4px;
+      margin-top: 10px;
+    }
+    .ng-journal-calendar-weekday {
+      text-align: center;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+    .ng-journal-day-cell {
+      position: relative;
+      min-height: 34px;
+      padding: 8px 6px;
+      border-radius: 10px;
+      border: 1px solid #ec9a63;
+      background: transparent;
+      color: var(--text-normal);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+    }
+    .ng-journal-day-cell:hover {
+      border-color: #ffd2b0;
+      box-shadow: 0 0 0 2px rgba(236, 154, 99, 0.18);
+    }
+    .ng-journal-day-cell.is-outside-month {
+      opacity: 0.35;
+    }
+    .ng-journal-day-cell.has-entry {
+      border-color: #ec9a63;
+      background: rgba(236, 154, 99, 0.08);
+    }
+    .ng-journal-day-cell.is-today {
+      box-shadow: 0 0 0 2px rgba(0, 240, 255, 0.18);
+    }
+    .ng-journal-day-cell.is-selected {
+      border-color: #00f0ff;
+      box-shadow: 0 0 0 2px rgba(0, 240, 255, 0.22);
+    }
+    .ng-journal-day-number {
+      font-size: 0.86rem;
+      font-weight: 600;
+    }
+    .ng-journal-day-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: #ec9a63;
+      position: absolute;
+      bottom: 8px;
+      right: 8px;
+    }
+    .ng-journal-metrics {
+      display: grid;
+      gap: 14px;
+      margin-top: 14px;
+    }
+    .ng-journal-entry-page .ng-journal-metrics {
+      margin-top: 0;
+    }
+    .ng-journal-metric {
+      display: grid;
+      gap: 8px;
+    }
+    .ng-journal-metric-meta {
+      display: grid;
+      gap: 2px;
+    }
+    .ng-journal-metric-label,
+    .ng-journal-task-heading {
+      font-weight: 600;
+      font-size: 1.1rem;
+    }
+    .ng-journal-metric-explain {
+      font-size: 0.9rem;
+    }
+    .ng-journal-progress {
+      position: relative;
+      height: 24px;
+      border-radius: 999px;
+      width: 100%;
+      background: var(--background-modifier-border);
+      overflow: hidden;
+      cursor: ew-resize;
+    }
+    .ng-journal-progress-readonly {
+      cursor: default;
+    }
+    .ng-journal-progress-fill {
+      height: 100%;
+      border-radius: 999px;
+      transition: width 200ms ease, background-color 220ms ease;
+      width: 0;
+    }
+    .ng-journal-progress-thumb {
+      display: none;
+    }
+    .ng-journal-emotions,
+    .ng-journal-note-section,
+    .ng-journal-tasks,
+    .ng-journal-body,
+    .ng-journal-meta-grid {
+      margin-top: 14px;
+      display: grid;
+      gap: 8px;
+    }
+    .ng-journal-emotions,
+    .ng-journal-tasks {
+      margin-top: 18px;
+    }
+    .ng-journal-emotions h4,
+    .ng-journal-tasks > h4,
+    .ng-journal-task-group h5 {
+      text-align: center;
+      color: var(--text-normal);
+    }
+    .ng-journal-emotions h4,
+    .ng-journal-tasks > h4 {
+      font-size: 1.2rem;
+      margin: 0;
+    }
+    .ng-journal-entry-page .ng-journal-emotions h4 {
+      font-size: 1.56rem;
+    }
+    .ng-journal-entry-page .ng-journal-tasks > h4 {
+      font-size: 1.56rem;
+    }
+    .ng-journal-entry-page .ng-journal-task-group h5 {
+      font-size: 1.2rem;
+    }
+    .ng-journal-entry-page .ng-journal-task-group + .ng-journal-task-group {
+      margin-top: 20px;
+    }
+    .ng-journal-entry-page .ng-journal-task-badge {
+      min-width: 70px;
+      padding: 2px 6px;
+      font-size: 0.62rem;
+    }
+    .ng-journal-emotion-note {
+      color: var(--text-muted);
+      margin-top: -4px;
+      font-size: 0.92rem;
+      text-align: center;
+    }
+    .ng-journal-emotion-group {
+      display: grid;
+      justify-items: center;
+    }
+    .ng-journal-emotion-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+    }
+    .ng-journal-emotion-button,
+    .ng-journal-tracker-cell {
+      padding: 8px 10px;
+    }
+    .ng-journal-emotion-button {
+      background: transparent;
+      border: 1px solid;
+      color: var(--text-normal);
+    }
+    .ng-journal-emotion-button:not(.is-active) {
+      filter: brightness(40%) saturate(40%);
+    }
+    .ng-journal-emotion-button.pleasant {
+      border-color: #39e05a;
+    }
+    .ng-journal-emotion-button.unpleasant {
+      border-color: #ff6565;
+    }
+    .ng-journal-emotion-button.is-active.pleasant {
+      background: rgba(57, 224, 90, 0.16);
+      color: var(--text-normal);
+    }
+    .ng-journal-emotion-button.is-active.unpleasant {
+      background: rgba(255, 101, 101, 0.16);
+      color: var(--text-normal);
+    }
+    .ng-journal-emotion-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+    }
+    .ng-journal-emotion-chip {
+      display: inline-flex;
+      align-items: center;
+      border: 1px solid var(--background-modifier-border);
+      border-radius: 999px;
+      padding: 5px 10px;
+      margin: 0;
+    }
+    .ng-journal-emotion-chip.pleasant {
+      border-color: #39e05a;
+      color: #39e05a;
+    }
+    .ng-journal-emotion-chip.unpleasant {
+      border-color: #ff6565;
+      color: #ff6565;
+    }
+    .ng-journal-note-input {
+      min-height: 90px;
+      width: 100%;
+      resize: vertical;
+      border-radius: 10px;
+      border: 1px solid var(--background-modifier-border);
+      background: transparent;
+      color: var(--text-normal);
+      padding: 30px 10px 10px;
+    }
+    .ng-journal-note-section {
+      position: relative;
+    }
+    .ng-journal-character-count {
+      position: absolute;
+      top: 6px;
+      left: 12px;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+    .ng-journal-tracker-create-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto auto;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .ng-journal-tracker-name {
+      border: 1px solid var(--background-modifier-border);
+      background: var(--background-primary);
+      color: var(--text-normal);
+      border-radius: 10px;
+      padding: 8px 10px;
+      width: 100%;
+    }
+    .ng-journal-tracker-list {
+      display: grid;
+      gap: 10px;
+    }
+    .ng-journal-tracker-row {
+      display: grid;
+      grid-template-columns: minmax(140px, 170px) minmax(0, 1fr);
+      gap: 10px;
+      align-items: center;
+    }
+    .ng-journal-tracker-label {
+      border: 1px solid;
+      border-radius: 10px;
+      padding: 8px 10px;
+      font-weight: 600;
+      position: sticky;
+      left: 0;
+      z-index: 1;
+      background: color-mix(in srgb, var(--background-primary) 92%, transparent);
+    }
+    .ng-journal-tracker-label-empty {
+      border-color: transparent;
+      background: transparent;
+      box-shadow: none;
+    }
+    .ng-journal-tracker-cells {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 6px;
+    }
+    .ng-journal-tracker-header {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      padding-bottom: 4px;
+      background: color-mix(in srgb, var(--background-primary) 92%, transparent);
+      backdrop-filter: blur(6px);
+    }
+    .ng-journal-tracker-header-cell {
+      min-height: 54px;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--background-modifier-border);
+      border-radius: 10px;
+      background: transparent;
+      color: var(--text-normal);
+    }
+    .ng-journal-tracker-cell {
+      position: relative;
+      min-height: 54px;
+      display: grid;
+      place-items: center;
+      transition: transform 160ms ease, background-color 160ms ease, border-color 160ms ease;
+    }
+    .ng-journal-tracker-cell.is-active {
+      border-style: solid;
+    }
+    .ng-journal-tracker-cell.is-streak-start {
+      border-top-left-radius: 999px;
+      border-bottom-left-radius: 999px;
+    }
+    .ng-journal-tracker-cell.is-streak-mid {
+      border-radius: 0;
+    }
+    .ng-journal-tracker-cell.is-streak-end {
+      border-top-right-radius: 999px;
+      border-bottom-right-radius: 999px;
+    }
+    .ng-journal-tracker-cell:hover {
+      transform: translateY(-1px);
+    }
+    .ng-journal-tracker-day {
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+    .ng-journal-tracker-streak {
+      position: absolute;
+      bottom: 6px;
+      right: 6px;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+    }
     .ng-task-empty {
       font-size: 0.96rem;
+    }
+    .ng-journal-entry-page,
+    .ng-journal-entry-card {
+      max-width: 720px;
+      margin: 0 auto;
+    }
+    .ng-journal-entry-page {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      padding: 8px 0 24px;
+    }
+    .ng-journal-task-group {
+      display: grid;
+      gap: 4px;
+      margin-top: 2px;
+    }
+    .ng-journal-task-group h5 {
+      margin: 0;
+    }
+    .ng-journal-task-row {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 10px;
+    }
+    .ng-journal-task-name {
+      flex: 0 1 auto;
+    }
+    .ng-journal-task-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 88px;
+      padding: 3px 8px;
+      border: 1px solid;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .ng-journal-entry-page .ng-journal-task-badge {
+      filter: saturate(60%);
+    }
+    .ng-journal-entry-page .ng-journal-task-row {
+      justify-content: center;
+    }
+    .ng-journal-entry-card .ng-journal-task-badge {
+      filter: saturate(70%);
+    }
+    .ng-journal-task-badge {
+      margin-left: 2px;
+    }
+    .ng-journal-entry-card .ng-journal-task-row {
+      justify-content: center;
+    }
+    .ng-journal-entry-card .ng-journal-body h4 {
+      text-align: center;
+      color: var(--text-normal);
+    }
+    .ng-journal-body-markdown {
+      margin-top: 18px;
+    }
+    .ng-journal-body-markdown h4 {
+      text-align: center;
+      color: var(--text-normal);
+      font-size: 1.8rem;
+      margin: 0;
+    }
+    .ng-journal-entry-subtitle {
+      text-align: center;
+      font-style: italic;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+    .ng-tracker-section {
+      margin-top: 22px;
+    }
+    .ng-journal-body-content {
+      min-height: 120px;
+      border: none;
+      background: transparent;
+      color: var(--text-normal);
+      padding: 0;
+      white-space: pre-wrap;
+      outline: none;
+      line-height: 1.6;
+    }
+    .ng-journal-body-content:focus {
+      outline: none;
+      box-shadow: none;
+    }
+    @media (max-width: 900px) {
+      .ng-journal-layout {
+        grid-template-columns: 1fr;
+      }
+      .ng-journal-tracker-row {
+        grid-template-columns: 1fr;
+      }
+      .ng-journal-tracker-label {
+        position: static;
+      }
+      .ng-journal-title-wrap {
+        text-align: left;
+      }
+      .ng-journal-entry-page .ng-journal-title-wrap,
+      .ng-journaling .ng-journal-title-wrap {
+        text-align: center;
+      }
     }
     @keyframes ng-energy-flow {
       from { background-position: 0% 50%; }

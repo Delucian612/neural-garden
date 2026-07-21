@@ -32,7 +32,11 @@ export class NeuralGardenHomeView extends ItemView {
   lastBreakMessageIndex: number | null = null;
   refocusTaskInputAfterRender = false;
 
-  constructor(leaf: WorkspaceLeaf, private readonly storage: TaskManagerStorage) {
+  constructor(
+    leaf: WorkspaceLeaf,
+    private readonly storage: TaskManagerStorage,
+    private readonly openJournalingView: (makeActive: boolean, targetLeaf?: WorkspaceLeaf) => Promise<void>,
+  ) {
     super(leaf);
   }
 
@@ -97,7 +101,7 @@ export class NeuralGardenHomeView extends ItemView {
     const categories = wrapper.createDiv({ cls: "ng-categories" });
     const categoryGrid = categories.createDiv({ cls: "ng-category-grid" });
     const journalButton = this.makeCategoryButton("Journaling", "book-open", () => {
-      new Notice("Journaling interface placeholder");
+      void this.openJournalingView(true, this.leaf);
     });
     categoryGrid.appendChild(journalButton);
 

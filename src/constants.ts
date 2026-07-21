@@ -1,7 +1,13 @@
 import { EffortDefinition, EffortKey, TaskManagerState } from "./types";
 
 export const VIEW_TYPE_NEURAL_GARDEN_HOME = "neural-garden-home";
+export const VIEW_TYPE_NEURAL_GARDEN_JOURNALING = "neural-garden-journaling";
+export const VIEW_TYPE_NEURAL_GARDEN_JOURNAL_ENTRY = "neural-garden-journal-entry";
 export const TASK_MANAGER_FILE_PATH = "Maintenance/TaskManager/TaskManager.md";
+export const JOURNAL_DAILY_FOLDER = "Journal/Daily";
+export const JOURNAL_WEEKLY_FOLDER = "Journal/Weekly";
+export const JOURNAL_MONTHLY_FOLDER = "Journal/Monthly";
+export const TRACKER_FOLDER = "Maintenance/Tracker";
 export const NOTES_FOLDER = "Notes";
 export const WEEKLY_RECAP_MIN_ENTRIES = 7;
 

@@ -2,11 +2,13 @@
 
 The Journaling Concept supports everyday life by offering Daily Journal Entries, Weekly Recaps, and Monthly Reflections.
 
-Each part has its own role and job to do. The Daily Journaling gathers useful data from everyday life. The Weekly Recap makes small adaptations and provides support based on the different symptoms. The Weekly Recap also offers the possibility to "plant seeds," a way to mark a possible topic that needs to be worked on in the next month. The Monthly Reflection reflects on whether symptoms have improved or become more stable. It gives feedback by comparing the weekly entries with each other and reacts to the data by suggesting different daily life adaptations, based on the symptoms. The Monthly Recap also processes the seeds planted during the Weekly Recaps.
+Each part has its own role and job to do. The Daily Journaling gathers useful data from everyday life. The Weekly Recap makes small adaptations and provides support based on the different symptoms. The Weekly Recap also offers the possibility to "plant seeds," a way to mark a possible topic that needs to be worked on in the next month. The Monthly Reflection reflects on whether symptoms have improved or become more stable. It gives feedback by comparing the weekly entries with each other and reacts to the data by suggesting different daily life adaptations, based on the symptoms. The Monthly Recap also processes the seeds planted during the Weekly Recaps. 
 
 ### Journal Hub/Journaling
 
 Here, past Daily Journals, Weekly Recaps, and Monthly Reflections can be accessed. A calendar at the top shows which days have a journal entry, by highlighting them in a color, and which don't. Clicking a day that has a journal entry opens that specific entry and shows its stats. If it's a past entry, the values can't be changed. If it's the current entry (same day, or no entry has been made since that day), it can still be edited.
+
+If A journal Entry hasn't been created that day, The button "Create Todays Journal Entry" will be highlighted, indicating it can be used. If there has been a journal entry on the same day already, the button will be greyed out, being unresponsive. By clicking the button It will ask if the TaskManager Task have been completed/are up to date. "yes" will execute the journal entry, "No" will redirect to the home page, not executing the journal entry 
 
 ### Daily Journals
 
