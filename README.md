@@ -6,21 +6,22 @@ Over the last 8 months, this project grew through constant trial and error while
 
 ## Why this exists
 
-At first, Obsidian felt powerful but overwhelming. Too many possible workflows, too many clicks, too many decisions when mental energy was already low.
+At my first Startup, Obsidian felt powerful but overwhelming. Too many possible workflows, too many clicks, too many decisions when mental energy was already low.
+The first few journal entries and mechanics felt clunky and operated truely manually. I was reading every JournalEntry, looked at the correlating tags and wrote a summary, trying to find new ways. Slowly but surely over the span of a few months it became graphically more pleasant, but still remained fully manual.   
 
-So Neural Garden moved toward a simpler interface made of focused graphical screens for specific actions. The Home view became the pathway: a stable starting point that routes into the things that matter most without forcing a long navigation chain.
+In the past few weeks and months The Neural Garden has moved toward a simpler interface involving some graphical inputs for specific actions. I was experimenting with sliders, which affected the frontmatter of a Note to actually store information, which could be read and processed.At some point The Home view became a pathway leading me through Obsidian. However, sometimes the navigation chains still remained long, and things like creating a new topic became tedious, sometimes even including building up the notebook from scratch.
 
 ## From overload to structure
 
-A recurring pattern was clear: periods of overdoing things for weeks, then crashing into depression and low function.
+Each week some recurring patterns became clear: periods of overdoing things for weeks, not taking care of myself and my own mental health which then inevitable led to crashing into deep depression and low function.
 
-I started with a weird way of journaling, tracking everything that seemed relevant and using tags to connect signals over time. Those tags became a map for emotions, symptoms, and energy, and slowly made it easier to notice links between internal states and external factors.
+As mentioned above, Journaling started in a weird way, trying to use the built-in functions of Obsidian, tracking everything that seemed relevant, using tags to connect important things over time. Those tags became a map for emotions, symptoms, and energy, and slowly made it easier to notice links between internal states and external factors. My Mental health slowly started to recover and I got more stable with every weekly reflection I did.
 
-Journaling was the first real foundation in this Obsidian journey. It was originally used to reflect manually, detect patterns, and adjust behavior by hand.
+Journaling was the first real foundation in this Obsidian journey. The Notes I created while being on this journey accompanied the whole process. During the past months I have mainly focused on reflecting on myself, and created hundreds of Notes about Mental Health and Psychology among other. Working on the Notebook and the notebooks concept also aligned with the intention of working on myself. However: I spent an enormous amount of Time doing so. 
 
-Now that time is tighter, the Journal system is being shaped to capture the current state quickly and reliably. The intent is simple: fast input in the present, useful processing in the background. Parts of that automation are still in progress, but the direction is clear: future feedback loops should adapt behavior over time, including influencing Task Manager responses among other functionalities.
+Now that time is tighter as the circumstances of life have changed, the whole system needed to be reshaped to capture the current state quickly and reliably, and have supporting measurements trigger depending on the values typed in. Fast input in the present, useful processing in the background. Parts of that automation are still in progress and will be implemented over time, but the direction is clear: future feedback loops should adapt to the behavior over time, including influencing Task Manager responses among other functionalities.
 
-From that process, the Task Manager emerged as a natural consequence and solution. It addresses the energy problem step by step, treats tasks as energy-bearing actions instead of plain checkboxes, and introduces forced breaks when strain runs too high. The exact calculation stays out of the way; what matters is that the system helps prevent another long overpush cycle.
+The Task Manager emerged as a natural consequence and solution of one of my exhaustion and "overload" problems. It addresses the energy problem step by step, treats tasks as energy-bearing actions instead of plain checkboxes, and now also introduces forced breaks when strain runs too high. The exact calculation stays out of the way; what matters is that the system helps prevent another long overpush cycle.
 
 ## What is implemented right now
 
