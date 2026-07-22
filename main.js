@@ -589,7 +589,7 @@ function injectNeuralGardenStyles() {
       display: flex;
       flex-direction: column;
       gap: 14px;
-      padding: 8px 0 24px;
+      padding: 8px 14px 24px;
       max-width: 720px;
       margin: 0 auto;
     }
@@ -657,12 +657,22 @@ function injectNeuralGardenStyles() {
     }
     .ng-journal-entry-card h3 {
       color: var(--text-normal);
+      margin-bottom: 12px;
+    }
+    .ng-journal-preview-summary {
+      margin: 0 0 16px;
+      text-align: center;
+      color: var(--text-normal);
+      font-size: 1.2rem;
+      font-weight: 600;
     }
     .ng-journal-readonly-note,
     .ng-journal-metric-feedback,
     .ng-journal-metric-explain,
     .ng-journal-body-copy {
       color: var(--text-muted);
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
     }
     .ng-journal-tracker-cell {
       border: 1px solid var(--background-modifier-border);
@@ -716,9 +726,73 @@ function injectNeuralGardenStyles() {
       padding-top: 8px;
       margin-top: 10px;
     }
-    .ng-journal-calendar-panel h3 {
+    .ng-journal-calendar-header {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .ng-journal-calendar-header h3 {
       color: var(--text-normal);
+      margin: 0;
+      justify-self: start;
+    }
+    .ng-journal-month-controls {
+      justify-self: center;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      justify-content: center;
+    }
+    .ng-journal-month-stepper {
+      all: unset;
+      width: auto;
+      height: auto;
+      padding: 0;
+      border: none !important;
+      box-shadow: none !important;
+      border-radius: 0;
+      background: transparent !important;
+      color: var(--text-normal);
+      font-size: 0.95rem;
+      line-height: 1;
+      display: inline;
+      cursor: pointer;
+      transform: translateY(-2px);
+      appearance: none;
+      -webkit-appearance: none;
+      outline: none !important;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .ng-journal-month-stepper:hover,
+    .ng-journal-month-stepper:focus-visible {
+      border: none !important;
+      box-shadow: none !important;
+      outline: none !important;
+      background: transparent !important;
+    }
+    .ng-journal-month-selector {
+      justify-self: center;
+      min-width: 180px;
+      padding: 7px 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(236, 154, 99, 0.5);
+      background: color-mix(in srgb, var(--background-primary) 88%, transparent);
+      color: var(--text-normal);
+      font-size: 0.92rem;
+      font-weight: 600;
       text-align: center;
+      cursor: pointer;
+    }
+    .ng-journal-month-selector:hover,
+    .ng-journal-month-selector:focus-visible {
+      border-color: #ffd2b0;
+      box-shadow: 0 0 0 2px rgba(236, 154, 99, 0.18);
+      outline: none;
+    }
+    .ng-journal-create-button {
+      justify-self: end;
     }
     .ng-journal-month-label {
       font-size: 1.2rem;
@@ -730,24 +804,81 @@ function injectNeuralGardenStyles() {
     }
     .ng-journal-detail-panel {
       margin-top: 18px;
+      border: none;
+      border-radius: 0;
+      padding: 0;
+      background: transparent;
     }
     .ng-journal-calendar-grid {
       display: grid;
-      grid-template-columns: repeat(7, minmax(0, 1fr));
-      gap: 4px;
-      margin-top: 10px;
+      grid-template-columns: minmax(54px, 62px) repeat(7, minmax(0, 1fr));
+      gap: 4px 6px;
     }
     .ng-journal-calendar-weekday {
       text-align: center;
       font-size: 0.78rem;
       color: var(--text-muted);
     }
+    .ng-journal-calendar-weekday {
+      text-align: center;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      color: var(--text-muted);
+      padding: 2px 0 4px;
+    }
+    .ng-journal-calendar-week-header {
+      color: var(--text-normal);
+      opacity: 0.8;
+      margin-right: 10px;
+    }
+    .ng-journal-week-cell {
+      position: relative;
+      min-height: 30px;
+      padding: 4px 6px;
+      border-radius: 9px;
+      border: 1px solid rgba(236, 154, 99, 0.45);
+      background: color-mix(in srgb, var(--background-primary) 82%, transparent);
+      color: var(--text-normal);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.78rem;
+      font-weight: 600;
+      transition: all 0.15s ease;
+      margin-right: 10px;
+    }
+    .ng-journal-week-cell.is-available {
+      border-color: #00f0ff;
+      background: color-mix(in srgb, var(--background-primary) 82%, transparent);
+      box-shadow: 0 0 0 2px rgba(0, 240, 255, 0.18);
+    }
+    .ng-journal-week-cell.is-available::after {
+      content: "+";
+      position: absolute;
+      top: 1px;
+      right: 3px;
+      font-size: 0.94rem;
+      line-height: 1;
+      font-weight: 700;
+      color: #00f0ff;
+      opacity: 0.95;
+      pointer-events: none;
+    }
+    .ng-journal-week-cell:hover:not(:disabled) {
+      border-color: #ffd2b0;
+      box-shadow: 0 0 0 2px rgba(236, 154, 99, 0.18);
+    }
+    .ng-journal-week-cell:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
     .ng-journal-day-cell {
       position: relative;
-      min-height: 34px;
-      padding: 8px 6px;
-      border-radius: 10px;
-      border: 1px solid #ec9a63;
+      min-height: 30px;
+      padding: 5px 3px;
+      border-radius: 8px;
+      border: 1px solid rgba(236, 154, 99, 0.38);
       background: transparent;
       color: var(--text-normal);
       display: flex;
@@ -763,40 +894,37 @@ function injectNeuralGardenStyles() {
       opacity: 0.35;
     }
     .ng-journal-day-cell.has-entry {
-      border-color: #ec9a63;
-      background: rgba(236, 154, 99, 0.08);
+      border-color: rgba(236, 154, 99, 0.5);
+      background: rgba(236, 154, 99, 0.07);
     }
     .ng-journal-day-cell.is-today {
-      box-shadow: 0 0 0 2px rgba(0, 240, 255, 0.18);
+      border-color: #0e8f9f;
+      box-shadow: 0 0 0 1.4px rgba(14, 143, 159, 0.16);
     }
     .ng-journal-day-cell.is-selected {
       border-color: #00f0ff;
       box-shadow: 0 0 0 2px rgba(0, 240, 255, 0.22);
     }
     .ng-journal-day-number {
-      font-size: 0.86rem;
+      font-size: 0.76rem;
       font-weight: 600;
     }
     .ng-journal-day-dot {
-      width: 8px;
-      height: 8px;
+      width: 7px;
+      height: 7px;
       border-radius: 999px;
       background: #ec9a63;
       position: absolute;
-      bottom: 8px;
-      right: 8px;
-    }
-    .ng-journal-metrics {
-      display: grid;
-      gap: 14px;
-      margin-top: 14px;
+      bottom: 4px;
+      right: 4px;
+      box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.14);
     }
     .ng-journal-entry-page .ng-journal-metrics {
       margin-top: 0;
     }
     .ng-journal-metric {
       display: grid;
-      gap: 8px;
+      gap: 2px;
     }
     .ng-journal-metric-meta {
       display: grid;
@@ -818,6 +946,7 @@ function injectNeuralGardenStyles() {
       background: var(--background-modifier-border);
       overflow: hidden;
       cursor: ew-resize;
+      margin-bottom: 10px;
     }
     .ng-journal-progress-readonly {
       cursor: default;
@@ -898,13 +1027,20 @@ function injectNeuralGardenStyles() {
       color: var(--text-normal);
     }
     .ng-journal-emotion-button:not(.is-active) {
-      filter: brightness(40%) saturate(40%);
+      color: color-mix(in srgb, var(--text-normal) 70%, black 30%);
+      filter: none;
     }
     .ng-journal-emotion-button.pleasant {
       border-color: #39e05a;
     }
     .ng-journal-emotion-button.unpleasant {
       border-color: #ff6565;
+    }
+    .ng-journal-emotion-button.pleasant:not(.is-active) {
+      border-color: color-mix(in srgb, #39e05a 60%, black 40%);
+    }
+    .ng-journal-emotion-button.unpleasant:not(.is-active) {
+      border-color: color-mix(in srgb, #ff6565 60%, black 40%);
     }
     .ng-journal-emotion-button.is-active.pleasant {
       background: rgba(57, 224, 90, 0.16);
@@ -1118,6 +1254,11 @@ function injectNeuralGardenStyles() {
     }
     .ng-journal-body-markdown {
       margin-top: 18px;
+      border: 1px solid rgba(236, 154, 99, 0.28);
+      border-bottom-color: rgba(236, 154, 99, 0.28);
+      border-radius: 14px;
+      background: color-mix(in srgb, var(--background-primary) 28%, transparent);
+      padding: 14px 14px 18px;
     }
     .ng-journal-body-markdown h4 {
       text-align: center;
@@ -1129,20 +1270,28 @@ function injectNeuralGardenStyles() {
       text-align: center;
       font-style: italic;
       color: var(--text-muted);
-      margin-top: 4px;
+      margin-top: 2px;
+      margin-bottom: 5px;
     }
     .ng-tracker-section {
       margin-top: 22px;
     }
     .ng-journal-body-content {
       min-height: 120px;
+      max-width: 100%;
       border: none;
       background: transparent;
       color: var(--text-normal);
+      font-size: 1.02em;
       padding: 0;
+      margin-top: 1px;
       white-space: pre-wrap;
+      overflow-wrap: normal;
+      word-break: normal;
+      overflow-x: hidden;
       outline: none;
       line-height: 1.6;
+      box-sizing: border-box;
     }
     .ng-journal-body-content:focus {
       outline: none;
@@ -1967,8 +2116,7 @@ var NeuralGardenJournalEntryView = class extends import_obsidian2.ItemView {
   }
   async openForDate(dateKey, editable) {
     var _a;
-    const today = currentDateKey();
-    this.editable = editable && dateKey === today;
+    this.editable = editable && isEditableJournalDate(dateKey);
     this.entry = (_a = await this.journalingStorage.readDailyEntryByDate(dateKey)) != null ? _a : await this.createDraftEntry(dateKey);
     if (this.editable) {
       const taskState = await this.taskStorage.loadTaskManagerState();
@@ -2253,22 +2401,20 @@ var NeuralGardenJournalEntryView = class extends import_obsidian2.ItemView {
     block.createEl("h4", { text: "Entry" });
     block.createDiv({ cls: "ng-journal-entry-subtitle", text: "Write your journal entry below when you are ready." });
     const body = block.createDiv({ cls: "ng-journal-body-content" });
-    body.textContent = this.entry.body;
+    body.innerText = this.entry.body;
     body.contentEditable = String(this.editable);
     body.spellcheck = true;
     body.addEventListener("input", () => {
-      var _a;
       if (!this.entry || !this.editable) {
         return;
       }
-      this.entry.body = (_a = body.textContent) != null ? _a : "";
+      this.entry.body = body.innerText.replace(/\r\n/g, "\n");
     });
     body.addEventListener("blur", () => {
-      var _a;
       if (!this.entry || !this.editable) {
         return;
       }
-      this.entry.body = (_a = body.textContent) != null ? _a : "";
+      this.entry.body = body.innerText.replace(/\r\n/g, "\n");
       void this.persist();
     });
   }
@@ -2290,6 +2436,14 @@ function snapshotTask(task) {
 function currentDateKey() {
   const date = /* @__PURE__ */ new Date();
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+function yesterdayDateKey() {
+  const date = /* @__PURE__ */ new Date();
+  date.setDate(date.getDate() - 1);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+function isEditableJournalDate(dateKey) {
+  return dateKey === currentDateKey() || dateKey === yesterdayDateKey();
 }
 function formatReadableDate(dateKey) {
   const match = dateKey.match(/^(\d{4})-(\d{2})-(\d{2})$/);
@@ -2413,9 +2567,8 @@ var NeuralGardenJournalingView = class extends import_obsidian3.ItemView {
     this.journalingStorage = journalingStorage;
     this.openHomeView = openHomeView;
     this.openJournalEntryView = openJournalEntryView;
-    this.section = "daily";
     this.calendarMonth = startOfMonth(/* @__PURE__ */ new Date());
-    this.selectedDateKey = todayKey();
+    this.selectedDateKey = null;
     this.dailyEntries = [];
     this.trackers = [];
     this.selectedEntry = null;
@@ -2436,20 +2589,25 @@ var NeuralGardenJournalingView = class extends import_obsidian3.ItemView {
   }
   async onClose() {
     this.selectedEntry = null;
+    this.selectedDateKey = null;
   }
   async reloadState() {
     var _a, _b;
     await this.journalingStorage.ensureJournalFolders();
     this.dailyEntries = await this.journalingStorage.listDailyEntries();
     this.trackers = (await this.journalingStorage.listTrackers()).slice(0, 18);
-    if (!this.dailyEntries.some((entry) => entry.frontmatter.date === this.selectedDateKey)) {
-      const latest = this.dailyEntries[this.dailyEntries.length - 1];
-      if (latest) {
-        this.selectedDateKey = latest.frontmatter.date;
+    if (this.selectedDateKey) {
+      if (!this.dailyEntries.some((entry) => entry.frontmatter.date === this.selectedDateKey)) {
+        const latest = this.dailyEntries[this.dailyEntries.length - 1];
+        if (latest) {
+          this.selectedDateKey = latest.frontmatter.date;
+          this.calendarMonth = startOfMonth((_a = parseDateKey(this.selectedDateKey)) != null ? _a : /* @__PURE__ */ new Date());
+        }
+      } else {
+        this.calendarMonth = startOfMonth((_b = parseDateKey(this.selectedDateKey)) != null ? _b : /* @__PURE__ */ new Date());
       }
     }
-    this.calendarMonth = startOfMonth((_a = parseDateKey(this.selectedDateKey)) != null ? _a : /* @__PURE__ */ new Date());
-    this.selectedEntry = (_b = this.dailyEntries.find((entry) => entry.frontmatter.date === this.selectedDateKey)) != null ? _b : null;
+    this.selectedEntry = null;
   }
   render() {
     const { contentEl } = this;
@@ -2464,41 +2622,48 @@ var NeuralGardenJournalingView = class extends import_obsidian3.ItemView {
     });
     const titleWrap = topBar.createDiv({ cls: "ng-journal-title-wrap" });
     titleWrap.createEl("h2", { text: "Journal Hub" });
-    const modeBar = wrapper.createDiv({ cls: "ng-journal-modebar" });
-    this.makeModeButton(modeBar, "daily", "Daily Journal");
-    this.makeModeButton(modeBar, "weekly", "Weekly Recap");
-    this.makeModeButton(modeBar, "monthly", "Monthly Reflection");
-    if (this.section === "daily") {
-      this.renderDailySection(wrapper);
-      return;
-    }
-    this.renderPlaceholder(wrapper, this.section);
-  }
-  makeModeButton(container, section, label) {
-    const button = container.createEl("button", { text: label });
-    button.addClass("ng-journal-mode-button");
-    if (this.section === section) {
-      button.addClass("is-active");
-    }
-    button.addEventListener("click", () => {
-      this.section = section;
-      this.render();
-    });
-  }
-  renderPlaceholder(parent, section) {
-    const placeholder = parent.createDiv({ cls: "ng-journal-placeholder" });
-    placeholder.createEl("h3", { text: section === "weekly" ? "Weekly Recap" : "Monthly Reflection" });
-    placeholder.createDiv({
-      cls: "ng-empty",
-      text: section === "weekly" ? "Weekly recap is intentionally left as a placeholder for now." : "Monthly reflection is intentionally left as a placeholder for now."
-    });
+    this.renderDailySection(wrapper);
   }
   renderDailySection(parent) {
     const section = parent.createDiv({ cls: "ng-journal-daily" });
-    const header = section.createDiv({ cls: "ng-journal-daily-header" });
+    const calendar = section.createDiv({ cls: "ng-journal-calendar-panel" });
+    const calendarHeader = calendar.createDiv({ cls: "ng-journal-calendar-header" });
+    calendarHeader.createEl("h3", { text: "Calendar" });
+    const monthControls = calendarHeader.createDiv({ cls: "ng-journal-month-controls" });
+    const prevMonthButton = monthControls.createEl("button", { text: "<--" });
+    prevMonthButton.type = "button";
+    prevMonthButton.addClass("ng-journal-month-stepper");
+    prevMonthButton.title = "Previous month";
+    prevMonthButton.addEventListener("click", () => {
+      this.shiftCalendarMonth(-1);
+    });
+    const monthSelector = monthControls.createEl("button");
+    monthSelector.type = "button";
+    monthSelector.addClass("ng-journal-month-selector");
+    monthSelector.textContent = formatMonthLabel(this.calendarMonth);
+    monthSelector.title = "Use the arrow keys to change month";
+    monthSelector.addEventListener("click", () => {
+      monthSelector.focus();
+    });
+    monthSelector.addEventListener("keydown", (event) => {
+      if (event.key !== "ArrowLeft" && event.key !== "ArrowRight" && event.key !== "ArrowUp" && event.key !== "ArrowDown") {
+        return;
+      }
+      event.preventDefault();
+      const delta = event.key === "ArrowLeft" || event.key === "ArrowUp" ? -1 : 1;
+      this.calendarMonth = addMonths(this.calendarMonth, delta);
+      this.render();
+    });
+    const nextMonthButton = monthControls.createEl("button", { text: "-->" });
+    nextMonthButton.type = "button";
+    nextMonthButton.addClass("ng-journal-month-stepper");
+    nextMonthButton.title = "Next month";
+    nextMonthButton.addEventListener("click", () => {
+      this.shiftCalendarMonth(1);
+    });
     const today = todayKey();
     const hasTodayEntry = this.dailyEntries.some((entry) => entry.frontmatter.date === today);
-    const createButton = header.createEl("button", { text: "Create Todays Entry" });
+    const createButton = calendarHeader.createEl("button", { text: "New Entry" });
     createButton.addClass("ng-journal-create-button");
     createButton.disabled = hasTodayEntry;
     if (!createButton.disabled) {
@@ -2507,22 +2672,6 @@ var NeuralGardenJournalingView = class extends import_obsidian3.ItemView {
         await this.openJournalEntryView(today, true, this.leaf);
       });
     }
-    const monthRow = section.createDiv({ cls: "ng-journal-month-row" });
-    const prevButton = monthRow.createEl("button", { text: "Previous" });
-    prevButton.addClass("ng-journal-mode-button");
-    monthRow.createDiv({ cls: "ng-journal-month-label", text: formatMonthLabel(this.calendarMonth) });
-    const nextButton = monthRow.createEl("button", { text: "Next" });
-    nextButton.addClass("ng-journal-mode-button");
-    prevButton.addEventListener("click", () => {
-      this.calendarMonth = addMonths(this.calendarMonth, -1);
-      this.render();
-    });
-    nextButton.addEventListener("click", () => {
-      this.calendarMonth = addMonths(this.calendarMonth, 1);
-      this.render();
-    });
-    const calendar = section.createDiv({ cls: "ng-journal-calendar-panel" });
-    calendar.createEl("h3", { text: "Journal Calendar" });
     this.renderCalendar(calendar);
     const details = section.createDiv({ cls: "ng-journal-detail-panel" });
     this.renderSelectedEntry(details);
@@ -2530,46 +2679,64 @@ var NeuralGardenJournalingView = class extends import_obsidian3.ItemView {
     this.renderTrackers(trackerSection);
   }
   renderCalendar(container) {
+    const entryDates = new Set(this.dailyEntries.map((entry) => entry.frontmatter.date));
+    const weeks = buildCalendarWeeks(this.calendarMonth, entryDates);
     const grid = container.createDiv({ cls: "ng-journal-calendar-grid" });
-    for (const label of ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]) {
+    grid.createDiv({ cls: "ng-journal-calendar-weekday ng-journal-calendar-week-header", text: "Week" });
+    for (const label of ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]) {
       grid.createDiv({ cls: "ng-journal-calendar-weekday", text: label });
     }
-    const cells = buildCalendarCells(this.calendarMonth);
-    for (const cell of cells) {
-      const wasSelected = cell.dateKey === this.selectedDateKey;
-      const button = grid.createEl("button");
-      button.addClass("ng-journal-day-cell");
-      if (cell.outsideMonth) {
-        button.addClass("is-outside-month");
+    for (const week of weeks) {
+      const weekButton = grid.createEl("button");
+      weekButton.type = "button";
+      weekButton.addClass("ng-journal-week-cell");
+      weekButton.textContent = String(week.weekNumber);
+      weekButton.title = week.entryCount >= 4 ? `Week ${week.weekNumber}: ${week.entryCount} entries` : `Week ${week.weekNumber}: ${week.entryCount} entries (need 4)`;
+      if (week.entryCount >= 4) {
+        weekButton.addClass("is-available");
+        weekButton.addEventListener("click", () => {
+          new import_obsidian3.Notice(`Weekly reflection for week ${week.weekNumber} is ready.`);
+        });
+      } else {
+        weekButton.disabled = true;
       }
-      if (cell.dateKey === todayKey()) {
-        button.addClass("is-today");
-      }
-      if (cell.dateKey === this.selectedDateKey) {
-        button.addClass("is-selected");
-      }
-      const hasEntry = this.dailyEntries.some((entry) => entry.frontmatter.date === cell.dateKey);
-      if (hasEntry) {
-        button.addClass("has-entry");
-      }
-      button.createDiv({ cls: "ng-journal-day-number", text: String(cell.day) });
-      if (hasEntry) {
-        button.createDiv({ cls: "ng-journal-day-dot" });
-      }
-      button.addEventListener("click", async (event) => {
-        var _a, _b;
-        this.selectedDateKey = cell.dateKey;
-        this.calendarMonth = startOfMonth((_a = parseDateKey(cell.dateKey)) != null ? _a : /* @__PURE__ */ new Date());
-        this.selectedEntry = (_b = this.dailyEntries.find((entry) => entry.frontmatter.date === cell.dateKey)) != null ? _b : null;
-        const isToday = cell.dateKey === todayKey();
-        if ((hasEntry || isToday) && wasSelected) {
-          const inNewSplit = event.metaKey || event.ctrlKey;
-          const targetLeaf = inNewSplit ? this.app.workspace.getLeaf(true) : this.leaf;
-          await this.openJournalEntryView(cell.dateKey, isToday, targetLeaf);
-          return;
+      for (const cell of week.days) {
+        const wasSelected = cell.dateKey === this.selectedDateKey;
+        const button = grid.createEl("button");
+        button.type = "button";
+        button.addClass("ng-journal-day-cell");
+        if (cell.outsideMonth) {
+          button.addClass("is-outside-month");
         }
-        this.render();
-      });
+        if (cell.dateKey === todayKey()) {
+          button.addClass("is-today");
+        }
+        if (cell.dateKey === this.selectedDateKey) {
+          button.addClass("is-selected");
+        }
+        const hasEntry = entryDates.has(cell.dateKey);
+        if (hasEntry) {
+          button.addClass("has-entry");
+        }
+        button.createDiv({ cls: "ng-journal-day-number", text: String(cell.day) });
+        if (hasEntry) {
+          button.createDiv({ cls: "ng-journal-day-dot" });
+        }
+        button.addEventListener("click", async (event) => {
+          var _a, _b;
+          this.selectedDateKey = cell.dateKey;
+          this.calendarMonth = startOfMonth((_a = parseDateKey(cell.dateKey)) != null ? _a : /* @__PURE__ */ new Date());
+          this.selectedEntry = (_b = this.dailyEntries.find((entry) => entry.frontmatter.date === cell.dateKey)) != null ? _b : null;
+          const isBackfillDate = isEditableBackfillDate(cell.dateKey);
+          if ((hasEntry || isBackfillDate) && wasSelected) {
+            const inNewSplit = event.metaKey || event.ctrlKey;
+            const targetLeaf = inNewSplit ? this.app.workspace.getLeaf(true) : this.leaf;
+            await this.openJournalEntryView(cell.dateKey, isBackfillDate, targetLeaf);
+            return;
+          }
+          this.render();
+        });
+      }
     }
   }
   renderSelectedEntry(container) {
@@ -2581,6 +2748,7 @@ var NeuralGardenJournalingView = class extends import_obsidian3.ItemView {
       return;
     }
     card.createEl("h3", { text: `Journal Entry - ${formatReadableDate2(entry.frontmatter.date)}` });
+    card.createEl("h4", { cls: "ng-journal-preview-summary", text: "Summary" });
     this.renderMetrics(card, entry.frontmatter);
     this.renderEmotionList(card, entry.frontmatter.emotions, true);
     this.renderTaskSnapshots(card, entry.frontmatter);
@@ -2732,12 +2900,24 @@ var NeuralGardenJournalingView = class extends import_obsidian3.ItemView {
       }
     }
   }
+  shiftCalendarMonth(amount) {
+    this.calendarMonth = new Date(this.calendarMonth.getFullYear(), this.calendarMonth.getMonth() + amount, 1);
+    this.render();
+  }
 };
 function valueOrDash(value) {
   return value === null ? "-" : String(value);
 }
 function todayKey() {
   return formatDateKey(/* @__PURE__ */ new Date());
+}
+function yesterdayKey() {
+  const previous = /* @__PURE__ */ new Date();
+  previous.setDate(previous.getDate() - 1);
+  return formatDateKey(previous);
+}
+function isEditableBackfillDate(dateKey) {
+  return dateKey === todayKey() || dateKey === yesterdayKey();
 }
 function formatDateKey(date) {
   const year = date.getFullYear();
@@ -2755,9 +2935,6 @@ function parseDateKey(dateKey) {
 }
 function startOfMonth(date) {
   return new Date(date.getFullYear(), date.getMonth(), 1);
-}
-function addMonths(date, amount) {
-  return new Date(date.getFullYear(), date.getMonth() + amount, 1);
 }
 function formatMonthLabel(date) {
   return date.toLocaleDateString(void 0, { month: "long", year: "numeric" });
@@ -2785,21 +2962,51 @@ function ordinalSuffix(day) {
       return "th";
   }
 }
-function buildCalendarCells(month) {
-  const firstDay = new Date(month.getFullYear(), month.getMonth(), 1);
-  const start = new Date(firstDay);
-  start.setDate(firstDay.getDate() - firstDay.getDay());
-  const cells = [];
-  for (let index = 0; index < 42; index += 1) {
-    const date = new Date(start);
-    date.setDate(start.getDate() + index);
-    cells.push({
-      dateKey: formatDateKey(date),
-      day: date.getDate(),
-      outsideMonth: date.getMonth() !== month.getMonth()
+function buildCalendarWeeks(month, entryDates) {
+  const monthStart = startOfMonth(month);
+  const monthEnd = endOfMonth(month);
+  const start = startOfWeek(monthStart);
+  const weeks = [];
+  for (let cursor = new Date(start); cursor <= monthEnd; cursor.setDate(cursor.getDate() + 7)) {
+    const weekStart = new Date(cursor);
+    const days = [];
+    let entryCount = 0;
+    for (let offset = 0; offset < 7; offset += 1) {
+      const date = new Date(weekStart);
+      date.setDate(weekStart.getDate() + offset);
+      const dateKey = formatDateKey(date);
+      if (entryDates.has(dateKey)) {
+        entryCount += 1;
+      }
+      days.push({
+        dateKey,
+        day: date.getDate(),
+        outsideMonth: date.getMonth() !== month.getMonth()
+      });
+    }
+    weeks.push({
+      weekNumber: getIsoWeekNumber(weekStart),
+      entryCount,
+      days
     });
   }
-  return cells;
+  return weeks;
+}
+function startOfWeek(date) {
+  const result = new Date(date);
+  const day = (result.getDay() + 6) % 7;
+  result.setDate(result.getDate() - day);
+  return result;
+}
+function endOfMonth(date) {
+  return new Date(date.getFullYear(), date.getMonth() + 1, 0);
+}
+function getIsoWeekNumber(date) {
+  const utcDate = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNumber = utcDate.getUTCDay() || 7;
+  utcDate.setUTCDate(utcDate.getUTCDate() + 4 - dayNumber);
+  const yearStart = new Date(Date.UTC(utcDate.getUTCFullYear(), 0, 1));
+  return Math.ceil(((utcDate.getTime() - yearStart.getTime()) / 864e5 + 1) / 7);
 }
 function buildTrackerWindow(days) {
   const today = /* @__PURE__ */ new Date();

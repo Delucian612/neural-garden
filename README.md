@@ -1,67 +1,57 @@
 # Neural Garden
 
-Neural Garden is an Obsidian plugin for people who want a calmer way to plan the day, reflect on it, and keep track of how things are going over time.
+Neural Garden began as a personal necessity.
 
-It brings journaling, task planning, and lightweight reflection into one place, while still feeling like part of Obsidian instead of a separate app.
+Over the last 8 months, this project grew through constant trial and error while life felt difficult to manage. The goal was never to build another productivity toy. The goal was to build a support system that could actually hold up on hard days, reduce chaos, and make self-management possible with less friction.
 
-## What it does
+## Why this exists
 
-### Home
+At first, Obsidian felt powerful but overwhelming. Too many possible workflows, too many clicks, too many decisions when mental energy was already low.
 
-The Home screen is the starting point. It is meant to feel like a small control room for the day: a place to jump into journaling, check on tasks, look at notes, and move to the parts of the plugin you use most often.
+So Neural Garden moved toward a simpler interface made of focused graphical screens for specific actions. The Home view became the pathway: a stable starting point that routes into the things that matter most without forcing a long navigation chain.
 
-It also gives a quick overview of what is available without making you dig through menus.
+## From overload to structure
 
-### Journaling
+A recurring pattern was clear: periods of overdoing things for weeks, then crashing into depression and low function.
 
-The journaling part is built for daily check-ins and longer reflections.
+I started with a weird way of journaling, tracking everything that seemed relevant and using tags to connect signals over time. Those tags became a map for emotions, symptoms, and energy, and slowly made it easier to notice links between internal states and external factors.
 
-You can use it to:
+Journaling was the first real foundation in this Obsidian journey. It was originally used to reflect manually, detect patterns, and adjust behavior by hand.
 
-- look back at previous days
-- open the current day for editing
-- fill in mood and wellbeing values
-- choose emotions that match the day
-- keep a written entry alongside those details
-- see task snapshots from the day
-- browse a calendar view of past entries
+Now that time is tighter, the Journal system is being shaped to capture the current state quickly and reliably. The intent is simple: fast input in the present, useful processing in the background. Parts of that automation are still in progress, but the direction is clear: future feedback loops should adapt behavior over time, including influencing Task Manager responses among other functionalities.
 
-The journaling area is split into a hub and an entry view so it stays easy to browse while still giving each day its own space.
+From that process, the Task Manager emerged as a natural consequence and solution. It addresses the energy problem step by step, treats tasks as energy-bearing actions instead of plain checkboxes, and introduces forced breaks when strain runs too high. The exact calculation stays out of the way; what matters is that the system helps prevent another long overpush cycle.
 
-### Tasks
+## What is implemented right now
 
-The task area is designed around energy instead of just a plain checklist.
+### Journaling system
 
-You can:
+The current journaling flow is split into a Hub and an Entry view.
 
-- add tasks with different effort levels
-- see how demanding a task is at a glance
-- complete, edit, or remove tasks
-- keep track of how much energy the day has used
-- get a warning when the day is pushing too far
-- be guided into a forced break when needed
+The Hub is calendar-based and built for quick navigation: you can browse entries by day, preview selected days, and open full entries. It supports current-day writing and yesterday backfill (for writing after midnight). The week starts on Monday, and week numbers are shown on the left side.
 
-This makes the task list feel a little more aware of your limits instead of acting like a standard to-do list.
+The Entry view is where the actual daily reflection happens. It includes symptom and state progress bars, emotion selection, a short note field, tracker interaction, task snapshots, and free-form writing. The goal is to collect relevant information quickly without forcing long manual processes.
 
-### Notes and search
+### Task Manager
 
-Neural Garden also includes space for notes and search so you can get back to the things that matter without leaving the plugin flow.
+The Task Manager is based on energy, not only completion status.
 
-## Planned work
+Each task carries an effort level, and total daily load is tracked continuously. When strain rises too far, the forced break behavior is triggered to interrupt overuse early. This is meant to reduce the repeated pattern of overpushing for too long and crashing afterward. 
 
-The plugin already covers the main journaling and planning flow, but more is planned.
+The system is intentionally practical: create tasks quickly, estimate effort, complete or edit tasks, and let the manager reflect the day’s overall demand in real time.
 
-The next areas include:
+Values from the single Journal entries softly guide the TaskManagers behaviour, making it adapt to each person and each situation individually.
 
-- a better personal notes area with categories and easier browsing
-- faster note capture for short, spontaneous ideas
-- a fuller weekly recap that helps summarize the past week
-- more reflection tools and follow-up suggestions
-- a proper settings area
-- continued visual polish and layout improvements
+### Home note
 
-## Why it exists
+The Home view acts as the plugin's central pathway.
 
-Neural Garden is meant to be practical first.
+Instead of navigating raw folders or many separate notes, the Home screen provides direct access to the main systems: Journaling, Task Manager, search, and category-based entry points. It is designed to lower friction when mental energy is low and make the next action obvious.
 
-It was built around the idea that daily planning and reflection should feel supportive, not heavy. The goal is to make it easier to keep up with the day in a way that feels usable and human.
+## Ongoing direction
+
+Neural Garden is still evolving, but always toward the same promise: fewer decisions in moments of stress, clearer feedback over time, and tools that support recovery instead of draining attention.
+
+## Ending Sentence
+
+This plugin exists because I exist, and I needed support in parts of my life. Realizing that this technology could help, I became determined to build what supports me - and maybe, over time, supports others too.

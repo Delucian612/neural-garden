@@ -6,8 +6,6 @@ import { TaskManagerStorage } from "./storage";
 import { effortColor, effortLabel } from "./taskState";
 import { EffortKey, JournalEntryFrontmatter, JournalEntryRecord, JournalTrackerRecord } from "./types";
 
-type JournalSection = "daily" | "weekly" | "monthly";
-
 type MetricKey =
   | "mood"
   | "sleep"
@@ -66,9 +64,8 @@ const UNPLEASANT_EMOTIONS = [
 const TRACKER_DAYS = 21;
 
 export class NeuralGardenJournalingView extends ItemView {
-  private section: JournalSection = "daily";
   private calendarMonth = startOfMonth(new Date());
-  private selectedDateKey = todayKey();
+  private selectedDateKey: string | null = null;
   private dailyEntries: JournalEntryRecord[] = [];
   private trackers: JournalTrackerRecord[] = [];
   private selectedEntry: JournalEntryRecord | null = null;
@@ -103,6 +100,7 @@ export class NeuralGardenJournalingView extends ItemView {
 
   async onClose(): Promise<void> {
     this.selectedEntry = null;
+    this.selectedDateKey = null;
   }
 
   private async reloadState(): Promise<void> {
@@ -110,15 +108,18 @@ export class NeuralGardenJournalingView extends ItemView {
     this.dailyEntries = await this.journalingStorage.listDailyEntries();
     this.trackers = (await this.journalingStorage.listTrackers()).slice(0, 18);
 
-    if (!this.dailyEntries.some((entry) => entry.frontmatter.date === this.selectedDateKey)) {
-      const latest = this.dailyEntries[this.dailyEntries.length - 1];
-      if (latest) {
-        this.selectedDateKey = latest.frontmatter.date;
+    if (this.selectedDateKey) {
+      if (!this.dailyEntries.some((entry) => entry.frontmatter.date === this.selectedDateKey)) {
+        const latest = this.dailyEntries[this.dailyEntries.length - 1];
+        if (latest) {
+          this.selectedDateKey = latest.frontmatter.date;
+          this.calendarMonth = startOfMonth(parseDateKey(this.selectedDateKey) ?? new Date());
+        }
+      } else {
+        this.calendarMonth = startOfMonth(parseDateKey(this.selectedDateKey) ?? new Date());
       }
     }
-
-    this.calendarMonth = startOfMonth(parseDateKey(this.selectedDateKey) ?? new Date());
-    this.selectedEntry = this.dailyEntries.find((entry) => entry.frontmatter.date === this.selectedDateKey) ?? null;
+    this.selectedEntry = null;
   }
 
   private render(): void {
@@ -137,46 +138,54 @@ export class NeuralGardenJournalingView extends ItemView {
     const titleWrap = topBar.createDiv({ cls: "ng-journal-title-wrap" });
     titleWrap.createEl("h2", { text: "Journal Hub" });
 
-    const modeBar = wrapper.createDiv({ cls: "ng-journal-modebar" });
-    this.makeModeButton(modeBar, "daily", "Daily Journal");
-    this.makeModeButton(modeBar, "weekly", "Weekly Recap");
-    this.makeModeButton(modeBar, "monthly", "Monthly Reflection");
-
-    if (this.section === "daily") {
-      this.renderDailySection(wrapper);
-      return;
-    }
-
-    this.renderPlaceholder(wrapper, this.section);
-  }
-
-  private makeModeButton(container: HTMLElement, section: JournalSection, label: string): void {
-    const button = container.createEl("button", { text: label });
-    button.addClass("ng-journal-mode-button");
-    if (this.section === section) {
-      button.addClass("is-active");
-    }
-    button.addEventListener("click", () => {
-      this.section = section;
-      this.render();
-    });
-  }
-
-  private renderPlaceholder(parent: HTMLElement, section: JournalSection): void {
-    const placeholder = parent.createDiv({ cls: "ng-journal-placeholder" });
-    placeholder.createEl("h3", { text: section === "weekly" ? "Weekly Recap" : "Monthly Reflection" });
-    placeholder.createDiv({
-      cls: "ng-empty",
-      text: section === "weekly" ? "Weekly recap is intentionally left as a placeholder for now." : "Monthly reflection is intentionally left as a placeholder for now.",
-    });
+    this.renderDailySection(wrapper);
   }
 
   private renderDailySection(parent: HTMLElement): void {
     const section = parent.createDiv({ cls: "ng-journal-daily" });
-    const header = section.createDiv({ cls: "ng-journal-daily-header" });
+
+    const calendar = section.createDiv({ cls: "ng-journal-calendar-panel" });
+    const calendarHeader = calendar.createDiv({ cls: "ng-journal-calendar-header" });
+    calendarHeader.createEl("h3", { text: "Calendar" });
+
+    const monthControls = calendarHeader.createDiv({ cls: "ng-journal-month-controls" });
+    const prevMonthButton = monthControls.createEl("button", { text: "<--" });
+    prevMonthButton.type = "button";
+    prevMonthButton.addClass("ng-journal-month-stepper");
+    prevMonthButton.title = "Previous month";
+    prevMonthButton.addEventListener("click", () => {
+      this.shiftCalendarMonth(-1);
+    });
+
+    const monthSelector = monthControls.createEl("button");
+    monthSelector.type = "button";
+    monthSelector.addClass("ng-journal-month-selector");
+    monthSelector.textContent = formatMonthLabel(this.calendarMonth);
+    monthSelector.title = "Use the arrow keys to change month";
+    monthSelector.addEventListener("click", () => {
+      monthSelector.focus();
+    });
+    monthSelector.addEventListener("keydown", (event) => {
+      if (event.key !== "ArrowLeft" && event.key !== "ArrowRight" && event.key !== "ArrowUp" && event.key !== "ArrowDown") {
+        return;
+      }
+      event.preventDefault();
+      const delta = event.key === "ArrowLeft" || event.key === "ArrowUp" ? -1 : 1;
+      this.calendarMonth = addMonths(this.calendarMonth, delta);
+      this.render();
+    });
+
+    const nextMonthButton = monthControls.createEl("button", { text: "-->" });
+    nextMonthButton.type = "button";
+    nextMonthButton.addClass("ng-journal-month-stepper");
+    nextMonthButton.title = "Next month";
+    nextMonthButton.addEventListener("click", () => {
+      this.shiftCalendarMonth(1);
+    });
+
     const today = todayKey();
     const hasTodayEntry = this.dailyEntries.some((entry) => entry.frontmatter.date === today);
-    const createButton = header.createEl("button", { text: "Create Todays Entry" });
+    const createButton = calendarHeader.createEl("button", { text: "New Entry" });
     createButton.addClass("ng-journal-create-button");
     createButton.disabled = hasTodayEntry;
     if (!createButton.disabled) {
@@ -186,23 +195,6 @@ export class NeuralGardenJournalingView extends ItemView {
       });
     }
 
-    const monthRow = section.createDiv({ cls: "ng-journal-month-row" });
-    const prevButton = monthRow.createEl("button", { text: "Previous" });
-    prevButton.addClass("ng-journal-mode-button");
-    monthRow.createDiv({ cls: "ng-journal-month-label", text: formatMonthLabel(this.calendarMonth) });
-    const nextButton = monthRow.createEl("button", { text: "Next" });
-    nextButton.addClass("ng-journal-mode-button");
-    prevButton.addEventListener("click", () => {
-      this.calendarMonth = addMonths(this.calendarMonth, -1);
-      this.render();
-    });
-    nextButton.addEventListener("click", () => {
-      this.calendarMonth = addMonths(this.calendarMonth, 1);
-      this.render();
-    });
-
-    const calendar = section.createDiv({ cls: "ng-journal-calendar-panel" });
-    calendar.createEl("h3", { text: "Journal Calendar" });
     this.renderCalendar(calendar);
 
     const details = section.createDiv({ cls: "ng-journal-detail-panel" });
@@ -213,46 +205,65 @@ export class NeuralGardenJournalingView extends ItemView {
   }
 
   private renderCalendar(container: HTMLElement): void {
+    const entryDates = new Set(this.dailyEntries.map((entry) => entry.frontmatter.date));
+    const weeks = buildCalendarWeeks(this.calendarMonth, entryDates);
     const grid = container.createDiv({ cls: "ng-journal-calendar-grid" });
-    for (const label of ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]) {
+    grid.createDiv({ cls: "ng-journal-calendar-weekday ng-journal-calendar-week-header", text: "Week" });
+    for (const label of ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]) {
       grid.createDiv({ cls: "ng-journal-calendar-weekday", text: label });
     }
 
-    const cells = buildCalendarCells(this.calendarMonth);
-    for (const cell of cells) {
-      const wasSelected = cell.dateKey === this.selectedDateKey;
-      const button = grid.createEl("button");
-      button.addClass("ng-journal-day-cell");
-      if (cell.outsideMonth) {
-        button.addClass("is-outside-month");
+    for (const week of weeks) {
+      const weekButton = grid.createEl("button");
+      weekButton.type = "button";
+      weekButton.addClass("ng-journal-week-cell");
+      weekButton.textContent = String(week.weekNumber);
+      weekButton.title = week.entryCount >= 4 ? `Week ${week.weekNumber}: ${week.entryCount} entries` : `Week ${week.weekNumber}: ${week.entryCount} entries (need 4)`;
+      if (week.entryCount >= 4) {
+        weekButton.addClass("is-available");
+        weekButton.addEventListener("click", () => {
+          new Notice(`Weekly reflection for week ${week.weekNumber} is ready.`);
+        });
+      } else {
+        weekButton.disabled = true;
       }
-      if (cell.dateKey === todayKey()) {
-        button.addClass("is-today");
-      }
-      if (cell.dateKey === this.selectedDateKey) {
-        button.addClass("is-selected");
-      }
-      const hasEntry = this.dailyEntries.some((entry) => entry.frontmatter.date === cell.dateKey);
-      if (hasEntry) {
-        button.addClass("has-entry");
-      }
-      button.createDiv({ cls: "ng-journal-day-number", text: String(cell.day) });
-      if (hasEntry) {
-        button.createDiv({ cls: "ng-journal-day-dot" });
-      }
-      button.addEventListener("click", async (event) => {
-        this.selectedDateKey = cell.dateKey;
-        this.calendarMonth = startOfMonth(parseDateKey(cell.dateKey) ?? new Date());
-        this.selectedEntry = this.dailyEntries.find((entry) => entry.frontmatter.date === cell.dateKey) ?? null;
-        const isToday = cell.dateKey === todayKey();
-        if ((hasEntry || isToday) && wasSelected) {
-          const inNewSplit = event.metaKey || event.ctrlKey;
-          const targetLeaf = inNewSplit ? this.app.workspace.getLeaf(true) : this.leaf;
-          await this.openJournalEntryView(cell.dateKey, isToday, targetLeaf);
-          return;
+
+      for (const cell of week.days) {
+        const wasSelected = cell.dateKey === this.selectedDateKey;
+        const button = grid.createEl("button");
+        button.type = "button";
+        button.addClass("ng-journal-day-cell");
+        if (cell.outsideMonth) {
+          button.addClass("is-outside-month");
         }
-        this.render();
-      });
+        if (cell.dateKey === todayKey()) {
+          button.addClass("is-today");
+        }
+        if (cell.dateKey === this.selectedDateKey) {
+          button.addClass("is-selected");
+        }
+        const hasEntry = entryDates.has(cell.dateKey);
+        if (hasEntry) {
+          button.addClass("has-entry");
+        }
+        button.createDiv({ cls: "ng-journal-day-number", text: String(cell.day) });
+        if (hasEntry) {
+          button.createDiv({ cls: "ng-journal-day-dot" });
+        }
+        button.addEventListener("click", async (event) => {
+          this.selectedDateKey = cell.dateKey;
+          this.calendarMonth = startOfMonth(parseDateKey(cell.dateKey) ?? new Date());
+          this.selectedEntry = this.dailyEntries.find((entry) => entry.frontmatter.date === cell.dateKey) ?? null;
+          const isBackfillDate = isEditableBackfillDate(cell.dateKey);
+          if ((hasEntry || isBackfillDate) && wasSelected) {
+            const inNewSplit = event.metaKey || event.ctrlKey;
+            const targetLeaf = inNewSplit ? this.app.workspace.getLeaf(true) : this.leaf;
+            await this.openJournalEntryView(cell.dateKey, isBackfillDate, targetLeaf);
+            return;
+          }
+          this.render();
+        });
+      }
     }
   }
 
@@ -266,6 +277,7 @@ export class NeuralGardenJournalingView extends ItemView {
     }
 
     card.createEl("h3", { text: `Journal Entry - ${formatReadableDate(entry.frontmatter.date)}` });
+    card.createEl("h4", { cls: "ng-journal-preview-summary", text: "Summary" });
     this.renderMetrics(card, entry.frontmatter);
     this.renderEmotionList(card, entry.frontmatter.emotions, true);
     this.renderTaskSnapshots(card, entry.frontmatter);
@@ -431,6 +443,11 @@ export class NeuralGardenJournalingView extends ItemView {
       }
     }
   }
+
+  private shiftCalendarMonth(amount: number): void {
+    this.calendarMonth = new Date(this.calendarMonth.getFullYear(), this.calendarMonth.getMonth() + amount, 1);
+    this.render();
+  }
 }
 
 function valueOrDash(value: number | null): string {
@@ -439,6 +456,16 @@ function valueOrDash(value: number | null): string {
 
 function todayKey(): string {
   return formatDateKey(new Date());
+}
+
+function yesterdayKey(): string {
+  const previous = new Date();
+  previous.setDate(previous.getDate() - 1);
+  return formatDateKey(previous);
+}
+
+function isEditableBackfillDate(dateKey: string): boolean {
+  return dateKey === todayKey() || dateKey === yesterdayKey();
 }
 
 function formatDateKey(date: Date): string {
@@ -461,10 +488,11 @@ function startOfMonth(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), 1);
 }
 
-function addMonths(date: Date, amount: number): Date {
-  return new Date(date.getFullYear(), date.getMonth() + amount, 1);
+function formatMonthPickerValue(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  return `${year}-${month}`;
 }
-
 function formatMonthLabel(date: Date): string {
   return date.toLocaleDateString(undefined, { month: "long", year: "numeric" });
 }
@@ -494,21 +522,61 @@ function ordinalSuffix(day: number): string {
   }
 }
 
-function buildCalendarCells(month: Date): Array<{ dateKey: string; day: number; outsideMonth: boolean }> {
-  const firstDay = new Date(month.getFullYear(), month.getMonth(), 1);
-  const start = new Date(firstDay);
-  start.setDate(firstDay.getDate() - firstDay.getDay());
-  const cells: Array<{ dateKey: string; day: number; outsideMonth: boolean }> = [];
-  for (let index = 0; index < 42; index += 1) {
-    const date = new Date(start);
-    date.setDate(start.getDate() + index);
-    cells.push({
-      dateKey: formatDateKey(date),
-      day: date.getDate(),
-      outsideMonth: date.getMonth() !== month.getMonth(),
+function buildCalendarWeeks(
+  month: Date,
+  entryDates: Set<string>,
+): Array<{ weekNumber: number; entryCount: number; days: Array<{ dateKey: string; day: number; outsideMonth: boolean }> }> {
+  const monthStart = startOfMonth(month);
+  const monthEnd = endOfMonth(month);
+  const start = startOfWeek(monthStart);
+  const weeks: Array<{ weekNumber: number; entryCount: number; days: Array<{ dateKey: string; day: number; outsideMonth: boolean }> }> = [];
+
+  for (let cursor = new Date(start); cursor <= monthEnd; cursor.setDate(cursor.getDate() + 7)) {
+    const weekStart = new Date(cursor);
+    const days: Array<{ dateKey: string; day: number; outsideMonth: boolean }> = [];
+    let entryCount = 0;
+
+    for (let offset = 0; offset < 7; offset += 1) {
+      const date = new Date(weekStart);
+      date.setDate(weekStart.getDate() + offset);
+      const dateKey = formatDateKey(date);
+      if (entryDates.has(dateKey)) {
+        entryCount += 1;
+      }
+      days.push({
+        dateKey,
+        day: date.getDate(),
+        outsideMonth: date.getMonth() !== month.getMonth(),
+      });
+    }
+
+    weeks.push({
+      weekNumber: getIsoWeekNumber(weekStart),
+      entryCount,
+      days,
     });
   }
-  return cells;
+
+  return weeks;
+}
+
+function startOfWeek(date: Date): Date {
+  const result = new Date(date);
+  const day = (result.getDay() + 6) % 7;
+  result.setDate(result.getDate() - day);
+  return result;
+}
+
+function endOfMonth(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth() + 1, 0);
+}
+
+function getIsoWeekNumber(date: Date): number {
+  const utcDate = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNumber = utcDate.getUTCDay() || 7;
+  utcDate.setUTCDate(utcDate.getUTCDate() + 4 - dayNumber);
+  const yearStart = new Date(Date.UTC(utcDate.getUTCFullYear(), 0, 1));
+  return Math.ceil((((utcDate.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
 }
 
 function buildTrackerWindow(days: number): Array<{ dateKey: string; day: number }> {

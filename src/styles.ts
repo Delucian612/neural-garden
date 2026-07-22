@@ -381,7 +381,7 @@ export function injectNeuralGardenStyles(): void {
       display: flex;
       flex-direction: column;
       gap: 14px;
-      padding: 8px 0 24px;
+      padding: 8px 14px 24px;
       max-width: 720px;
       margin: 0 auto;
     }
@@ -449,12 +449,22 @@ export function injectNeuralGardenStyles(): void {
     }
     .ng-journal-entry-card h3 {
       color: var(--text-normal);
+      margin-bottom: 12px;
+    }
+    .ng-journal-preview-summary {
+      margin: 0 0 16px;
+      text-align: center;
+      color: var(--text-normal);
+      font-size: 1.2rem;
+      font-weight: 600;
     }
     .ng-journal-readonly-note,
     .ng-journal-metric-feedback,
     .ng-journal-metric-explain,
     .ng-journal-body-copy {
       color: var(--text-muted);
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
     }
     .ng-journal-tracker-cell {
       border: 1px solid var(--background-modifier-border);
@@ -508,9 +518,73 @@ export function injectNeuralGardenStyles(): void {
       padding-top: 8px;
       margin-top: 10px;
     }
-    .ng-journal-calendar-panel h3 {
+    .ng-journal-calendar-header {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .ng-journal-calendar-header h3 {
       color: var(--text-normal);
+      margin: 0;
+      justify-self: start;
+    }
+    .ng-journal-month-controls {
+      justify-self: center;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      justify-content: center;
+    }
+    .ng-journal-month-stepper {
+      all: unset;
+      width: auto;
+      height: auto;
+      padding: 0;
+      border: none !important;
+      box-shadow: none !important;
+      border-radius: 0;
+      background: transparent !important;
+      color: var(--text-normal);
+      font-size: 0.95rem;
+      line-height: 1;
+      display: inline;
+      cursor: pointer;
+      transform: translateY(-2px);
+      appearance: none;
+      -webkit-appearance: none;
+      outline: none !important;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .ng-journal-month-stepper:hover,
+    .ng-journal-month-stepper:focus-visible {
+      border: none !important;
+      box-shadow: none !important;
+      outline: none !important;
+      background: transparent !important;
+    }
+    .ng-journal-month-selector {
+      justify-self: center;
+      min-width: 180px;
+      padding: 7px 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(236, 154, 99, 0.5);
+      background: color-mix(in srgb, var(--background-primary) 88%, transparent);
+      color: var(--text-normal);
+      font-size: 0.92rem;
+      font-weight: 600;
       text-align: center;
+      cursor: pointer;
+    }
+    .ng-journal-month-selector:hover,
+    .ng-journal-month-selector:focus-visible {
+      border-color: #ffd2b0;
+      box-shadow: 0 0 0 2px rgba(236, 154, 99, 0.18);
+      outline: none;
+    }
+    .ng-journal-create-button {
+      justify-self: end;
     }
     .ng-journal-month-label {
       font-size: 1.2rem;
@@ -522,24 +596,81 @@ export function injectNeuralGardenStyles(): void {
     }
     .ng-journal-detail-panel {
       margin-top: 18px;
+      border: none;
+      border-radius: 0;
+      padding: 0;
+      background: transparent;
     }
     .ng-journal-calendar-grid {
       display: grid;
-      grid-template-columns: repeat(7, minmax(0, 1fr));
-      gap: 4px;
-      margin-top: 10px;
+      grid-template-columns: minmax(54px, 62px) repeat(7, minmax(0, 1fr));
+      gap: 4px 6px;
     }
     .ng-journal-calendar-weekday {
       text-align: center;
       font-size: 0.78rem;
       color: var(--text-muted);
     }
+    .ng-journal-calendar-weekday {
+      text-align: center;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      color: var(--text-muted);
+      padding: 2px 0 4px;
+    }
+    .ng-journal-calendar-week-header {
+      color: var(--text-normal);
+      opacity: 0.8;
+      margin-right: 10px;
+    }
+    .ng-journal-week-cell {
+      position: relative;
+      min-height: 30px;
+      padding: 4px 6px;
+      border-radius: 9px;
+      border: 1px solid rgba(236, 154, 99, 0.45);
+      background: color-mix(in srgb, var(--background-primary) 82%, transparent);
+      color: var(--text-normal);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.78rem;
+      font-weight: 600;
+      transition: all 0.15s ease;
+      margin-right: 10px;
+    }
+    .ng-journal-week-cell.is-available {
+      border-color: #00f0ff;
+      background: color-mix(in srgb, var(--background-primary) 82%, transparent);
+      box-shadow: 0 0 0 2px rgba(0, 240, 255, 0.18);
+    }
+    .ng-journal-week-cell.is-available::after {
+      content: "+";
+      position: absolute;
+      top: 1px;
+      right: 3px;
+      font-size: 0.94rem;
+      line-height: 1;
+      font-weight: 700;
+      color: #00f0ff;
+      opacity: 0.95;
+      pointer-events: none;
+    }
+    .ng-journal-week-cell:hover:not(:disabled) {
+      border-color: #ffd2b0;
+      box-shadow: 0 0 0 2px rgba(236, 154, 99, 0.18);
+    }
+    .ng-journal-week-cell:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
     .ng-journal-day-cell {
       position: relative;
-      min-height: 34px;
-      padding: 8px 6px;
-      border-radius: 10px;
-      border: 1px solid #ec9a63;
+      min-height: 30px;
+      padding: 5px 3px;
+      border-radius: 8px;
+      border: 1px solid rgba(236, 154, 99, 0.38);
       background: transparent;
       color: var(--text-normal);
       display: flex;
@@ -555,40 +686,37 @@ export function injectNeuralGardenStyles(): void {
       opacity: 0.35;
     }
     .ng-journal-day-cell.has-entry {
-      border-color: #ec9a63;
-      background: rgba(236, 154, 99, 0.08);
+      border-color: rgba(236, 154, 99, 0.5);
+      background: rgba(236, 154, 99, 0.07);
     }
     .ng-journal-day-cell.is-today {
-      box-shadow: 0 0 0 2px rgba(0, 240, 255, 0.18);
+      border-color: #0e8f9f;
+      box-shadow: 0 0 0 1.4px rgba(14, 143, 159, 0.16);
     }
     .ng-journal-day-cell.is-selected {
       border-color: #00f0ff;
       box-shadow: 0 0 0 2px rgba(0, 240, 255, 0.22);
     }
     .ng-journal-day-number {
-      font-size: 0.86rem;
+      font-size: 0.76rem;
       font-weight: 600;
     }
     .ng-journal-day-dot {
-      width: 8px;
-      height: 8px;
+      width: 7px;
+      height: 7px;
       border-radius: 999px;
       background: #ec9a63;
       position: absolute;
-      bottom: 8px;
-      right: 8px;
-    }
-    .ng-journal-metrics {
-      display: grid;
-      gap: 14px;
-      margin-top: 14px;
+      bottom: 4px;
+      right: 4px;
+      box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.14);
     }
     .ng-journal-entry-page .ng-journal-metrics {
       margin-top: 0;
     }
     .ng-journal-metric {
       display: grid;
-      gap: 8px;
+      gap: 2px;
     }
     .ng-journal-metric-meta {
       display: grid;
@@ -610,6 +738,7 @@ export function injectNeuralGardenStyles(): void {
       background: var(--background-modifier-border);
       overflow: hidden;
       cursor: ew-resize;
+      margin-bottom: 10px;
     }
     .ng-journal-progress-readonly {
       cursor: default;
@@ -690,13 +819,20 @@ export function injectNeuralGardenStyles(): void {
       color: var(--text-normal);
     }
     .ng-journal-emotion-button:not(.is-active) {
-      filter: brightness(40%) saturate(40%);
+      color: color-mix(in srgb, var(--text-normal) 70%, black 30%);
+      filter: none;
     }
     .ng-journal-emotion-button.pleasant {
       border-color: #39e05a;
     }
     .ng-journal-emotion-button.unpleasant {
       border-color: #ff6565;
+    }
+    .ng-journal-emotion-button.pleasant:not(.is-active) {
+      border-color: color-mix(in srgb, #39e05a 60%, black 40%);
+    }
+    .ng-journal-emotion-button.unpleasant:not(.is-active) {
+      border-color: color-mix(in srgb, #ff6565 60%, black 40%);
     }
     .ng-journal-emotion-button.is-active.pleasant {
       background: rgba(57, 224, 90, 0.16);
@@ -910,6 +1046,11 @@ export function injectNeuralGardenStyles(): void {
     }
     .ng-journal-body-markdown {
       margin-top: 18px;
+      border: 1px solid rgba(236, 154, 99, 0.28);
+      border-bottom-color: rgba(236, 154, 99, 0.28);
+      border-radius: 14px;
+      background: color-mix(in srgb, var(--background-primary) 28%, transparent);
+      padding: 14px 14px 18px;
     }
     .ng-journal-body-markdown h4 {
       text-align: center;
@@ -921,20 +1062,28 @@ export function injectNeuralGardenStyles(): void {
       text-align: center;
       font-style: italic;
       color: var(--text-muted);
-      margin-top: 4px;
+      margin-top: 2px;
+      margin-bottom: 5px;
     }
     .ng-tracker-section {
       margin-top: 22px;
     }
     .ng-journal-body-content {
       min-height: 120px;
+      max-width: 100%;
       border: none;
       background: transparent;
       color: var(--text-normal);
+      font-size: 1.02em;
       padding: 0;
+      margin-top: 1px;
       white-space: pre-wrap;
+      overflow-wrap: normal;
+      word-break: normal;
+      overflow-x: hidden;
       outline: none;
       line-height: 1.6;
+      box-sizing: border-box;
     }
     .ng-journal-body-content:focus {
       outline: none;

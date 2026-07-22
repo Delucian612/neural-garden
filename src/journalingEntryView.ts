@@ -100,8 +100,7 @@ export class NeuralGardenJournalEntryView extends ItemView {
   }
 
   async openForDate(dateKey: string, editable: boolean): Promise<void> {
-    const today = currentDateKey();
-    this.editable = editable && dateKey === today;
+    this.editable = editable && isEditableJournalDate(dateKey);
     this.entry = (await this.journalingStorage.readDailyEntryByDate(dateKey)) ?? (await this.createDraftEntry(dateKey));
     if (this.editable) {
       const taskState = await this.taskStorage.loadTaskManagerState();
@@ -439,20 +438,20 @@ export class NeuralGardenJournalEntryView extends ItemView {
     block.createEl("h4", { text: "Entry" });
     block.createDiv({ cls: "ng-journal-entry-subtitle", text: "Write your journal entry below when you are ready." });
     const body = block.createDiv({ cls: "ng-journal-body-content" });
-    body.textContent = this.entry.body;
+    body.innerText = this.entry.body;
     body.contentEditable = String(this.editable);
     body.spellcheck = true;
     body.addEventListener("input", () => {
       if (!this.entry || !this.editable) {
         return;
       }
-      this.entry.body = body.textContent ?? "";
+      this.entry.body = body.innerText.replace(/\r\n/g, "\n");
     });
     body.addEventListener("blur", () => {
       if (!this.entry || !this.editable) {
         return;
       }
-      this.entry.body = body.textContent ?? "";
+      this.entry.body = body.innerText.replace(/\r\n/g, "\n");
       void this.persist();
     });
   }
@@ -479,6 +478,16 @@ function snapshotTask(task: { taskName: string; effort: EffortKey; energy: numbe
 function currentDateKey(): string {
   const date = new Date();
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+function yesterdayDateKey(): string {
+  const date = new Date();
+  date.setDate(date.getDate() - 1);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+function isEditableJournalDate(dateKey: string): boolean {
+  return dateKey === currentDateKey() || dateKey === yesterdayDateKey();
 }
 
 function formatReadableDate(dateKey: string): string {
