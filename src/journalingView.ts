@@ -616,33 +616,36 @@ function streakEndingAt(dates: string[], dateKey: string): number {
 function metricColor(metric: MetricKey, value: number): string {
   const clamped = Math.max(0, Math.min(100, value));
   if (metric === "regulation") {
-    if (clamped >= 70) return "#39E05A";
-    if (clamped >= 50) return "#F4D35E";
+    if (clamped >= 75) return "#39E05A";
+    if (clamped >= 51) return "#F4D35E";
+    if (clamped >= 36) return "#F0A04C";
     return "#FF6565";
   }
   if (metric === "mood") {
-    if (clamped > 90) return "#EC9A63";
-    if (clamped >= 51) return "#39E05A";
-    if (clamped >= 21) return "#F0A04C";
+    if (clamped >= 75) return "#39E05A";
+    if (clamped >= 51) return "#F4D35E";
+    if (clamped >= 36) return "#F0A04C";
     return "#FF6565";
   }
   if (metric === "sleep") {
-    if (clamped >= 51) return "#39E05A";
-    if (clamped >= 21) return "#F0A04C";
+    if (clamped >= 75) return "#39E05A";
+    if (clamped >= 51) return "#F4D35E";
+    if (clamped >= 36) return "#F0A04C";
     return "#FF6565";
   }
-  if (metric === "stress" || metric === "anxiety" || metric === "exhaustion" || metric === "sensoryLoad" || metric === "socialLoad") {
-    if (clamped >= 81) return "#FF6565";
-    if (clamped >= 61) return "#E06E2C";
+  if (metric === "stress" || metric === "anxiety") {
+    if (clamped >= 75) return "#FF6565";
     if (clamped >= 41) return "#F0A04C";
-    if (clamped >= 21) return "#F4D35E";
+    if (clamped >= 26) return "#F4D35E";
     return "#39E05A";
   }
-  if (clamped >= 81) return "#9BE7FF";
-  if (clamped >= 61) return "#6FD8FF";
-  if (clamped >= 41) return "#39E05A";
-  if (clamped >= 21) return "#F0A04C";
-  return "#3FD6FF";
+  if (metric === "exhaustion" || metric === "sensoryLoad" || metric === "socialLoad") {
+    if (clamped >= 75) return "#FF6565";
+    if (clamped >= 46) return "#F0A04C";
+    if (clamped >= 31) return "#F4D35E";
+    return "#39E05A";
+  }
+  return "#39E05A";
 }
 
 function getEmotionToneClass(emotion: string): string {

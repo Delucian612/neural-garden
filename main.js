@@ -2452,81 +2452,115 @@ function formatReadableDate(dateKey) {
   return date.toLocaleDateString(void 0, { day: "numeric", month: "long", year: "numeric" });
 }
 function metricColor(metric, value) {
-  if (metric === "regulation") {
-    if (value >= 70) return "#39E05A";
-    if (value >= 50) return "#F4D35E";
-    return "#FF6565";
+  const clamped = Math.max(0, Math.min(100, value));
+  if (metric === "regulation" || metric === "mood" || metric === "sleep") {
+    return interpolateMetricStops(clamped, [
+      { value: 0, color: [255, 101, 101] },
+      { value: 46, color: [240, 160, 76] },
+      { value: 61, color: [244, 211, 94] },
+      { value: 85, color: [57, 224, 90] },
+      { value: 100, color: [57, 224, 90] }
+    ]);
   }
-  if (metric === "mood") {
-    if (value > 90) return "#EC9A63";
-    if (value >= 51) return "#39E05A";
-    if (value >= 21) return "#F0A04C";
-    return "#FF6565";
+  if (metric === "stress" || metric === "anxiety") {
+    return interpolateMetricStops(clamped, [
+      { value: 0, color: [57, 224, 90] },
+      { value: 36, color: [244, 211, 94] },
+      { value: 51, color: [240, 160, 76] },
+      { value: 85, color: [255, 101, 101] },
+      { value: 100, color: [255, 101, 101] }
+    ]);
   }
-  if (metric === "sleep") {
-    if (value >= 51) return "#39E05A";
-    if (value >= 21) return "#F0A04C";
-    return "#FF6565";
+  if (metric === "exhaustion" || metric === "sensoryLoad" || metric === "socialLoad") {
+    return interpolateMetricStops(clamped, [
+      { value: 0, color: [57, 224, 90] },
+      { value: 41, color: [244, 211, 94] },
+      { value: 56, color: [240, 160, 76] },
+      { value: 85, color: [255, 101, 101] },
+      { value: 100, color: [255, 101, 101] }
+    ]);
   }
-  if (value >= 81) return "#FF6565";
-  if (value >= 61) return "#E06E2C";
-  if (value >= 41) return "#F0A04C";
-  if (value >= 21) return "#F4D35E";
-  return "#39E05A";
+  return "#39e05a";
+}
+function interpolateMetricStops(value, stops) {
+  if (stops.length === 0) {
+    return "#39e05a";
+  }
+  if (value <= stops[0].value) {
+    return rgbToHex(stops[0].color);
+  }
+  for (let i = 0; i < stops.length - 1; i += 1) {
+    const start = stops[i];
+    const end = stops[i + 1];
+    if (value <= end.value) {
+      const distance = end.value - start.value;
+      const ratio = distance <= 0 ? 1 : (value - start.value) / distance;
+      const color = [
+        Math.round(start.color[0] + (end.color[0] - start.color[0]) * ratio),
+        Math.round(start.color[1] + (end.color[1] - start.color[1]) * ratio),
+        Math.round(start.color[2] + (end.color[2] - start.color[2]) * ratio)
+      ];
+      return rgbToHex(color);
+    }
+  }
+  return rgbToHex(stops[stops.length - 1].color);
+}
+function rgbToHex([r, g, b]) {
+  const toHex = (channel) => channel.toString(16).padStart(2, "0");
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
 }
 function getMetricFeedback(metric, value) {
   if (metric === "mood") {
-    if (value > 80) return "I've been doing great.";
-    if (value > 65) return "I've been doing fine.";
-    if (value > 50) return "I've been alright.";
-    if (value > 35) return "I've felt a bit off, but I'm still getting through the day.";
+    if (value >= 80) return "I've been doing great.";
+    if (value >= 51) return "I've been doing fine.";
+    if (value >= 36) return "I've been alright.";
     return "I've been having a hard time today.";
   }
   if (metric === "sleep") {
-    if (value > 80) return "My sleep was great, I feel well rested.";
-    if (value > 65) return "My sleep was good, I feel rested.";
-    if (value > 50) return "My sleep was alright.";
-    if (value > 35) return "I've been struggling, my sleep wasn't very restful.";
+    if (value >= 70) return "My sleep was great, I feel well rested.";
+    if (value >= 51) return "My sleep was good, I feel rested.";
+    if (value >= 36) return "My sleep was alright.";
     return "I've had a terrible night.";
   }
+  if (metric === "regulation") {
+    if (value >= 70) return "Regulation felt strong and steady today.";
+    if (value >= 51) return "I was mostly able to regulate myself today.";
+    if (value >= 36) return "Regulation was mixed, with some difficult moments.";
+    return "I felt overwhelmed and dysregulated today.";
+  }
   if (metric === "stress") {
-    if (value > 80) return "I've been constantly stressed today.";
-    if (value > 65) return "I was really stressed today.";
-    if (value > 35) return "Stress has been noticeable, but I am still managing it.";
+    if (value >= 75) return "I've been constantly stressed today.";
+    if (value >= 65) return "I was really stressed today.";
+    if (value >= 41) return "Stress was present today, but I was able to manage it.";
     return "Stress has been fairly low today.";
   }
   if (metric === "anxiety") {
-    if (value > 80) return "I've been constantly and severely anxious today.";
-    if (value > 65) return "I was really anxious today.";
-    if (value > 35) return "I've been dealing with some anxiety, but it is not overwhelming right now.";
-    if (value > 20) return "I've been a little anxious today.";
+    if (value >= 75) return "I've been constantly and severely anxious today.";
+    if (value >= 55) return "I was really anxious today.";
+    if (value >= 41) return "I've experienced anxiety here and there.";
     return "I had low or no anxiety.";
   }
   if (metric === "exhaustion") {
-    if (value > 80) return "I've felt extremely exhausted all day.";
-    if (value > 65) return "I felt heavily exhausted today.";
-    if (value > 35) return "I was noticeably tired, but still functioning.";
-    if (value > 20) return "I felt a little tired today.";
+    if (value >= 70) return "I've felt extremely exhausted all day.";
+    if (value >= 46) return "I felt heavily exhausted today.";
+    if (value >= 31) return "I was noticeably tired, but still functioning.";
     return "My energy felt steady today.";
   }
   if (metric === "sensoryLoad") {
-    if (value > 80) return "I was in sensory overload today.";
-    if (value > 65) return "I've had demanding sensory issues today.";
-    if (value > 35) return "I've had fair sensory issues.";
-    if (value > 20) return "I've had some sensory issues today.";
+    if (value >= 70) return "I was in sensory overload today.";
+    if (value >= 46) return "I've had demanding sensory issues today.";
+    if (value >= 31) return "I've had fair sensory issues.";
     return "I've had no or low sensory issues.";
   }
   if (metric === "socialLoad") {
-    if (value > 80) return "Social interactions were highly demanding, wearing me out.";
-    if (value > 65) return "Social interactions were exhausting.";
-    if (value > 35) return "Social interactions were tiring today.";
-    if (value > 20) return "Social interactions were alright, but still a little tiring.";
+    if (value >= 70) return "Social interactions were highly demanding, wearing me out.";
+    if (value >= 46) return "Social interactions were exhausting.";
+    if (value >= 31) return "Social interactions were tiring today.";
     return "Social interactions felt good, easy, and natural.";
   }
-  if (value > 80) return "Regulation felt strong and steady today.";
-  if (value > 60) return "I was mostly able to regulate myself today.";
-  if (value > 40) return "Regulation was mixed, with some difficult moments.";
-  if (value > 20) return "I struggled with regulation today.";
+  if (value >= 70) return "Regulation felt strong and steady today.";
+  if (value >= 51) return "I was mostly able to regulate myself today.";
+  if (value >= 36) return "Regulation was mixed, with some difficult moments.";
   return "I felt overwhelmed and dysregulated today.";
 }
 function getEmotionToneClass(emotion) {
@@ -3041,33 +3075,36 @@ function streakEndingAt(dates, dateKey) {
 function metricColor2(metric, value) {
   const clamped = Math.max(0, Math.min(100, value));
   if (metric === "regulation") {
-    if (clamped >= 70) return "#39E05A";
-    if (clamped >= 50) return "#F4D35E";
+    if (clamped >= 75) return "#39E05A";
+    if (clamped >= 51) return "#F4D35E";
+    if (clamped >= 36) return "#F0A04C";
     return "#FF6565";
   }
   if (metric === "mood") {
-    if (clamped > 90) return "#EC9A63";
-    if (clamped >= 51) return "#39E05A";
-    if (clamped >= 21) return "#F0A04C";
+    if (clamped >= 75) return "#39E05A";
+    if (clamped >= 51) return "#F4D35E";
+    if (clamped >= 36) return "#F0A04C";
     return "#FF6565";
   }
   if (metric === "sleep") {
-    if (clamped >= 51) return "#39E05A";
-    if (clamped >= 21) return "#F0A04C";
+    if (clamped >= 75) return "#39E05A";
+    if (clamped >= 51) return "#F4D35E";
+    if (clamped >= 36) return "#F0A04C";
     return "#FF6565";
   }
-  if (metric === "stress" || metric === "anxiety" || metric === "exhaustion" || metric === "sensoryLoad" || metric === "socialLoad") {
-    if (clamped >= 81) return "#FF6565";
-    if (clamped >= 61) return "#E06E2C";
+  if (metric === "stress" || metric === "anxiety") {
+    if (clamped >= 75) return "#FF6565";
     if (clamped >= 41) return "#F0A04C";
-    if (clamped >= 21) return "#F4D35E";
+    if (clamped >= 26) return "#F4D35E";
     return "#39E05A";
   }
-  if (clamped >= 81) return "#9BE7FF";
-  if (clamped >= 61) return "#6FD8FF";
-  if (clamped >= 41) return "#39E05A";
-  if (clamped >= 21) return "#F0A04C";
-  return "#3FD6FF";
+  if (metric === "exhaustion" || metric === "sensoryLoad" || metric === "socialLoad") {
+    if (clamped >= 75) return "#FF6565";
+    if (clamped >= 46) return "#F0A04C";
+    if (clamped >= 31) return "#F4D35E";
+    return "#39E05A";
+  }
+  return "#39E05A";
 }
 function getEmotionToneClass2(emotion) {
   return PLEASANT_EMOTIONS2.includes(emotion) ? "pleasant" : "unpleasant";
