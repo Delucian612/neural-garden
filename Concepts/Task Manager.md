@@ -11,11 +11,11 @@ The Graphical Interface of the Task Manager is built up in the following way
 	descInput.style.color = "var(--text-normal)";
 
 3. String "Effort" on the left side, and a EnergyProgressBar(displaying the % of the CurrentEnergy/MaxEnergy) on the right side
-4. EffortButtons(BorderColor) "Easy Peasy"(#3FD6FF), "Easy"(#39E05A), "Medium"(#F0A04C), "Hard"(#E06E2C), "Heavy"(#FF6565)
+4. EffortButtons(BorderColor) "Light"(#3FD6FF), "Easy"(#39E05A), "Fair"(#F0A04C), "Hard"(#E06E2C), "Heavy"(#FF6565)
 5. TaskList
 	If Empty it will Display "add Tasks above"
 	Tasks listed are listed the following way:
-	Task Name on the left, spacing, then EffortLevel as a pill-shaped Badge(Easy peasy, Easy, Medium, yada yada), followed by a Edit Button, followed by a "X"(Color: (#FF6565)) to delete the task
+	Task Name on the left, spacing, then EffortLevel as a pill-shaped Badge(Light, Easy, Fair, yada yada), followed by a Edit Button, followed by a "X"(Color: (#FF6565)) to delete the task
 
 A Border around Line 1-4 acting in following way:
 	formDiv.style.gap = "8px";
@@ -88,9 +88,9 @@ All Data Will be Stored, Read And written inside the frontmatter of the file "Ta
 A Task is being typed into the TaskInput (2. Line in Line-By-Line Static Build up)
 A Press on A Button(4th line in Line-by-Line Build Up) will create a Task and list it down below at the task list. (The Interface probably has to reload after that, so the task can be displayed properly, but not quite sure yet)
 **The Button Values**:
-- Easy Peasy: 5 Energy
+- Light: 5 Energy
 - Easy : 15 Energy
-- Medium: 30 Energy
+- Fair: 30 Energy
 - Hard : 50 Energy
 - Heavy: 70 Energy
 

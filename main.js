@@ -42,9 +42,9 @@ var TRACKER_FOLDER = "Maintenance/Tracker";
 var NOTES_FOLDER = "Notes";
 var WEEKLY_RECAP_MIN_ENTRIES = 7;
 var EFFORTS = [
-  { key: "easy-peasy", label: "Easy Peasy", energy: 5, color: "#3FD6FF" },
+  { key: "easy-peasy", label: "Light", energy: 5, color: "#3FD6FF" },
   { key: "easy", label: "Easy", energy: 15, color: "#39E05A" },
-  { key: "medium", label: "Medium", energy: 30, color: "#F0A04C" },
+  { key: "medium", label: "Fair", energy: 30, color: "#F0A04C" },
   { key: "hard", label: "Hard", energy: 50, color: "#E06E2C" },
   { key: "heavy", label: "Heavy", energy: 70, color: "#FF6565" }
 ];
@@ -2512,7 +2512,7 @@ function getMetricFeedback(metric, value) {
   if (metric === "sensoryLoad") {
     if (value > 80) return "I was in sensory overload today.";
     if (value > 65) return "I've had demanding sensory issues today.";
-    if (value > 35) return "I've had medium sensory issues.";
+    if (value > 35) return "I've had fair sensory issues.";
     if (value > 20) return "I've had some sensory issues today.";
     return "I've had no or low sensory issues.";
   }

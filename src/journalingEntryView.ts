@@ -559,7 +559,7 @@ function getMetricFeedback(metric: MetricKey, value: number): string {
   if (metric === "sensoryLoad") {
     if (value > 80) return "I was in sensory overload today.";
     if (value > 65) return "I've had demanding sensory issues today.";
-    if (value > 35) return "I've had medium sensory issues.";
+    if (value > 35) return "I've had fair sensory issues.";
     if (value > 20) return "I've had some sensory issues today.";
     return "I've had no or low sensory issues.";
   }

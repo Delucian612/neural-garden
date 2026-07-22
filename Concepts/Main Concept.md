@@ -120,7 +120,7 @@ The value of the daily check in is stored in the frontmatter of the note, making
 
 - Regulation (Question: how good were you able to regulate yourself today?" answer via buttons: "Good" "alright" "Struggling" "Dysregulated" "overwhelmed")
 
-- Sensory Load (Question: Have you had any sensory issues, multiselect Yes/No, if yes is being clicked buttons appear which can be pressed: "slightly, Medium, Heavy, Overload)
+- Sensory Load (Question: Have you had any sensory issues, multiselect Yes/No, if yes is being clicked buttons appear which can be pressed: "slightly, Fair, Heavy, Overload)
 
 - Social Load (Question: "How tiring were social interactions, how did they make you feel?" answer via buttons: Easy, Alright, Tiring, Exhausting)
 

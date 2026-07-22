@@ -115,7 +115,7 @@ To make it easier for the user to fill out the progress bars, direct feedback ap
 
 - BarFeedback >80%: "I was in sensory overload today"
 - BarFeedback >65%: "I've had demanding sensory issues today"
-- BarFeedback >35%: "I've had medium sensory issues"
+- BarFeedback >35%: "I've had fair sensory issues"
 - BarFeedback >20%: "I've had some sensory issues today"
 - BarFeedback <20%: "I've had no or low sensory issues"
 

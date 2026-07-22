@@ -12,9 +12,9 @@ export const NOTES_FOLDER = "Notes";
 export const WEEKLY_RECAP_MIN_ENTRIES = 7;
 
 export const EFFORTS: EffortDefinition[] = [
-  { key: "easy-peasy", label: "Easy Peasy", energy: 5, color: "#3FD6FF" },
+  { key: "easy-peasy", label: "Light", energy: 5, color: "#3FD6FF" },
   { key: "easy", label: "Easy", energy: 15, color: "#39E05A" },
-  { key: "medium", label: "Medium", energy: 30, color: "#F0A04C" },
+  { key: "medium", label: "Fair", energy: 30, color: "#F0A04C" },
   { key: "hard", label: "Hard", energy: 50, color: "#E06E2C" },
   { key: "heavy", label: "Heavy", energy: 70, color: "#FF6565" },
 ];
