@@ -62,10 +62,7 @@ export function injectNeuralGardenStyles(): void {
     }
     .ng-search-title {
       font-weight: 600;
-    }
-    .ng-search-path {
-      font-size: 12px;
-      color: var(--text-muted);
+      font-size: 1.2em;
     }
     .ng-task-heading {
       display: flex;
@@ -446,6 +443,7 @@ export function injectNeuralGardenStyles(): void {
     }
     .ng-journal-entry-page .ng-journal-title-wrap h2 {
       margin-bottom: 0;
+      font-size: 156%;
     }
     .ng-journal-entry-card h3 {
       color: var(--text-normal);
@@ -829,10 +827,10 @@ export function injectNeuralGardenStyles(): void {
       border-color: #ff6565;
     }
     .ng-journal-emotion-button.pleasant:not(.is-active) {
-      border-color: color-mix(in srgb, #39e05a 60%, black 40%);
+      border-color: color-mix(in srgb, #39e05a 48%, black 52%);
     }
     .ng-journal-emotion-button.unpleasant:not(.is-active) {
-      border-color: color-mix(in srgb, #ff6565 60%, black 40%);
+      border-color: color-mix(in srgb, #ff6565 48%, black 52%);
     }
     .ng-journal-emotion-button.is-active.pleasant {
       background: rgba(57, 224, 90, 0.16);
@@ -863,6 +861,9 @@ export function injectNeuralGardenStyles(): void {
     .ng-journal-emotion-chip.unpleasant {
       border-color: #ff6565;
       color: #ff6565;
+    }
+    .ng-journal-entry-card .ng-journal-emotion-chip {
+      filter: saturate(80%);
     }
     .ng-journal-note-input {
       min-height: 90px;

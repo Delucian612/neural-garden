@@ -270,10 +270,7 @@ function injectNeuralGardenStyles() {
     }
     .ng-search-title {
       font-weight: 600;
-    }
-    .ng-search-path {
-      font-size: 12px;
-      color: var(--text-muted);
+      font-size: 1.2em;
     }
     .ng-task-heading {
       display: flex;
@@ -654,6 +651,7 @@ function injectNeuralGardenStyles() {
     }
     .ng-journal-entry-page .ng-journal-title-wrap h2 {
       margin-bottom: 0;
+      font-size: 156%;
     }
     .ng-journal-entry-card h3 {
       color: var(--text-normal);
@@ -1037,10 +1035,10 @@ function injectNeuralGardenStyles() {
       border-color: #ff6565;
     }
     .ng-journal-emotion-button.pleasant:not(.is-active) {
-      border-color: color-mix(in srgb, #39e05a 60%, black 40%);
+      border-color: color-mix(in srgb, #39e05a 48%, black 52%);
     }
     .ng-journal-emotion-button.unpleasant:not(.is-active) {
-      border-color: color-mix(in srgb, #ff6565 60%, black 40%);
+      border-color: color-mix(in srgb, #ff6565 48%, black 52%);
     }
     .ng-journal-emotion-button.is-active.pleasant {
       background: rgba(57, 224, 90, 0.16);
@@ -1071,6 +1069,9 @@ function injectNeuralGardenStyles() {
     .ng-journal-emotion-chip.unpleasant {
       border-color: #ff6565;
       color: #ff6565;
+    }
+    .ng-journal-entry-card .ng-journal-emotion-chip {
+      filter: saturate(80%);
     }
     .ng-journal-note-input {
       min-height: 90px;
@@ -1497,7 +1498,6 @@ var NeuralGardenHomeView = class extends import_obsidian.ItemView {
     for (const file of matches) {
       const row = container.createDiv({ cls: "ng-search-row" });
       row.createDiv({ cls: "ng-search-title", text: file.basename });
-      row.createDiv({ cls: "ng-search-path", text: file.path });
       row.addEventListener("click", async () => {
         await this.app.workspace.getLeaf(true).openFile(file);
       });
@@ -2048,10 +2048,10 @@ var import_obsidian2 = require("obsidian");
 var METRICS = [
   { key: "mood", label: "Mood", explanation: "How have you been feeling today?" },
   { key: "sleep", label: "Sleep", explanation: "How rested did you feel after tonight's sleep?" },
+  { key: "regulation", label: "Regulation", explanation: "How well were you able to regulate yourself today?" },
   { key: "stress", label: "Stress", explanation: "How stressed were you today?" },
   { key: "anxiety", label: "Anxiety", explanation: "Have you been anxious today? How intense was it?" },
   { key: "exhaustion", label: "Exhaustion", explanation: "How exhausted did you feel today?" },
-  { key: "regulation", label: "Regulation", explanation: "How well were you able to regulate yourself today?" },
   { key: "sensoryLoad", label: "Sensory Load", explanation: "Have you had any sensory issues? How intense were they?" },
   { key: "socialLoad", label: "Social Load", explanation: "How demanding were social interactions today?" }
 ];
@@ -2538,10 +2538,10 @@ var import_obsidian3 = require("obsidian");
 var METRICS2 = [
   { key: "mood", label: "Mood", explanation: "How have you been feeling today?" },
   { key: "sleep", label: "Sleep", explanation: "How rested did you feel after tonight's sleep?" },
+  { key: "regulation", label: "Regulation", explanation: "How well were you able to regulate yourself today?" },
   { key: "stress", label: "Stress", explanation: "How stressed were you today?" },
   { key: "anxiety", label: "Anxiety", explanation: "Have you been anxious today? How intense was it?" },
   { key: "exhaustion", label: "Exhaustion", explanation: "How exhausted did you feel today?" },
-  { key: "regulation", label: "Regulation", explanation: "How well were you able to regulate yourself today?" },
   { key: "sensoryLoad", label: "Sensory Load", explanation: "Have you had any sensory issues? How intense were they?" },
   { key: "socialLoad", label: "Social Load", explanation: "How demanding were social interactions today?" }
 ];

@@ -186,7 +186,6 @@ export class NeuralGardenHomeView extends ItemView {
     for (const file of matches) {
       const row = container.createDiv({ cls: "ng-search-row" });
       row.createDiv({ cls: "ng-search-title", text: file.basename });
-      row.createDiv({ cls: "ng-search-path", text: file.path });
       row.addEventListener("click", async () => {
         await this.app.workspace.getLeaf(true).openFile(file);
       });

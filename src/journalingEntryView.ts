@@ -19,10 +19,10 @@ type MetricKey =
 const METRICS: Array<{ key: MetricKey; label: string; explanation: string }> = [
   { key: "mood", label: "Mood", explanation: "How have you been feeling today?" },
   { key: "sleep", label: "Sleep", explanation: "How rested did you feel after tonight's sleep?" },
+  { key: "regulation", label: "Regulation", explanation: "How well were you able to regulate yourself today?" },
   { key: "stress", label: "Stress", explanation: "How stressed were you today?" },
   { key: "anxiety", label: "Anxiety", explanation: "Have you been anxious today? How intense was it?" },
   { key: "exhaustion", label: "Exhaustion", explanation: "How exhausted did you feel today?" },
-  { key: "regulation", label: "Regulation", explanation: "How well were you able to regulate yourself today?" },
   { key: "sensoryLoad", label: "Sensory Load", explanation: "Have you had any sensory issues? How intense were they?" },
   { key: "socialLoad", label: "Social Load", explanation: "How demanding were social interactions today?" },
 ];
