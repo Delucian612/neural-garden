@@ -2,7 +2,7 @@
 
 Neural Garden began as a personal necessity.
 
-Over the last 8 months, this project grew through constant trial and error while life felt difficult to manage. The goal was never to build another productivity toy. The goal was to build a support system that could actually hold up on hard days, reduce chaos, and make self-management possible with less friction.
+Over the last 8 months, this project grew through constant trial and error while life felt difficult to manage. The goal was never to build another productivity tool. The goal was to build a support system that could actually hold up on hard days, reduce chaos, and make self-management possible with less friction.
 
 ## Why this exists
 
