@@ -25,7 +25,7 @@ __export(main_exports, {
 module.exports = __toCommonJS(main_exports);
 
 // src/plugin.ts
-var import_obsidian6 = require("obsidian");
+var import_obsidian9 = require("obsidian");
 
 // src/homeView.ts
 var import_obsidian = require("obsidian");
@@ -34,13 +34,26 @@ var import_obsidian = require("obsidian");
 var VIEW_TYPE_NEURAL_GARDEN_HOME = "neural-garden-home";
 var VIEW_TYPE_NEURAL_GARDEN_JOURNALING = "neural-garden-journaling";
 var VIEW_TYPE_NEURAL_GARDEN_JOURNAL_ENTRY = "neural-garden-journal-entry";
+var VIEW_TYPE_NEURAL_GARDEN_MY_NOTES = "neural-garden-my-notes";
 var TASK_MANAGER_FILE_PATH = "Maintenance/TaskManager/TaskManager.md";
 var JOURNAL_DAILY_FOLDER = "Journal/Daily";
 var JOURNAL_WEEKLY_FOLDER = "Journal/Weekly";
 var JOURNAL_MONTHLY_FOLDER = "Journal/Monthly";
 var TRACKER_FOLDER = "Maintenance/Tracker";
 var NOTES_FOLDER = "Notes";
+var MY_NOTES_MAINTENANCE_FOLDER = "Maintenance/MyNotes";
+var MY_NOTES_CATEGORIES_FILE_PATH = "Maintenance/MyNotes/Categories.md";
 var WEEKLY_RECAP_MIN_ENTRIES = 7;
+var SUPPORT_CATEGORIES = [
+  { name: "Mood", color: "#39E05A" },
+  { name: "Sleep", color: "#3FD6FF" },
+  { name: "Regulation", color: "#A66BFF" },
+  { name: "Stress", color: "#F0A04C" },
+  { name: "Anxiety", color: "#FF6565" },
+  { name: "Exhaustion", color: "#3B82F6" },
+  { name: "Sensory Load", color: "#F5D742" },
+  { name: "Social Load", color: "#EC407A" }
+];
 var EFFORTS = [
   { key: "easy-peasy", label: "Light", energy: 5, color: "#3FD6FF" },
   { key: "easy", label: "Easy", energy: 15, color: "#39E05A" },
@@ -547,8 +560,7 @@ function injectNeuralGardenStyles() {
     .ng-home-category-button,
     .ng-journal-nav-button,
     .ng-journal-mode-button,
-    .ng-journal-create-button,
-    .ng-journal-tracker-add {
+    .ng-journal-create-button {
       padding: 16px;
       border-radius: 10px;
       border: 1px solid #ec9a63;
@@ -564,15 +576,13 @@ function injectNeuralGardenStyles() {
     }
     .ng-journal-nav-button,
     .ng-journal-mode-button,
-    .ng-journal-create-button,
-    .ng-journal-tracker-add {
+    .ng-journal-create-button {
       width: auto;
     }
     .ng-home-category-button:hover,
     .ng-journal-nav-button:hover,
     .ng-journal-mode-button:hover,
-    .ng-journal-create-button:hover,
-    .ng-journal-tracker-add:hover {
+    .ng-journal-create-button:hover {
       border-color: #ffd2b0;
       box-shadow: 0 0 0 2px rgba(236, 154, 99, 0.25);
     }
@@ -672,13 +682,6 @@ function injectNeuralGardenStyles() {
       white-space: pre-wrap;
       overflow-wrap: anywhere;
     }
-    .ng-journal-tracker-cell {
-      border: 1px solid var(--background-modifier-border);
-      background: transparent;
-      color: var(--text-normal);
-      cursor: pointer;
-      border-radius: 10px;
-    }
     .ng-journal-modebar {
       display: flex;
       gap: 8px;
@@ -711,13 +714,13 @@ function injectNeuralGardenStyles() {
       border: 1px solid var(--background-modifier-border);
       border-radius: 14px;
       padding: 14px;
-      background: color-mix(in srgb, var(--background-primary) 84%, transparent);
+      background: color-mix(in srgb, var(--background-primary) 18%, transparent);
     }
     .ng-journal-calendar-panel,
     .ng-journal-detail-panel,
     .ng-journal-trackers,
     .ng-journal-entry-card {
-      background: color-mix(in srgb, var(--background-primary) 36%, transparent);
+      background: color-mix(in srgb, var(--background-primary) 12%, transparent);
     }
     .ng-journal-calendar-panel {
       width: 100%;
@@ -776,7 +779,7 @@ function injectNeuralGardenStyles() {
       padding: 7px 14px;
       border-radius: 999px;
       border: 1px solid rgba(236, 154, 99, 0.5);
-      background: color-mix(in srgb, var(--background-primary) 88%, transparent);
+      background: color-mix(in srgb, var(--background-primary) 20%, transparent);
       color: var(--text-normal);
       font-size: 0.92rem;
       font-weight: 600;
@@ -836,7 +839,7 @@ function injectNeuralGardenStyles() {
       padding: 4px 6px;
       border-radius: 9px;
       border: 1px solid rgba(236, 154, 99, 0.45);
-      background: color-mix(in srgb, var(--background-primary) 82%, transparent);
+      background: color-mix(in srgb, var(--background-primary) 16%, transparent);
       color: var(--text-normal);
       display: flex;
       align-items: center;
@@ -848,7 +851,7 @@ function injectNeuralGardenStyles() {
     }
     .ng-journal-week-cell.is-available {
       border-color: #00f0ff;
-      background: color-mix(in srgb, var(--background-primary) 82%, transparent);
+      background: color-mix(in srgb, var(--background-primary) 16%, transparent);
       box-shadow: 0 0 0 2px rgba(0, 240, 255, 0.18);
     }
     .ng-journal-week-cell.is-available::after {
@@ -1015,8 +1018,7 @@ function injectNeuralGardenStyles() {
       gap: 8px;
       justify-content: center;
     }
-    .ng-journal-emotion-button,
-    .ng-journal-tracker-cell {
+    .ng-journal-emotion-button {
       padding: 8px 10px;
     }
     .ng-journal-emotion-button {
@@ -1094,102 +1096,269 @@ function injectNeuralGardenStyles() {
       color: var(--text-muted);
       pointer-events: none;
     }
-    .ng-journal-tracker-create-row {
+    .ng-journal-tracker-head {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) auto auto;
-      gap: 8px;
+      grid-template-columns: 1fr auto 1fr;
       align-items: center;
-      margin-bottom: 10px;
+      margin-bottom: 12px;
     }
-    .ng-journal-tracker-name {
-      border: 1px solid var(--background-modifier-border);
-      background: var(--background-primary);
-      color: var(--text-normal);
-      border-radius: 10px;
-      padding: 8px 10px;
-      width: 100%;
+    .ng-journal-tracker-head h3 {
+      margin: 0;
+      grid-column: 2;
+      text-align: center;
+    }
+    .ng-journal-tracker-add-toggle {
+      all: unset;
+      grid-column: 3;
+      justify-self: end;
+      cursor: pointer;
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: color-mix(in srgb, #ec9a63 55%, white);
+      transition: color 140ms ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .ng-journal-tracker-add-toggle:hover,
+    .ng-journal-tracker-add-toggle:focus-visible {
+      color: #ec9a63;
+    }
+    .ng-journal-tracker-add-row {
+      margin-bottom: 14px;
+    }
+    .ng-journal-tracker-color-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: 0 0 auto;
+    }
+    .ng-journal-tracker-color-option {
+      width: 22px;
+      height: 22px;
+      flex: 0 0 auto;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 1px solid transparent;
+      box-sizing: border-box;
+      transition: transform 140ms ease, box-shadow 140ms ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .ng-journal-tracker-color-option:hover {
+      transform: scale(1.15);
+    }
+    .ng-journal-tracker-color-option:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 2px rgba(236, 154, 99, 0.45);
     }
     .ng-journal-tracker-list {
       display: grid;
-      gap: 10px;
+      gap: 3px;
     }
     .ng-journal-tracker-row {
       display: grid;
-      grid-template-columns: minmax(140px, 170px) minmax(0, 1fr);
+      grid-template-columns: 140px minmax(0, 1fr);
       gap: 10px;
       align-items: center;
+      border-radius: 8px;
+      padding: 1px 4px;
+      transition: background-color 140ms ease;
+    }
+    .ng-journal-tracker-row:not(.ng-journal-tracker-header):hover {
+      background: color-mix(in srgb, var(--background-modifier-hover) 55%, transparent);
     }
     .ng-journal-tracker-label {
-      border: 1px solid;
-      border-radius: 10px;
-      padding: 8px 10px;
-      font-weight: 600;
-      position: sticky;
-      left: 0;
-      z-index: 1;
-      background: color-mix(in srgb, var(--background-primary) 92%, transparent);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+      padding: 4px 0;
+    }
+    .ng-journal-tracker-title {
+      font-size: 0.9rem;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .ng-journal-tracker-label .ng-journal-tracker-color-chip {
+      width: 14px;
+      height: 14px;
+    }
+    .ng-journal-tracker-color-chip {
+      width: 16px;
+      height: 16px;
+      flex: 0 0 auto;
+      border-radius: 50%;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .ng-journal-tracker-color-chip:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 2px rgba(236, 154, 99, 0.45);
+    }
+    .ng-journal-tracker-color-hidden {
+      position: absolute;
+      width: 0;
+      height: 0;
+      padding: 0;
+      border: none;
+      opacity: 0;
+      pointer-events: none;
+    }
+    .ng-journal-tracker-block {
+      display: grid;
+      gap: 8px;
+      justify-items: center;
+      margin-top: 18px;
+    }
+    .ng-journal-tracker-block h4 {
+      margin: 0;
+      color: var(--text-normal);
+      text-align: center;
+      font-size: 1.2rem;
+    }
+    .ng-journal-entry-page .ng-journal-tracker-block h4 {
+      font-size: 1.56rem;
+    }
+    .ng-journal-tracker-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+    }
+    .ng-journal-tracker-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 12px;
+      border: 1px solid var(--background-modifier-border);
+      border-radius: 999px;
+      font-size: 0.85rem;
+      color: var(--text-normal);
+      transition: border-color 140ms ease, background-color 140ms ease;
+    }
+    .ng-journal-tracker-chip-dot {
+      width: 10px;
+      height: 10px;
+      flex: 0 0 auto;
+      border-radius: 50%;
+    }
+    .ng-journal-tracker-chip.is-active {
+      border-color: var(--ng-tracker-color, #ec9a63);
+      background: color-mix(in srgb, var(--ng-tracker-color, #ec9a63) 14%, transparent);
+    }
+    .ng-journal-tracker-chip.ng-journal-tracker-chip-preview {
+      border-color: var(--ng-tracker-color, #ec9a63);
+      background: transparent;
+    }
+    .ng-journal-tracker-chip.is-clickable {
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .ng-journal-tracker-chip.is-clickable:hover {
+      border-color: var(--ng-tracker-color, #ec9a63);
+    }
+    .ng-journal-tracker-chip.is-clickable:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--ng-tracker-color, #ec9a63) 45%, transparent);
     }
     .ng-journal-tracker-label-empty {
-      border-color: transparent;
+      border: none;
       background: transparent;
       box-shadow: none;
     }
     .ng-journal-tracker-cells {
       display: grid;
-      grid-template-columns: repeat(7, minmax(0, 1fr));
-      gap: 6px;
+      gap: 0;
     }
     .ng-journal-tracker-header {
       position: sticky;
       top: 0;
       z-index: 2;
-      padding-bottom: 4px;
-      background: color-mix(in srgb, var(--background-primary) 92%, transparent);
+      padding-bottom: 2px;
+      margin-bottom: 4px;
+      border-bottom: 1px solid var(--background-modifier-border);
+      background: color-mix(in srgb, var(--background-primary) 16%, transparent);
       backdrop-filter: blur(6px);
     }
     .ng-journal-tracker-header-cell {
-      min-height: 54px;
       display: grid;
       place-items: center;
-      border: 1px solid var(--background-modifier-border);
-      border-radius: 10px;
-      background: transparent;
-      color: var(--text-normal);
+      padding: 2px 0 6px;
+      color: var(--text-faint);
+    }
+    .ng-journal-tracker-header-cell .ng-journal-tracker-day {
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      transform: translateY(1px);
+    }
+    .ng-journal-tracker-header-cell.is-today .ng-journal-tracker-day {
+      color: #ec9a63;
     }
     .ng-journal-tracker-cell {
+      all: unset;
       position: relative;
-      min-height: 54px;
+      cursor: pointer;
       display: grid;
       place-items: center;
-      transition: transform 160ms ease, background-color 160ms ease, border-color 160ms ease;
+      min-height: 30px;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
     }
-    .ng-journal-tracker-cell.is-active {
-      border-style: solid;
+    .ng-journal-tracker-dot {
+      position: relative;
+      z-index: 1;
+      width: 19px;
+      height: 19px;
+      border-radius: 50%;
+      border: 1.5px solid var(--background-modifier-border);
+      background: transparent;
+      box-sizing: border-box;
+      transition: background-color 160ms ease, border-color 160ms ease, transform 160ms ease;
     }
-    .ng-journal-tracker-cell.is-streak-start {
-      border-top-left-radius: 999px;
-      border-bottom-left-radius: 999px;
+    .ng-journal-tracker-cell:hover .ng-journal-tracker-dot {
+      border-color: var(--ng-tracker-color, #ec9a63);
+      transform: scale(1.12);
     }
-    .ng-journal-tracker-cell.is-streak-mid {
-      border-radius: 0;
+    .ng-journal-tracker-cell:focus-visible .ng-journal-tracker-dot {
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--ng-tracker-color, #ec9a63) 45%, transparent);
     }
-    .ng-journal-tracker-cell.is-streak-end {
-      border-top-right-radius: 999px;
-      border-bottom-right-radius: 999px;
+    .ng-journal-tracker-cell.is-today .ng-journal-tracker-dot {
+      border-color: color-mix(in srgb, #ec9a63 55%, var(--background-modifier-border));
     }
-    .ng-journal-tracker-cell:hover {
-      transform: translateY(-1px);
+    .ng-journal-tracker-cell.is-active .ng-journal-tracker-dot {
+      background: var(--ng-tracker-color, #ec9a63);
+      border-color: var(--ng-tracker-color, #ec9a63);
     }
-    .ng-journal-tracker-day {
-      font-size: 0.85rem;
-      font-weight: 600;
+    .ng-journal-tracker-cell.has-prev::before,
+    .ng-journal-tracker-cell.has-next::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      height: 6px;
+      background: color-mix(in srgb, var(--ng-tracker-color, #ec9a63) 55%, var(--background-primary));
+      z-index: 0;
+    }
+    .ng-journal-tracker-cell.has-prev::before {
+      left: 0;
+      right: 50%;
+    }
+    .ng-journal-tracker-cell.has-next::after {
+      left: 50%;
+      right: 0;
     }
     .ng-journal-tracker-streak {
       position: absolute;
-      bottom: 6px;
-      right: 6px;
-      font-size: 0.72rem;
-      color: var(--text-muted);
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 2;
+      font-size: 0.64rem;
+      font-weight: 700;
+      color: var(--ng-tracker-streak-color, #ffffff);
+      pointer-events: none;
+      line-height: 1;
     }
     .ng-task-empty {
       font-size: 0.96rem;
@@ -1258,7 +1427,7 @@ function injectNeuralGardenStyles() {
       border: 1px solid rgba(236, 154, 99, 0.28);
       border-bottom-color: rgba(236, 154, 99, 0.28);
       border-radius: 14px;
-      background: color-mix(in srgb, var(--background-primary) 28%, transparent);
+      background: color-mix(in srgb, var(--background-primary) 10%, transparent);
       padding: 14px 14px 18px;
     }
     .ng-journal-body-markdown h4 {
@@ -1303,10 +1472,15 @@ function injectNeuralGardenStyles() {
         grid-template-columns: 1fr;
       }
       .ng-journal-tracker-row {
-        grid-template-columns: 1fr;
+        grid-template-columns: 100px minmax(0, 1fr);
+        gap: 6px;
       }
-      .ng-journal-tracker-label {
-        position: static;
+      .ng-journal-tracker-title {
+        font-size: 0.82rem;
+      }
+      .ng-journal-tracker-dot {
+        width: 16px;
+        height: 16px;
       }
       .ng-journal-title-wrap {
         text-align: left;
@@ -1356,16 +1530,486 @@ function injectNeuralGardenStyles() {
         grid-template-columns: repeat(5, minmax(0, 1fr));
       }
     }
+    .ng-mynotes {
+      max-width: 720px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      padding: 8px 0 24px;
+    }
+    .ng-mynotes-topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .ng-mynotes-learning {
+      opacity: 0.5;
+      cursor: default;
+    }
+    .ng-mynotes-heading {
+      text-align: center;
+      margin: 0;
+    }
+    .ng-mynotes-heading-hint {
+      text-align: center;
+      font-style: italic;
+      font-size: 0.92em;
+      color: var(--text-muted);
+      margin-top: 0;
+    }
+    .ng-mynotes-categories {
+      border: none;
+      border-radius: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      background: transparent;
+    }
+    .ng-mynotes-section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .ng-mynotes-section-title {
+      margin: 0;
+      font-size: 1.3em;
+      font-weight: 600;
+      color: var(--text-normal);
+    }
+    .ng-mynotes-new-button {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      border: 1px solid #ec9a63;
+      background: transparent;
+      color: var(--text-normal);
+      cursor: pointer;
+    }
+    .ng-mynotes-new-button:hover {
+      box-shadow: 0 0 0 2px rgba(236, 154, 99, 0.25);
+    }
+    .ng-mynotes-button-icon {
+      display: inline-flex;
+      align-items: center;
+    }
+    .ng-mynotes-button-icon svg {
+      width: 15px;
+      height: 15px;
+    }
+    .ng-mynotes-pill-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .ng-mynotes-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--background-modifier-border);
+      background: transparent;
+      color: var(--text-normal);
+      cursor: pointer;
+      transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+    }
+    .ng-mynotes-pill:hover {
+      border-color: #ec9a63;
+    }
+    .ng-mynotes-pill:not(.is-active) {
+      border-color: color-mix(in srgb, var(--background-modifier-border) 54%, transparent);
+      background: transparent;
+      box-shadow: none;
+    }
+    .ng-mynotes-pill:not(.is-active):hover {
+      border-color: color-mix(in srgb, var(--background-modifier-border) 66%, transparent);
+      box-shadow: none;
+    }
+    .ng-mynotes-pill.is-active {
+      border-color: #ec9a63;
+      background: transparent;
+      box-shadow: 0 0 0 2px rgba(236, 154, 99, 0.2);
+    }
+    .ng-mynotes-pill-favourite .ng-mynotes-button-icon svg {
+      color: #ff6565;
+    }
+    .ng-mynotes-pill-favourite.is-active .ng-mynotes-button-icon svg,
+    .ng-mynotes-pill-favourite.is-active .ng-mynotes-button-icon svg * {
+      fill: #ff6565 !important;
+    }
+    .ng-mynotes-support-pill {
+      border-color: color-mix(in srgb, var(--ng-support-color) 65%, transparent);
+    }
+    .ng-mynotes-support-pill:not(.is-active) {
+      border-color: color-mix(in srgb, var(--background-modifier-border) 54%, transparent);
+    }
+    .ng-mynotes-support-pill:hover {
+      border-color: var(--ng-support-color);
+    }
+    .ng-mynotes-support-pill:not(.is-active):hover {
+      border-color: color-mix(in srgb, var(--background-modifier-border) 66%, transparent);
+    }
+    .ng-mynotes-support-pill.is-active {
+      border-color: var(--ng-support-color);
+      background: transparent;
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--ng-support-color) 25%, transparent);
+    }
+    .ng-mynotes-support {
+      margin-top: 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .ng-mynotes-support .ng-mynotes-pill-row {
+      gap: 7px;
+    }
+    .ng-mynotes-support .ng-mynotes-pill {
+      padding: 5.5px 11px;
+    }
+    .ng-mynotes-search {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .ng-mynotes-search input {
+      width: 100%;
+    }
+    .ng-mynotes-search-hint {
+      font-size: 0.9em;
+      color: var(--text-muted);
+    }
+    .ng-mynotes-search-hint.is-hidden {
+      display: none;
+    }
+    .ng-mynotes-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .ng-mynotes-subheading {
+      margin: 24px 0 6px;
+      font-size: 1.3em;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+    .ng-mynotes-subheading-toggle {
+      position: relative;
+      align-self: flex-start;
+      background: none !important;
+      border: none !important;
+      box-shadow: none !important;
+      padding: 0;
+      cursor: pointer;
+    }
+    .ng-mynotes-subheading-toggle:hover {
+      color: var(--text-normal);
+    }
+    .ng-mynotes-caret {
+      position: absolute;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 0.6em;
+      margin-right: 0;
+      display: inline-flex;
+      width: 10px;
+      justify-content: center;
+      align-items: center;
+      pointer-events: none;
+    }
+    .ng-mynotes-subheading-label {
+      padding-left: 14px;
+    }
+    .ng-mynotes-note-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+    .ng-mynotes-note-row:hover {
+      background: color-mix(in srgb, var(--text-normal) 6%, transparent);
+    }
+    .ng-mynotes-note-indicator {
+      width: 3px;
+      height: 18px;
+      border-radius: 2px;
+      background: #ec9a63;
+      flex-shrink: 0;
+      margin-left: -7px;
+    }
+    .ng-mynotes-note-title {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .ng-mynotes-note-heart,
+    .ng-mynotes-note-delete {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: none !important;
+      border: none !important;
+      box-shadow: none !important;
+      padding: 4px;
+      height: auto;
+      cursor: pointer;
+      color: var(--text-muted);
+    }
+    .ng-mynotes-note-heart svg,
+    .ng-mynotes-note-delete svg {
+      width: 16px;
+      height: 16px;
+    }
+    .ng-mynotes-note-heart:hover {
+      color: #ff6565;
+    }
+    .ng-mynotes-note-heart.is-favourite {
+      color: #ff6565;
+    }
+    .ng-mynotes-note-heart.is-favourite svg,
+    .ng-mynotes-note-heart.is-favourite svg * {
+      fill: #ff6565 !important;
+    }
+    .ng-heart-pop {
+      animation: ng-heart-pop 0.3s ease;
+    }
+    @keyframes ng-heart-pop {
+      0% { transform: scale(1); }
+      45% { transform: scale(1.45); }
+      100% { transform: scale(1); }
+    }
+    .ng-mynotes-note-delete {
+      color: #ff6565;
+    }
+    .ng-mynotes-note-delete:hover {
+      color: #fb2c36;
+    }
+    .ng-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+    }
+    .ng-overlay-card {
+      background: var(--background-primary);
+      border: 1px solid var(--background-modifier-border);
+      border-radius: 14px;
+      padding: 20px;
+      min-width: 280px;
+      max-width: 90vw;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+    }
+    .ng-overlay-title {
+      margin: 0;
+      text-align: center;
+      color: var(--text-normal);
+      font-weight: 500;
+    }
+    .ng-overlay-subtitle {
+      text-align: center;
+      font-style: italic;
+      color: var(--text-muted);
+    }
+    .ng-overlay-error {
+      text-align: center;
+      color: #ff6565;
+    }
+    .ng-overlay-text {
+      color: var(--text-normal);
+      text-align: center;
+    }
+    .ng-overlay-actions {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+    }
+    .ng-overlay-confirm,
+    .ng-overlay-cancel,
+    .ng-overlay-danger {
+      padding: 6px 16px;
+      border-radius: 999px;
+      border: 1px solid var(--background-modifier-border);
+      background: transparent;
+      color: var(--text-normal);
+      cursor: pointer;
+    }
+    .ng-overlay-confirm {
+      border-color: #ec9a63;
+      background: rgba(236, 154, 99, 0.18);
+    }
+    .ng-overlay-danger {
+      border-color: #fb2c36;
+      color: #fb2c36;
+    }
+    .ng-overlay-danger:hover {
+      background: rgba(251, 44, 54, 0.15);
+    }
+    .ng-note-header {
+      max-width: 720px;
+      margin: 8px auto 4px;
+      padding: 0;
+      border: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      background: transparent;
+    }
+    .ng-note-header-box {
+      border: none;
+      border-bottom: 1px solid var(--background-modifier-border);
+      border-radius: 0;
+      padding: 4px 0 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      background: transparent;
+    }
+    .ng-note-header .ng-mynotes-section-title {
+      font-size: 1.3em;
+      color: var(--text-normal);
+    }
+    .ng-note-header-categories-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .ng-note-header-categories-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .ng-note-header-add-category-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 26px;
+      height: 26px;
+      padding: 0 6px;
+      border: none !important;
+      background: none !important;
+      box-shadow: none !important;
+      color: color-mix(in srgb, #ec9a63 55%, white);
+      cursor: pointer;
+      font-size: 1.5em;
+      font-weight: 600;
+      line-height: 1;
+    }
+    .ng-note-header-add-category-icon:hover {
+      color: #ec9a63;
+    }
+    .ng-note-header-add-category-icon.has-input {
+      color: #ec9a63;
+    }
+    .ng-note-header-fav {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      border: none !important;
+      background: none !important;
+      box-shadow: none !important;
+      color: var(--text-muted);
+      cursor: pointer;
+    }
+    .ng-note-header-fav svg {
+      width: 18px;
+      height: 18px;
+    }
+    .ng-note-header-fav:hover {
+      color: #ff6565;
+    }
+    .ng-note-header-fav.is-favourite {
+      color: #ff6565;
+    }
+    .ng-note-header-fav.is-favourite svg,
+    .ng-note-header-fav.is-favourite svg * {
+      fill: #ff6565 !important;
+    }
+    .ng-note-header-nav {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 6px;
+    }
+    .ng-note-header-spacer {
+      height: 4px;
+    }
+    .ng-note-header-add-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .ng-note-header-add-row input {
+      flex: 1;
+    }
+    .ng-note-header-support {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 4px;
+    }
+    .ng-note-header-support-label {
+      align-self: flex-start;
+      background: none;
+      border: none;
+      box-shadow: none;
+      padding: 0;
+      margin: 0;
+      cursor: pointer;
+      color: var(--text-normal);
+      font-size: 1.3em;
+      font-weight: 600;
+      line-height: 1.2;
+      transition: color 0.15s ease;
+    }
+    .ng-note-header-support-hint {
+      margin-top: -2px;
+      font-style: italic;
+      color: var(--text-muted);
+      font-size: 0.92em;
+    }
+    .ng-note-header-support-hint.is-hidden {
+      display: none;
+    }
+    .ng-note-header-support-label:hover {
+      color: var(--text-normal);
+    }
+    .ng-note-header-support-label.is-active {
+      color: #ec407a;
+      background: none !important;
+    }
+    .ng-note-header-category-pill {
+      border-color: color-mix(in srgb, var(--background-modifier-border) 55%, transparent);
+      color: var(--text-muted);
+    }
   `;
   document.head.appendChild(style);
 }
 
 // src/homeView.ts
 var NeuralGardenHomeView = class extends import_obsidian.ItemView {
-  constructor(leaf, storage, openJournalingView) {
+  constructor(leaf, storage, openJournalingView, openMyNotesView) {
     super(leaf);
     this.storage = storage;
     this.openJournalingView = openJournalingView;
+    this.openMyNotesView = openMyNotesView;
     this.state = { ...DEFAULT_STATE };
     this.searchDebounceTimer = null;
     this.breakTickTimer = null;
@@ -1430,8 +2074,8 @@ var NeuralGardenHomeView = class extends import_obsidian.ItemView {
       void this.openJournalingView(true, this.leaf);
     });
     categoryGrid.appendChild(journalButton);
-    const notesButton = this.makeCategoryButton("My Notes", "folder", () => {
-      new import_obsidian.Notice("My Notes interface placeholder");
+    const notesButton = this.makeCategoryButton("MyNotes", "folder", () => {
+      void this.openMyNotesView(true, this.leaf);
     });
     categoryGrid.appendChild(notesButton);
     const settingsButton = this.makeCategoryButton("Settings", "settings", () => {
@@ -2093,6 +2737,7 @@ var NeuralGardenJournalEntryView = class extends import_obsidian2.ItemView {
     this.openJournalingView = openJournalingView;
     this.entry = null;
     this.editable = false;
+    this.trackers = [];
     this.liveTaskSnapshots = null;
     this.saveChain = Promise.resolve();
   }
@@ -2118,6 +2763,7 @@ var NeuralGardenJournalEntryView = class extends import_obsidian2.ItemView {
     var _a;
     this.editable = editable && isEditableJournalDate(dateKey);
     this.entry = (_a = await this.journalingStorage.readDailyEntryByDate(dateKey)) != null ? _a : await this.createDraftEntry(dateKey);
+    this.trackers = await this.journalingStorage.listTrackers();
     if (this.editable) {
       const taskState = await this.taskStorage.loadTaskManagerState();
       this.liveTaskSnapshots = {
@@ -2207,8 +2853,50 @@ var NeuralGardenJournalEntryView = class extends import_obsidian2.ItemView {
     titleWrap.createEl("h3", { text: "Daily Check In" });
     this.renderMetrics(wrapper);
     this.renderEmotions(wrapper);
+    this.renderTrackerSection(wrapper);
     this.renderTasks(wrapper);
     this.renderEntryBody(wrapper);
+  }
+  renderTrackerSection(parent) {
+    if (!this.entry) {
+      return;
+    }
+    const block = parent.createDiv({ cls: "ng-journal-tracker-block" });
+    block.createEl("h4", { text: "Tracker" });
+    if (this.trackers.length === 0) {
+      block.createDiv({ cls: "ng-empty", text: "No trackers yet." });
+      return;
+    }
+    const dateKey = this.entry.frontmatter.date;
+    const chips = block.createDiv({ cls: "ng-journal-tracker-chips" });
+    for (const tracker of this.trackers) {
+      const isTracked = tracker.dates.includes(dateKey);
+      const chip = chips.createDiv({ cls: "ng-journal-tracker-chip" });
+      chip.style.setProperty("--ng-tracker-color", tracker.color);
+      chip.createSpan({ text: tracker.name });
+      chip.toggleClass("is-active", isTracked);
+      if (!this.editable) {
+        continue;
+      }
+      chip.addClass("is-clickable");
+      chip.setAttribute("role", "button");
+      chip.setAttribute("tabindex", "0");
+      chip.setAttribute("aria-pressed", String(isTracked));
+      const toggle = async () => {
+        const next = await this.journalingStorage.toggleTrackerDate(tracker, dateKey);
+        this.trackers = this.trackers.map((candidate) => candidate.file.path === next.file.path ? next : candidate);
+        this.render();
+      };
+      chip.addEventListener("click", () => {
+        void toggle();
+      });
+      chip.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          void toggle();
+        }
+      });
+    }
   }
   makeNavButton(label, onClick) {
     const button = document.createElement("button");
@@ -2593,7 +3281,15 @@ var PLEASANT_EMOTIONS2 = [
   "Relieved",
   "Curious"
 ];
-var TRACKER_DAYS = 21;
+var TRACKER_DAYS = 15;
+var TRACKER_COLORS = [
+  { name: "Green", value: "#39E05A" },
+  { name: "Cyan", value: "#00F0FF" },
+  { name: "Blue", value: "#5B8CFF" },
+  { name: "Purple", value: "#A78BFA" },
+  { name: "Orange", value: "#EC9A63" },
+  { name: "Red", value: "#FF6565" }
+];
 var NeuralGardenJournalingView = class extends import_obsidian3.ItemView {
   constructor(leaf, taskStorage, journalingStorage, openHomeView, openJournalEntryView) {
     super(leaf);
@@ -2685,8 +3381,7 @@ var NeuralGardenJournalingView = class extends import_obsidian3.ItemView {
       }
       event.preventDefault();
       const delta = event.key === "ArrowLeft" || event.key === "ArrowUp" ? -1 : 1;
-      this.calendarMonth = addMonths(this.calendarMonth, delta);
-      this.render();
+      this.shiftCalendarMonth(delta);
     });
     const nextMonthButton = monthControls.createEl("button", { text: "-->" });
     nextMonthButton.type = "button";
@@ -2785,8 +3480,23 @@ var NeuralGardenJournalingView = class extends import_obsidian3.ItemView {
     card.createEl("h4", { cls: "ng-journal-preview-summary", text: "Summary" });
     this.renderMetrics(card, entry.frontmatter);
     this.renderEmotionList(card, entry.frontmatter.emotions, true);
+    this.renderTrackedTrackers(card, entry.frontmatter.date);
     this.renderTaskSnapshots(card, entry.frontmatter);
     this.renderBody(card, entry.body);
+  }
+  renderTrackedTrackers(container, dateKey) {
+    const tracked = this.trackers.filter((tracker) => tracker.dates.includes(dateKey));
+    if (tracked.length === 0) {
+      return;
+    }
+    const block = container.createDiv({ cls: "ng-journal-tracker-block" });
+    block.createEl("h4", { text: "Tracker" });
+    const chips = block.createDiv({ cls: "ng-journal-tracker-chips" });
+    for (const tracker of tracked) {
+      const chip = chips.createDiv({ cls: "ng-journal-tracker-chip ng-journal-tracker-chip-preview" });
+      chip.style.setProperty("--ng-tracker-color", normalizeHexColor(tracker.color));
+      chip.createSpan({ text: tracker.name });
+    }
   }
   renderMetrics(container, frontmatter) {
     const grid = container.createDiv({ cls: "ng-journal-metrics" });
@@ -2859,24 +3569,51 @@ var NeuralGardenJournalingView = class extends import_obsidian3.ItemView {
   }
   renderTrackers(container) {
     const section = container.createDiv({ cls: "ng-journal-trackers" });
-    section.createEl("h3", { text: "Trackers" });
-    const createRow = section.createDiv({ cls: "ng-journal-tracker-create-row" });
-    const nameInput = createRow.createEl("input", { type: "text", placeholder: "Tracker name" });
-    nameInput.classList.add("ng-journal-tracker-name");
-    const colorInput = createRow.createEl("input", { type: "color" });
-    colorInput.value = "#EC9A63";
-    const addButton = createRow.createEl("button", { text: "+" });
-    addButton.classList.add("ng-journal-tracker-add");
-    addButton.addEventListener("click", async () => {
+    const head = section.createDiv({ cls: "ng-journal-tracker-head" });
+    head.createEl("h3", { text: "Tracker" });
+    const addButton = head.createEl("button", { text: "Add Tracker", cls: "ng-journal-tracker-add-toggle" });
+    addButton.setAttribute("aria-label", "Add Tracker");
+    const addRow = section.createDiv({ cls: "ng-note-header-add-row ng-journal-tracker-add-row" });
+    addRow.hide();
+    const nameInput = addRow.createEl("input", { type: "text", placeholder: "Tracker name..." });
+    nameInput.addClass("ng-task-input");
+    const colorRow = addRow.createDiv({ cls: "ng-journal-tracker-color-row" });
+    const submitTracker = async (color) => {
       const trackerName = nameInput.value.trim();
       if (!trackerName) {
-        new import_obsidian3.Notice("Please enter a tracker name first.");
+        nameInput.focus();
         return;
       }
-      await this.journalingStorage.upsertTracker(trackerName, colorInput.value);
+      await this.journalingStorage.upsertTracker(trackerName, color);
       nameInput.value = "";
+      addRow.hide();
       await this.reloadState();
       this.render();
+    };
+    for (const color of TRACKER_COLORS) {
+      const dot = colorRow.createDiv({ cls: "ng-journal-tracker-color-option" });
+      dot.style.backgroundColor = color.value;
+      dot.setAttribute("role", "button");
+      dot.setAttribute("tabindex", "0");
+      dot.setAttribute("aria-label", `Create tracker with ${color.name} color`);
+      dot.title = color.name;
+      dot.addEventListener("click", () => {
+        void submitTracker(color.value);
+      });
+      dot.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          void submitTracker(color.value);
+        }
+      });
+    }
+    addButton.addEventListener("click", () => {
+      if (addRow.isShown()) {
+        addRow.hide();
+        return;
+      }
+      addRow.show();
+      nameInput.focus();
     });
     const list = section.createDiv({ cls: "ng-journal-tracker-list" });
     if (this.trackers.length === 0) {
@@ -2884,52 +3621,86 @@ var NeuralGardenJournalingView = class extends import_obsidian3.ItemView {
       return;
     }
     const visibleDates = buildTrackerWindow(TRACKER_DAYS);
+    const columns = `repeat(${visibleDates.length}, minmax(0, 1fr))`;
     const header = list.createDiv({ cls: "ng-journal-tracker-header ng-journal-tracker-row" });
     header.createDiv({ cls: "ng-journal-tracker-label ng-journal-tracker-label-empty" });
     const headerCells = header.createDiv({ cls: "ng-journal-tracker-cells" });
+    headerCells.style.gridTemplateColumns = columns;
     for (const date of visibleDates) {
       const cell = headerCells.createDiv({ cls: "ng-journal-tracker-header-cell" });
-      cell.createDiv({ cls: "ng-journal-tracker-day", text: String(date.day) });
+      cell.createSpan({ cls: "ng-journal-tracker-day", text: String(date.day) });
       if (date.dateKey === todayKey()) {
         cell.addClass("is-today");
       }
     }
     for (const tracker of this.trackers) {
+      const trackerColor = normalizeHexColor(tracker.color);
       const row = list.createDiv({ cls: "ng-journal-tracker-row" });
-      const label = row.createDiv({ cls: "ng-journal-tracker-label", text: tracker.name });
-      label.style.borderColor = tracker.color;
+      row.style.setProperty("--ng-tracker-color", trackerColor);
+      row.style.setProperty("--ng-tracker-streak-color", chooseReadableTextColor(trackerColor));
+      const label = row.createDiv({ cls: "ng-journal-tracker-label" });
       label.title = tracker.file.path;
+      const swatch = label.createSpan({ cls: "ng-journal-tracker-color-chip" });
+      swatch.style.backgroundColor = trackerColor;
+      swatch.setAttribute("role", "button");
+      swatch.setAttribute("tabindex", "0");
+      swatch.setAttribute("aria-label", `Change color of ${tracker.name}`);
+      swatch.title = "Change bubble color";
+      const hiddenColor = label.createEl("input", { type: "color" });
+      hiddenColor.addClass("ng-journal-tracker-color-hidden");
+      hiddenColor.value = trackerColor;
+      hiddenColor.tabIndex = -1;
+      hiddenColor.setAttribute("aria-hidden", "true");
+      hiddenColor.addEventListener("change", async () => {
+        await this.journalingStorage.upsertTracker(tracker.name, hiddenColor.value);
+        await this.reloadState();
+        this.render();
+      });
+      swatch.addEventListener("click", () => {
+        hiddenColor.click();
+      });
+      label.createSpan({ cls: "ng-journal-tracker-title", text: tracker.name });
       const cells = row.createDiv({ cls: "ng-journal-tracker-cells" });
+      cells.style.gridTemplateColumns = columns;
       for (let index = 0; index < visibleDates.length; index += 1) {
         const cellDate = visibleDates[index];
         const isTracked = tracker.dates.includes(cellDate.dateKey);
         const hasPrev = index > 0 && tracker.dates.includes(visibleDates[index - 1].dateKey);
         const hasNext = index < visibleDates.length - 1 && tracker.dates.includes(visibleDates[index + 1].dateKey);
-        const cell = cells.createEl("button");
-        cell.addClass("ng-journal-tracker-cell");
+        const cell = cells.createDiv({ cls: "ng-journal-tracker-cell" });
+        cell.setAttribute("role", "button");
+        cell.setAttribute("tabindex", "0");
+        cell.setAttribute("aria-pressed", String(isTracked));
+        cell.setAttribute("aria-label", `${tracker.name}, ${cellDate.dateKey}${isTracked ? ", tracked" : ""}`);
+        if (cellDate.dateKey === todayKey()) {
+          cell.addClass("is-today");
+        }
         if (isTracked) {
           cell.addClass("is-active");
-          cell.style.borderColor = tracker.color;
-          cell.style.backgroundColor = `${tracker.color}22`;
-          if (!hasPrev) {
-            cell.addClass("is-streak-start");
+          if (hasPrev) {
+            cell.addClass("has-prev");
           }
-          if (!hasNext) {
-            cell.addClass("is-streak-end");
-          }
-          if (hasPrev && hasNext) {
-            cell.addClass("is-streak-mid");
+          if (hasNext) {
+            cell.addClass("has-next");
           }
         }
-        cell.createDiv({ cls: "ng-journal-tracker-day", text: String(cellDate.day) });
-        const streak = streakEndingAt(tracker.dates, cellDate.dateKey);
-        if (streak > 1) {
-          cell.createDiv({ cls: "ng-journal-tracker-streak", text: String(streak) });
+        cell.createSpan({ cls: "ng-journal-tracker-dot" });
+        if (isTracked && !hasNext) {
+          const streak = streakEndingAt(tracker.dates, cellDate.dateKey);
+          if (streak > 1) {
+            cell.createSpan({ cls: "ng-journal-tracker-streak", text: String(streak) });
+          }
         }
         cell.addEventListener("click", async () => {
           const next = await this.journalingStorage.toggleTrackerDate(tracker, cellDate.dateKey);
           this.trackers = this.trackers.map((candidate) => candidate.file.path === next.file.path ? next : candidate);
           this.render();
+        });
+        cell.addEventListener("keydown", (event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            cell.click();
+          }
         });
       }
     }
@@ -3052,6 +3823,44 @@ function buildTrackerWindow(days) {
   }
   return cells;
 }
+function normalizeHexColor(color) {
+  return /^#[0-9a-fA-F]{6}$/.test(color) ? color : "#EC9A63";
+}
+function chooseReadableTextColor(backgroundHex) {
+  const rgb = parseHexColor(backgroundHex);
+  if (!rgb) {
+    return "#ffffff";
+  }
+  const whiteContrast = contrastRatio(rgb, { r: 255, g: 255, b: 255 });
+  const blackContrast = contrastRatio(rgb, { r: 0, g: 0, b: 0 });
+  return whiteContrast >= blackContrast ? "#ffffff" : "#000000";
+}
+function parseHexColor(hex) {
+  const match = hex.trim().match(/^#([0-9a-fA-F]{6})$/);
+  if (!match) {
+    return null;
+  }
+  const value = match[1];
+  return {
+    r: Number.parseInt(value.slice(0, 2), 16),
+    g: Number.parseInt(value.slice(2, 4), 16),
+    b: Number.parseInt(value.slice(4, 6), 16)
+  };
+}
+function contrastRatio(left, right) {
+  const l1 = relativeLuminance(left);
+  const l2 = relativeLuminance(right);
+  const lighter = Math.max(l1, l2);
+  const darker = Math.min(l1, l2);
+  return (lighter + 0.05) / (darker + 0.05);
+}
+function relativeLuminance(color) {
+  const [r, g, b] = [color.r, color.g, color.b].map((channel) => {
+    const normalized = channel / 255;
+    return normalized <= 0.03928 ? normalized / 12.92 : ((normalized + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
 function streakEndingAt(dates, dateKey) {
   if (!dates.includes(dateKey)) {
     return 0;
@@ -3110,8 +3919,326 @@ function getEmotionToneClass2(emotion) {
   return PLEASANT_EMOTIONS2.includes(emotion) ? "pleasant" : "unpleasant";
 }
 
-// src/journalingStorage.ts
+// src/myNotesView.ts
 var import_obsidian4 = require("obsidian");
+
+// src/overlay.ts
+function openOverlay(title) {
+  const overlay = document.body.createDiv({ cls: "ng-overlay" });
+  const card = overlay.createDiv({ cls: "ng-overlay-card" });
+  card.createEl("h3", { text: title, cls: "ng-overlay-title" });
+  const close = () => {
+    overlay.remove();
+    document.removeEventListener("keydown", onKeyDown);
+  };
+  const onKeyDown = (event) => {
+    if (event.key === "Escape") {
+      close();
+    }
+  };
+  overlay.addEventListener("click", (event) => {
+    if (event.target === overlay) {
+      close();
+    }
+  });
+  document.addEventListener("keydown", onKeyDown);
+  return { card, close };
+}
+
+// src/myNotesView.ts
+var FAVOURITE_CATEGORY = "__favourite__";
+var SUPPORT_PREFIX = "support:";
+var NeuralGardenMyNotesView = class extends import_obsidian4.ItemView {
+  constructor(leaf, myNotesStorage, openHomeView) {
+    super(leaf);
+    this.myNotesStorage = myNotesStorage;
+    this.openHomeView = openHomeView;
+    this.selectedCategory = null;
+    this.searchQuery = "";
+    this.searchDebounceTimer = null;
+    this.uncategorizedExpanded = false;
+    this.searchHintEl = null;
+    this.notesListEl = null;
+  }
+  getViewType() {
+    return VIEW_TYPE_NEURAL_GARDEN_MY_NOTES;
+  }
+  getDisplayText() {
+    return "MyNotes";
+  }
+  getIcon() {
+    return "folder";
+  }
+  async onOpen() {
+    await this.myNotesStorage.ensureCategoriesFile();
+    await this.render();
+  }
+  async onClose() {
+    if (this.searchDebounceTimer) {
+      window.clearTimeout(this.searchDebounceTimer);
+      this.searchDebounceTimer = null;
+    }
+  }
+  async render() {
+    const { contentEl } = this;
+    contentEl.empty();
+    contentEl.addClass("neural-garden-root");
+    const wrapper = contentEl.createDiv({ cls: "ng-mynotes" });
+    const topBar = wrapper.createDiv({ cls: "ng-mynotes-topbar" });
+    const homeButton = topBar.createEl("button", { text: "Home", cls: "ng-journal-nav-button" });
+    homeButton.addEventListener("click", async () => {
+      await this.openHomeView(true, this.leaf);
+    });
+    const learningButton = topBar.createEl("button", { text: "Learning", cls: "ng-journal-nav-button" });
+    learningButton.disabled = true;
+    learningButton.addClass("ng-mynotes-learning");
+    wrapper.createEl("h2", { text: "MyNotes", cls: "ng-mynotes-heading" });
+    this.searchHintEl = wrapper.createDiv({ cls: "ng-mynotes-heading-hint" });
+    this.renderSearchSection(wrapper);
+    await this.renderCategoriesSection(wrapper);
+    this.renderSupportSection(wrapper);
+    this.notesListEl = wrapper.createDiv({ cls: "ng-mynotes-list" });
+    await this.updateNotesList();
+  }
+  async renderCategoriesSection(parent) {
+    const section = parent.createDiv({ cls: "ng-mynotes-categories" });
+    const headerRow = section.createDiv({ cls: "ng-mynotes-section-header" });
+    headerRow.createEl("h4", { text: "Categories", cls: "ng-mynotes-section-title" });
+    const newButton = headerRow.createEl("button", { cls: "ng-mynotes-new-button" });
+    const newIcon = newButton.createSpan({ cls: "ng-mynotes-button-icon" });
+    (0, import_obsidian4.setIcon)(newIcon, "file-plus-2");
+    newButton.createSpan({ text: "New" });
+    newButton.addEventListener("click", () => {
+      this.openNewNoteOverlay();
+    });
+    const pillRow = section.createDiv({ cls: "ng-mynotes-pill-row" });
+    const favouritePill = pillRow.createEl("button", { cls: "ng-mynotes-pill ng-mynotes-pill-favourite" });
+    const heartIcon = favouritePill.createSpan({ cls: "ng-mynotes-button-icon" });
+    (0, import_obsidian4.setIcon)(heartIcon, "heart");
+    favouritePill.createSpan({ text: "Favourites" });
+    if (this.selectedCategory === FAVOURITE_CATEGORY) {
+      favouritePill.addClass("is-active");
+    }
+    favouritePill.addEventListener("click", () => {
+      void this.selectCategory(FAVOURITE_CATEGORY);
+    });
+    const categories = await this.myNotesStorage.loadCategories();
+    for (const category of categories) {
+      const pill = pillRow.createEl("button", { cls: "ng-mynotes-pill" });
+      pill.createSpan({ text: category.name });
+      if (this.selectedCategory === category.name) {
+        pill.addClass("is-active");
+      }
+      pill.addEventListener("click", () => {
+        void this.selectCategory(category.name);
+      });
+    }
+    if (categories.length === 0) {
+      section.createDiv({
+        cls: "ng-empty",
+        text: "No categories yet. Add categories from a note's header."
+      });
+    }
+  }
+  renderSupportSection(parent) {
+    const section = parent.createDiv({ cls: "ng-mynotes-support" });
+    section.createEl("h4", { text: "Support Notes", cls: "ng-mynotes-section-title" });
+    const pillRow = section.createDiv({ cls: "ng-mynotes-pill-row" });
+    for (const support of SUPPORT_CATEGORIES) {
+      const key = `${SUPPORT_PREFIX}${support.name}`;
+      const pill = pillRow.createEl("button", { cls: "ng-mynotes-pill ng-mynotes-support-pill" });
+      pill.createSpan({ text: support.name });
+      pill.style.setProperty("--ng-support-color", support.color);
+      if (this.selectedCategory === key) {
+        pill.addClass("is-active");
+      }
+      pill.addEventListener("click", () => {
+        void this.selectCategory(key);
+      });
+    }
+  }
+  renderSearchSection(parent) {
+    const section = parent.createDiv({ cls: "ng-mynotes-search" });
+    const input = section.createEl("input", {
+      type: "text",
+      placeholder: "Search Notes..."
+    });
+    input.addClass("ng-task-input");
+    input.value = this.searchQuery;
+    input.addEventListener("input", () => {
+      if (this.searchDebounceTimer) {
+        window.clearTimeout(this.searchDebounceTimer);
+      }
+      this.searchDebounceTimer = window.setTimeout(() => {
+        this.searchQuery = input.value.trim();
+        void this.updateNotesList();
+      }, 250);
+    });
+  }
+  syncSearchHint() {
+    if (!this.searchHintEl) {
+      return;
+    }
+    this.searchHintEl.setText("Select a category or search to see notes");
+  }
+  async selectCategory(name) {
+    this.selectedCategory = this.selectedCategory === name ? null : name;
+    await this.render();
+  }
+  async updateNotesList() {
+    const container = this.notesListEl;
+    if (!container) {
+      return;
+    }
+    container.empty();
+    this.syncSearchHint();
+    if (!this.selectedCategory && this.searchQuery.length < 2) {
+      this.renderUncategorizedSection(container);
+      return;
+    }
+    const files = await this.collectNotes();
+    if (files.length === 0) {
+      container.createDiv({ cls: "ng-empty", text: "No notes found." });
+    } else {
+      for (const file of files) {
+        this.renderNoteRow(container, file);
+      }
+    }
+    this.renderUncategorizedSection(container);
+  }
+  renderUncategorizedSection(container) {
+    const uncategorized = this.myNotesStorage.listNotes().filter((file) => this.myNotesStorage.getNoteCategories(file).length === 0);
+    const uncategorizedToggle = container.createEl("button", {
+      cls: "ng-mynotes-subheading ng-mynotes-subheading-toggle"
+    });
+    uncategorizedToggle.createSpan({
+      cls: "ng-mynotes-caret",
+      text: this.uncategorizedExpanded ? "\u25BC" : "\u25B6"
+    });
+    uncategorizedToggle.createSpan({ cls: "ng-mynotes-subheading-label", text: "Uncategorized Notes" });
+    uncategorizedToggle.addEventListener("click", () => {
+      this.uncategorizedExpanded = !this.uncategorizedExpanded;
+      void this.updateNotesList();
+    });
+    if (!this.uncategorizedExpanded) {
+      return;
+    }
+    if (uncategorized.length === 0) {
+      container.createDiv({ cls: "ng-empty", text: "No uncategorized notes." });
+      return;
+    }
+    for (const file of uncategorized) {
+      this.renderNoteRow(container, file);
+    }
+  }
+  async collectNotes() {
+    var _a;
+    let files = null;
+    if (this.selectedCategory === FAVOURITE_CATEGORY) {
+      files = this.myNotesStorage.favouriteNotes();
+    } else if ((_a = this.selectedCategory) == null ? void 0 : _a.startsWith(SUPPORT_PREFIX)) {
+      files = this.myNotesStorage.notesWithSupport(this.selectedCategory.slice(SUPPORT_PREFIX.length));
+    } else if (this.selectedCategory) {
+      files = this.myNotesStorage.notesInCategory(this.selectedCategory);
+    }
+    const query = this.searchQuery;
+    if (query.length >= 2) {
+      if (files === null) {
+        return await searchNotesInFolder(this.app, query);
+      }
+      const q = query.toLowerCase();
+      return files.filter((file) => file.basename.toLowerCase().includes(q));
+    }
+    return files != null ? files : [];
+  }
+  renderNoteRow(container, file) {
+    const row = container.createDiv({ cls: "ng-mynotes-note-row" });
+    const favouriteButton = row.createEl("button", { cls: "ng-mynotes-note-heart" });
+    (0, import_obsidian4.setIcon)(favouriteButton, "heart");
+    if (this.myNotesStorage.isFavourite(file)) {
+      favouriteButton.addClass("is-favourite");
+    }
+    favouriteButton.addEventListener("click", async (event) => {
+      event.stopPropagation();
+      const nowFavourite = await this.myNotesStorage.toggleFavourite(file);
+      favouriteButton.toggleClass("is-favourite", nowFavourite);
+      favouriteButton.removeClass("ng-heart-pop");
+      void favouriteButton.offsetWidth;
+      favouriteButton.addClass("ng-heart-pop");
+      if (this.selectedCategory === FAVOURITE_CATEGORY && !nowFavourite) {
+        row.remove();
+      }
+    });
+    row.createDiv({ cls: "ng-mynotes-note-indicator" });
+    row.createDiv({ cls: "ng-mynotes-note-title", text: file.basename });
+    const deleteButton = row.createEl("button", { cls: "ng-mynotes-note-delete" });
+    (0, import_obsidian4.setIcon)(deleteButton, "x");
+    deleteButton.addEventListener("click", (event) => {
+      event.stopPropagation();
+      this.openDeleteOverlay(file, row);
+    });
+    row.addEventListener("click", async () => {
+      await this.app.workspace.getLeaf(true).openFile(file);
+    });
+  }
+  openNewNoteOverlay() {
+    const { card, close } = openOverlay("Create A Note");
+    card.createDiv({ cls: "ng-overlay-subtitle", text: "Write down a name" });
+    const input = card.createEl("input", { type: "text", placeholder: "Note name..." });
+    input.addClass("ng-task-input");
+    const errorEl = card.createDiv({ cls: "ng-overlay-error" });
+    errorEl.hide();
+    const actions = card.createDiv({ cls: "ng-overlay-actions" });
+    const createButton = actions.createEl("button", { text: "Create", cls: "ng-overlay-confirm" });
+    const submit = async () => {
+      const name = input.value.trim();
+      if (!name) {
+        return;
+      }
+      if (this.myNotesStorage.noteExists(name)) {
+        errorEl.setText("This Note already exists");
+        errorEl.show();
+        input.value = "";
+        input.focus();
+        return;
+      }
+      const file = await this.myNotesStorage.createNote(name);
+      close();
+      if (!file) {
+        new import_obsidian4.Notice("Could not create the note. Try a different name.");
+        return;
+      }
+      await this.app.workspace.getLeaf(true).openFile(file);
+    };
+    createButton.addEventListener("click", () => void submit());
+    input.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        void submit();
+      }
+    });
+    input.focus();
+  }
+  openDeleteOverlay(file, row) {
+    const { card, close } = openOverlay("Delete Note");
+    card.createDiv({
+      cls: "ng-overlay-text",
+      text: `Are you sure you want to delete "${file.basename}"?`
+    });
+    const actions = card.createDiv({ cls: "ng-overlay-actions" });
+    const cancelButton = actions.createEl("button", { text: "Cancel", cls: "ng-overlay-cancel" });
+    const deleteButton = actions.createEl("button", { text: "Delete", cls: "ng-overlay-danger" });
+    cancelButton.addEventListener("click", () => close());
+    deleteButton.addEventListener("click", async () => {
+      await this.myNotesStorage.deleteNote(file);
+      close();
+      row.remove();
+      await this.render();
+    });
+  }
+};
+
+// src/journalingStorage.ts
+var import_obsidian5 = require("obsidian");
 var FRONTMATTER_REGEX = /^---\n[\s\S]*?\n---\n?/;
 var ENTRY_HEADING_REGEX = /^# Entry\s*(?:\n|\r\n)+/i;
 var JournalingStorage = class {
@@ -3131,7 +4258,7 @@ var JournalingStorage = class {
   }
   async readDailyEntryByDate(dateKey) {
     const file = this.app.vault.getAbstractFileByPath(`${JOURNAL_DAILY_FOLDER}/${dateKey}.md`);
-    if (!(file instanceof import_obsidian4.TFile)) {
+    if (!(file instanceof import_obsidian5.TFile)) {
       return null;
     }
     return this.readDailyEntry(file);
@@ -3153,8 +4280,8 @@ var JournalingStorage = class {
     const fileName = sanitizeFileName(name);
     const path = `${TRACKER_FOLDER}/${fileName}.md`;
     const existing = this.app.vault.getAbstractFileByPath(path);
-    const dates = existing instanceof import_obsidian4.TFile ? (await this.readTracker(existing)).dates : [];
-    const file = existing instanceof import_obsidian4.TFile ? existing : await this.createTrackerFile(path, name, color, dates);
+    const dates = existing instanceof import_obsidian5.TFile ? (await this.readTracker(existing)).dates : [];
+    const file = existing instanceof import_obsidian5.TFile ? existing : await this.createTrackerFile(path, name, color, dates);
     const frontmatter = { Date: dates, color };
     await this.writeTrackerFile(file, name, frontmatter, dates);
     return { file, name, frontmatter, dates, color };
@@ -3168,7 +4295,7 @@ var JournalingStorage = class {
   }
   async ensureDailyFile(dateKey) {
     const existing = this.app.vault.getAbstractFileByPath(`${JOURNAL_DAILY_FOLDER}/${dateKey}.md`);
-    if (existing instanceof import_obsidian4.TFile) {
+    if (existing instanceof import_obsidian5.TFile) {
       return existing;
     }
     await this.ensureFolderExists(JOURNAL_DAILY_FOLDER);
@@ -3176,7 +4303,7 @@ var JournalingStorage = class {
       return await this.app.vault.create(`${JOURNAL_DAILY_FOLDER}/${dateKey}.md`, this.buildDailyContent(defaultDailyFrontmatter(dateKey), ""));
     } catch (e) {
       const createdByOtherCall = this.app.vault.getAbstractFileByPath(`${JOURNAL_DAILY_FOLDER}/${dateKey}.md`);
-      if (createdByOtherCall instanceof import_obsidian4.TFile) {
+      if (createdByOtherCall instanceof import_obsidian5.TFile) {
         return createdByOtherCall;
       }
       throw new Error(`Failed to create daily journal file for ${dateKey}`);
@@ -3207,7 +4334,7 @@ var JournalingStorage = class {
       return await this.app.vault.create(path, content);
     } catch (e) {
       const createdByOtherCall = this.app.vault.getAbstractFileByPath(path);
-      if (createdByOtherCall instanceof import_obsidian4.TFile) {
+      if (createdByOtherCall instanceof import_obsidian5.TFile) {
         return createdByOtherCall;
       }
       throw new Error(`Failed to create tracker note at ${path}`);
@@ -3238,7 +4365,7 @@ ${content}`;
     if (!match) {
       return {};
     }
-    const parsed = (0, import_obsidian4.parseYaml)(match[0].replace(/^---\n|\n---\n?$/g, ""));
+    const parsed = (0, import_obsidian5.parseYaml)(match[0].replace(/^---\n|\n---\n?$/g, ""));
     return parsed != null ? parsed : {};
   }
   extractEntryBody(content) {
@@ -3247,7 +4374,7 @@ ${content}`;
   }
   serializeFrontmatter(frontmatter) {
     return `---
-${(0, import_obsidian4.stringifyYaml)(frontmatter).replace(/\s+$/, "")}
+${(0, import_obsidian5.stringifyYaml)(frontmatter).replace(/\s+$/, "")}
 ---`;
   }
   normalizeDailyFrontmatter(raw, fallbackDate) {
@@ -3351,15 +4478,420 @@ function snapshotArray(value) {
   }).filter((item) => item !== void 0);
 }
 
+// src/myNotesStorage.ts
+var import_obsidian6 = require("obsidian");
+function stripLink(value) {
+  if (typeof value !== "string") {
+    return "";
+  }
+  return value.replace(/^\[\[/, "").replace(/\]\]$/, "").trim();
+}
+function toLink(name) {
+  return `[[${name}]]`;
+}
+var MyNotesStorage = class {
+  constructor(app) {
+    this.app = app;
+  }
+  async ensureCategoriesFile() {
+    const existing = this.app.vault.getAbstractFileByPath(MY_NOTES_CATEGORIES_FILE_PATH);
+    if (existing instanceof import_obsidian6.TFile) {
+      return existing;
+    }
+    await this.ensureFolderExists(MY_NOTES_MAINTENANCE_FOLDER);
+    try {
+      return await this.app.vault.create(MY_NOTES_CATEGORIES_FILE_PATH, "---\ncategories: {}\n---\n# Categories\n");
+    } catch (e) {
+      const createdByOtherCall = this.app.vault.getAbstractFileByPath(MY_NOTES_CATEGORIES_FILE_PATH);
+      if (createdByOtherCall instanceof import_obsidian6.TFile) {
+        return createdByOtherCall;
+      }
+      throw new Error(`Failed to create categories file at ${MY_NOTES_CATEGORIES_FILE_PATH}`);
+    }
+  }
+  async loadCategories() {
+    var _a, _b;
+    const file = await this.ensureCategoriesFile();
+    const raw = (_b = (_a = this.app.metadataCache.getFileCache(file)) == null ? void 0 : _a.frontmatter) == null ? void 0 : _b.categories;
+    const categories = [];
+    if (raw && typeof raw === "object" && !Array.isArray(raw)) {
+      for (const [name, count] of Object.entries(raw)) {
+        categories.push({ name, count: typeof count === "number" && Number.isFinite(count) ? Math.max(0, count) : 0 });
+      }
+    }
+    return categories;
+  }
+  async addCategory(name) {
+    const trimmed = name.trim();
+    if (!trimmed) {
+      return;
+    }
+    const file = await this.ensureCategoriesFile();
+    await this.app.fileManager.processFrontMatter(file, (fm) => {
+      const categories = fm.categories && typeof fm.categories === "object" && !Array.isArray(fm.categories) ? fm.categories : {};
+      if (!(trimmed in categories)) {
+        categories[trimmed] = 0;
+      }
+      fm.categories = categories;
+    });
+  }
+  async adjustCategoryCount(name, delta) {
+    const file = await this.ensureCategoriesFile();
+    await this.app.fileManager.processFrontMatter(file, (fm) => {
+      const categories = fm.categories && typeof fm.categories === "object" && !Array.isArray(fm.categories) ? fm.categories : {};
+      const current = typeof categories[name] === "number" ? categories[name] : 0;
+      categories[name] = Math.max(0, current + delta);
+      fm.categories = categories;
+    });
+  }
+  listNotes() {
+    return this.app.vault.getMarkdownFiles().filter((file) => file.path.startsWith(`${NOTES_FOLDER}/`)).sort((a, b) => a.basename.localeCompare(b.basename));
+  }
+  isNoteFile(file) {
+    return !!file && file.extension === "md" && file.path.startsWith(`${NOTES_FOLDER}/`);
+  }
+  noteExists(name) {
+    const trimmed = this.sanitizeNoteName(name);
+    if (!trimmed) {
+      return false;
+    }
+    return this.app.vault.getAbstractFileByPath(`${NOTES_FOLDER}/${trimmed}.md`) instanceof import_obsidian6.TFile;
+  }
+  async createNote(name) {
+    const trimmed = this.sanitizeNoteName(name);
+    if (!trimmed) {
+      return null;
+    }
+    const path = `${NOTES_FOLDER}/${trimmed}.md`;
+    const existing = this.app.vault.getAbstractFileByPath(path);
+    if (existing instanceof import_obsidian6.TFile) {
+      return existing;
+    }
+    await this.ensureFolderExists(NOTES_FOLDER);
+    return await this.app.vault.create(path, "");
+  }
+  async deleteNote(file) {
+    const categories = this.getNoteCategories(file);
+    await this.app.vault.trash(file, true);
+    for (const category of categories) {
+      await this.adjustCategoryCount(category, -1);
+    }
+  }
+  sanitizeNoteName(name) {
+    return name.trim().replace(/[\\/:*?"<>|#^[\]]/g, "").trim();
+  }
+  getNoteCategories(file) {
+    var _a, _b;
+    const raw = (_b = (_a = this.app.metadataCache.getFileCache(file)) == null ? void 0 : _a.frontmatter) == null ? void 0 : _b.category;
+    if (!Array.isArray(raw)) {
+      return [];
+    }
+    return raw.map(stripLink).filter(Boolean);
+  }
+  async toggleNoteCategory(file, name) {
+    let nowActive = false;
+    await this.app.fileManager.processFrontMatter(file, (fm) => {
+      const current = Array.isArray(fm.category) ? fm.category.map(stripLink).filter(Boolean) : [];
+      if (current.includes(name)) {
+        fm.category = current.filter((entry) => entry !== name).map(toLink);
+        nowActive = false;
+      } else {
+        fm.category = [...current, name].map(toLink);
+        nowActive = true;
+      }
+    });
+    await this.adjustCategoryCount(name, nowActive ? 1 : -1);
+    return nowActive;
+  }
+  isFavourite(file) {
+    var _a, _b;
+    return ((_b = (_a = this.app.metadataCache.getFileCache(file)) == null ? void 0 : _a.frontmatter) == null ? void 0 : _b.favourite) === true;
+  }
+  async toggleFavourite(file) {
+    let nowFavourite = false;
+    await this.app.fileManager.processFrontMatter(file, (fm) => {
+      nowFavourite = fm.favourite !== true;
+      fm.favourite = nowFavourite;
+    });
+    return nowFavourite;
+  }
+  isSupportNote(file) {
+    var _a, _b;
+    return ((_b = (_a = this.app.metadataCache.getFileCache(file)) == null ? void 0 : _a.frontmatter) == null ? void 0 : _b.SupportNote) === true;
+  }
+  async setSupportNote(file, value) {
+    await this.app.fileManager.processFrontMatter(file, (fm) => {
+      fm.SupportNote = value;
+      if (!value) {
+        delete fm.support;
+      }
+    });
+  }
+  getNoteSupports(file) {
+    var _a, _b;
+    const raw = (_b = (_a = this.app.metadataCache.getFileCache(file)) == null ? void 0 : _a.frontmatter) == null ? void 0 : _b.support;
+    if (!Array.isArray(raw)) {
+      return [];
+    }
+    return raw.filter((entry) => typeof entry === "string");
+  }
+  async toggleNoteSupport(file, name) {
+    let nowActive = false;
+    await this.app.fileManager.processFrontMatter(file, (fm) => {
+      const current = Array.isArray(fm.support) ? fm.support.filter((entry) => typeof entry === "string") : [];
+      if (current.includes(name)) {
+        fm.support = current.filter((entry) => entry !== name);
+        nowActive = false;
+      } else {
+        fm.support = [...current, name];
+        nowActive = true;
+      }
+    });
+    return nowActive;
+  }
+  notesInCategory(name) {
+    return this.listNotes().filter((file) => this.getNoteCategories(file).includes(name));
+  }
+  favouriteNotes() {
+    return this.listNotes().filter((file) => this.isFavourite(file));
+  }
+  notesWithSupport(name) {
+    return this.listNotes().filter((file) => this.isSupportNote(file) && this.getNoteSupports(file).includes(name));
+  }
+  async ensureFolderExists(path) {
+    const segments = path.split("/").filter(Boolean);
+    let currentPath = "";
+    for (const segment of segments) {
+      currentPath = currentPath ? `${currentPath}/${segment}` : segment;
+      if (this.app.vault.getAbstractFileByPath(currentPath)) {
+        continue;
+      }
+      try {
+        await this.app.vault.createFolder(currentPath);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        if (message.toLowerCase().includes("already exists") || this.app.vault.getAbstractFileByPath(currentPath)) {
+          continue;
+        }
+        throw error;
+      }
+    }
+  }
+};
+
+// src/noteHeader.ts
+var import_obsidian7 = require("obsidian");
+var NoteHeaderManager = class {
+  constructor(app, myNotesStorage, openHomeView, openMyNotesView) {
+    this.app = app;
+    this.myNotesStorage = myNotesStorage;
+    this.openHomeView = openHomeView;
+    this.openMyNotesView = openMyNotesView;
+  }
+  sync() {
+    for (const leaf of this.app.workspace.getLeavesOfType("markdown")) {
+      const view = leaf.view;
+      if (!(view instanceof import_obsidian7.MarkdownView)) {
+        continue;
+      }
+      const content = view.containerEl.querySelector(".view-content");
+      if (!(content instanceof HTMLElement)) {
+        continue;
+      }
+      const existing = content.querySelector(":scope > .ng-note-header");
+      const file = view.file;
+      if (!file || !this.myNotesStorage.isNoteFile(file)) {
+        existing == null ? void 0 : existing.remove();
+        continue;
+      }
+      if (existing instanceof HTMLElement && existing.getAttribute("data-path") === file.path) {
+        continue;
+      }
+      existing == null ? void 0 : existing.remove();
+      void this.renderHeader(content, leaf, file);
+    }
+  }
+  detachAll() {
+    document.querySelectorAll(".ng-note-header").forEach((el) => el.remove());
+  }
+  async renderHeader(content, leaf, file) {
+    const header = document.createElement("div");
+    header.className = "ng-note-header";
+    header.setAttribute("data-path", file.path);
+    content.prepend(header);
+    const navColumn = header.createDiv({ cls: "ng-note-header-nav" });
+    const homeButton = navColumn.createEl("button", { text: "Home", cls: "ng-journal-nav-button" });
+    homeButton.addEventListener("click", async () => {
+      await this.openHomeView(true, leaf);
+    });
+    header.createDiv({ cls: "ng-note-header-spacer" });
+    const box = header.createDiv({ cls: "ng-note-header-box" });
+    const categoriesHeader = box.createDiv({ cls: "ng-note-header-categories-row" });
+    categoriesHeader.createEl("h4", { text: "Categories", cls: "ng-mynotes-section-title" });
+    const categoriesActions = categoriesHeader.createDiv({ cls: "ng-note-header-categories-actions" });
+    const addButton = categoriesActions.createEl("button", { cls: "ng-note-header-add-category-icon" });
+    addButton.setAttribute("aria-label", "Add Category");
+    addButton.setAttribute("title", "Add Category");
+    const favouriteButton = categoriesActions.createEl("button", { cls: "ng-note-header-fav" });
+    favouriteButton.setAttribute("aria-label", "Favourite");
+    favouriteButton.setAttribute("title", "Favourite");
+    (0, import_obsidian7.setIcon)(favouriteButton, "heart");
+    favouriteButton.toggleClass("is-favourite", this.myNotesStorage.isFavourite(file));
+    favouriteButton.addEventListener("click", async () => {
+      const nowFavourite = await this.myNotesStorage.toggleFavourite(file);
+      favouriteButton.toggleClass("is-favourite", nowFavourite);
+      favouriteButton.removeClass("ng-heart-pop");
+      void favouriteButton.offsetWidth;
+      favouriteButton.addClass("ng-heart-pop");
+    });
+    const addRow = box.createDiv({ cls: "ng-note-header-add-row" });
+    addRow.hide();
+    const addInput = addRow.createEl("input", { type: "text", placeholder: "Category name..." });
+    addInput.addClass("ng-task-input");
+    const updateAddButton = () => {
+      const open = addRow.isShown();
+      const hasText = addInput.value.trim().length > 0;
+      addButton.toggleClass("has-input", open && hasText);
+      if (!open) {
+        addButton.setText("+");
+      } else if (hasText) {
+        addButton.setText("\u2713");
+      } else {
+        addButton.setText("-");
+      }
+    };
+    updateAddButton();
+    addInput.addEventListener("input", updateAddButton);
+    addButton.addEventListener("click", () => {
+      if (!addRow.isShown()) {
+        addRow.show();
+        addInput.focus();
+        updateAddButton();
+        return;
+      }
+      if (addInput.value.trim().length > 0) {
+        void submitNewCategory();
+      } else {
+        addRow.hide();
+        updateAddButton();
+      }
+    });
+    const pillRow = box.createDiv({ cls: "ng-mynotes-pill-row" });
+    await this.renderCategoryPills(pillRow, file);
+    const submitNewCategory = async () => {
+      const name = addInput.value.trim();
+      if (!name) {
+        return;
+      }
+      await this.myNotesStorage.addCategory(name);
+      const active = this.myNotesStorage.getNoteCategories(file);
+      if (!active.includes(name)) {
+        await this.myNotesStorage.toggleNoteCategory(file, name);
+      }
+      addInput.value = "";
+      addRow.hide();
+      updateAddButton();
+      await this.renderCategoryPills(pillRow, file, name);
+    };
+    addInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        void submitNewCategory();
+      }
+    });
+    const supportSection = box.createDiv({ cls: "ng-note-header-support" });
+    const supportToggle = supportSection.createDiv({ cls: "ng-note-header-support-label" });
+    supportToggle.setText("Support Note");
+    supportToggle.setAttribute("role", "button");
+    supportToggle.setAttribute("tabindex", "0");
+    supportSection.createDiv({
+      cls: "ng-note-header-support-hint",
+      text: "Press the above Support note to show support categories"
+    });
+    let supportActive = this.myNotesStorage.isSupportNote(file);
+    supportToggle.toggleClass("is-active", supportActive);
+    const supportHint = supportSection.querySelector(".ng-note-header-support-hint");
+    if (supportHint instanceof HTMLElement) {
+      supportHint.toggleClass("is-hidden", supportActive);
+    }
+    const supportPillRow = supportSection.createDiv({ cls: "ng-mynotes-pill-row" });
+    const renderSupportPills = () => {
+      supportPillRow.empty();
+      const active = this.myNotesStorage.getNoteSupports(file);
+      for (const support of SUPPORT_CATEGORIES) {
+        const pill = supportPillRow.createEl("button", { cls: "ng-mynotes-pill ng-mynotes-support-pill" });
+        pill.createSpan({ text: support.name });
+        pill.style.setProperty("--ng-support-color", support.color);
+        pill.toggleClass("is-active", active.includes(support.name));
+        pill.addEventListener("click", async () => {
+          const nowActive = await this.myNotesStorage.toggleNoteSupport(file, support.name);
+          pill.toggleClass("is-active", nowActive);
+        });
+      }
+    };
+    if (supportActive) {
+      renderSupportPills();
+    } else {
+      supportPillRow.hide();
+    }
+    const toggleSupport = async () => {
+      supportActive = !supportActive;
+      supportToggle.toggleClass("is-active", supportActive);
+      if (supportHint instanceof HTMLElement) {
+        supportHint.toggleClass("is-hidden", supportActive);
+      }
+      await this.myNotesStorage.setSupportNote(file, supportActive);
+      if (supportActive) {
+        renderSupportPills();
+        supportPillRow.show();
+      } else {
+        supportPillRow.hide();
+      }
+    };
+    supportToggle.addEventListener("click", () => {
+      void toggleSupport();
+    });
+    supportToggle.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        void toggleSupport();
+      }
+    });
+  }
+  async renderCategoryPills(pillRow, file, ensureCategory) {
+    pillRow.empty();
+    const categories = await this.myNotesStorage.loadCategories();
+    if (ensureCategory && !categories.some((category) => category.name === ensureCategory)) {
+      categories.push({ name: ensureCategory, count: 1 });
+    }
+    const active = this.myNotesStorage.getNoteCategories(file);
+    if (ensureCategory && !active.includes(ensureCategory)) {
+      active.push(ensureCategory);
+    }
+    if (categories.length === 0) {
+      pillRow.createDiv({ cls: "ng-empty", text: "No categories yet." });
+      return;
+    }
+    for (const category of categories) {
+      const pill = pillRow.createEl("button", { cls: "ng-mynotes-pill ng-note-header-category-pill" });
+      pill.createSpan({ text: category.name });
+      pill.toggleClass("is-active", active.includes(category.name));
+      pill.addEventListener("click", async () => {
+        const nowActive = await this.myNotesStorage.toggleNoteCategory(file, category.name);
+        pill.toggleClass("is-active", nowActive);
+      });
+    }
+  }
+};
+
 // src/storage.ts
-var import_obsidian5 = require("obsidian");
+var import_obsidian8 = require("obsidian");
 var TaskManagerStorage = class {
   constructor(app) {
     this.app = app;
   }
   async ensureTaskManagerFile() {
     const existing = this.app.vault.getAbstractFileByPath(TASK_MANAGER_FILE_PATH);
-    if (existing instanceof import_obsidian5.TFile) {
+    if (existing instanceof import_obsidian8.TFile) {
       return existing;
     }
     const folderPath = TASK_MANAGER_FILE_PATH.split("/").slice(0, -1).join("/");
@@ -3373,7 +4905,7 @@ var TaskManagerStorage = class {
       return await this.app.vault.create(TASK_MANAGER_FILE_PATH, fileContent);
     } catch (e) {
       const createdByOtherCall = this.app.vault.getAbstractFileByPath(TASK_MANAGER_FILE_PATH);
-      if (createdByOtherCall instanceof import_obsidian5.TFile) {
+      if (createdByOtherCall instanceof import_obsidian8.TFile) {
         return createdByOtherCall;
       }
       throw new Error(`Failed to create task manager file at ${TASK_MANAGER_FILE_PATH}`);
@@ -3431,10 +4963,10 @@ ${content}`;
     if (!match) {
       return {};
     }
-    return (_a = (0, import_obsidian5.parseYaml)(match[1])) != null ? _a : {};
+    return (_a = (0, import_obsidian8.parseYaml)(match[1])) != null ? _a : {};
   }
   serializeFrontmatter(state) {
-    const yaml = (0, import_obsidian5.stringifyYaml)(state).replace(/\s+$/, "");
+    const yaml = (0, import_obsidian8.stringifyYaml)(state).replace(/\s+$/, "");
     return `---
 ${yaml}
 ---`;
@@ -3442,15 +4974,44 @@ ${yaml}
 };
 
 // src/plugin.ts
-var NeuralGardenPlugin = class extends import_obsidian6.Plugin {
+var NeuralGardenPlugin = class extends import_obsidian9.Plugin {
+  constructor() {
+    super(...arguments);
+    this.openHomeView = async (makeActive, targetLeaf) => {
+      const leaf = targetLeaf != null ? targetLeaf : this.app.workspace.getLeaf(true);
+      await leaf.setViewState({ type: VIEW_TYPE_NEURAL_GARDEN_HOME, active: makeActive });
+      if (makeActive) {
+        this.app.workspace.revealLeaf(leaf);
+      }
+    };
+    this.openMyNotesView = async (makeActive, targetLeaf) => {
+      const leaf = targetLeaf != null ? targetLeaf : this.app.workspace.getLeaf(true);
+      await leaf.setViewState({ type: VIEW_TYPE_NEURAL_GARDEN_MY_NOTES, active: makeActive });
+      if (makeActive) {
+        this.app.workspace.revealLeaf(leaf);
+      }
+    };
+  }
   async onload() {
     this.storage = new TaskManagerStorage(this.app);
     this.journalingStorage = new JournalingStorage(this.app);
+    this.myNotesStorage = new MyNotesStorage(this.app);
+    this.hidePropertiesInDocument();
+    this.noteHeaderManager = new NoteHeaderManager(
+      this.app,
+      this.myNotesStorage,
+      this.openHomeView,
+      this.openMyNotesView
+    );
     await this.storage.ensureNotesFolder();
     await this.journalingStorage.ensureJournalFolders();
     this.registerView(
       VIEW_TYPE_NEURAL_GARDEN_HOME,
-      (leaf) => new NeuralGardenHomeView(leaf, this.storage, this.openJournalingView)
+      (leaf) => new NeuralGardenHomeView(leaf, this.storage, this.openJournalingView, this.openMyNotesView)
+    );
+    this.registerView(
+      VIEW_TYPE_NEURAL_GARDEN_MY_NOTES,
+      (leaf) => new NeuralGardenMyNotesView(leaf, this.myNotesStorage, this.openHomeView)
     );
     this.registerView(
       VIEW_TYPE_NEURAL_GARDEN_JOURNALING,
@@ -3474,6 +5035,13 @@ var NeuralGardenPlugin = class extends import_obsidian6.Plugin {
         await this.openJournalingView(true);
       }
     });
+    this.addCommand({
+      id: "open-neural-garden-my-notes",
+      name: "Open Neural Garden MyNotes",
+      callback: async () => {
+        await this.openMyNotesView(true);
+      }
+    });
     this.addRibbonIcon("sparkles", "Open Neural Garden Home", async () => {
       await this.openHomeView(true);
     });
@@ -3490,23 +5058,38 @@ var NeuralGardenPlugin = class extends import_obsidian6.Plugin {
         }
       })
     );
+    this.registerEvent(
+      this.app.workspace.on("layout-change", () => {
+        this.noteHeaderManager.sync();
+      })
+    );
+    this.registerEvent(
+      this.app.workspace.on("file-open", () => {
+        this.noteHeaderManager.sync();
+      })
+    );
+    this.app.workspace.onLayoutReady(() => {
+      this.noteHeaderManager.sync();
+    });
   }
   onunload() {
+    this.noteHeaderManager.detachAll();
     this.app.workspace.detachLeavesOfType(VIEW_TYPE_NEURAL_GARDEN_HOME);
     this.app.workspace.detachLeavesOfType(VIEW_TYPE_NEURAL_GARDEN_JOURNALING);
     this.app.workspace.detachLeavesOfType(VIEW_TYPE_NEURAL_GARDEN_JOURNAL_ENTRY);
+    this.app.workspace.detachLeavesOfType(VIEW_TYPE_NEURAL_GARDEN_MY_NOTES);
+  }
+  hidePropertiesInDocument() {
+    var _a, _b;
+    const vault = this.app.vault;
+    if (((_a = vault.getConfig) == null ? void 0 : _a.call(vault, "propertiesInDocument")) !== "hidden") {
+      (_b = vault.setConfig) == null ? void 0 : _b.call(vault, "propertiesInDocument", "hidden");
+    }
   }
   async openHomeOnStartup() {
     var _a;
     const targetLeaf = (_a = this.app.workspace.getMostRecentLeaf()) != null ? _a : this.app.workspace.getLeaf(true);
     await this.openHomeView(true, targetLeaf);
-  }
-  async openHomeView(makeActive, targetLeaf) {
-    const leaf = targetLeaf != null ? targetLeaf : this.app.workspace.getLeaf(true);
-    await leaf.setViewState({ type: VIEW_TYPE_NEURAL_GARDEN_HOME, active: makeActive });
-    if (makeActive) {
-      this.app.workspace.revealLeaf(leaf);
-    }
   }
   async openJournalingView(makeActive, targetLeaf) {
     const leaf = targetLeaf != null ? targetLeaf : this.app.workspace.getLeaf(true);

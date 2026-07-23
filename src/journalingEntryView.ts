@@ -4,7 +4,7 @@ import { JournalingStorage } from "./journalingStorage";
 import { injectNeuralGardenStyles } from "./styles";
 import { TaskManagerStorage } from "./storage";
 import { effortColor, effortLabel } from "./taskState";
-import { EffortKey, JournalEntryFrontmatter, JournalEntryRecord } from "./types";
+import { EffortKey, JournalEntryFrontmatter, JournalEntryRecord, JournalTrackerRecord } from "./types";
 
 type MetricKey =
   | "mood"
@@ -60,6 +60,7 @@ const MAX_EMOTIONS = 7;
 export class NeuralGardenJournalEntryView extends ItemView {
   private entry: JournalEntryRecord | null = null;
   private editable = false;
+  private trackers: JournalTrackerRecord[] = [];
   private liveTaskSnapshots: {
     completed: Array<{ taskName: string; effort: EffortKey; energy: number }>;
     uncompleted: Array<{ taskName: string; effort: EffortKey; energy: number }>;
@@ -102,6 +103,7 @@ export class NeuralGardenJournalEntryView extends ItemView {
   async openForDate(dateKey: string, editable: boolean): Promise<void> {
     this.editable = editable && isEditableJournalDate(dateKey);
     this.entry = (await this.journalingStorage.readDailyEntryByDate(dateKey)) ?? (await this.createDraftEntry(dateKey));
+    this.trackers = await this.journalingStorage.listTrackers();
     if (this.editable) {
       const taskState = await this.taskStorage.loadTaskManagerState();
       this.liveTaskSnapshots = {
@@ -210,8 +212,51 @@ export class NeuralGardenJournalEntryView extends ItemView {
 
     this.renderMetrics(wrapper);
     this.renderEmotions(wrapper);
+    this.renderTrackerSection(wrapper);
     this.renderTasks(wrapper);
     this.renderEntryBody(wrapper);
+  }
+
+  private renderTrackerSection(parent: HTMLElement): void {
+    if (!this.entry) {
+      return;
+    }
+    const block = parent.createDiv({ cls: "ng-journal-tracker-block" });
+    block.createEl("h4", { text: "Tracker" });
+    if (this.trackers.length === 0) {
+      block.createDiv({ cls: "ng-empty", text: "No trackers yet." });
+      return;
+    }
+    const dateKey = this.entry.frontmatter.date;
+    const chips = block.createDiv({ cls: "ng-journal-tracker-chips" });
+    for (const tracker of this.trackers) {
+      const isTracked = tracker.dates.includes(dateKey);
+      const chip = chips.createDiv({ cls: "ng-journal-tracker-chip" });
+      chip.style.setProperty("--ng-tracker-color", tracker.color);
+      chip.createSpan({ text: tracker.name });
+      chip.toggleClass("is-active", isTracked);
+      if (!this.editable) {
+        continue;
+      }
+      chip.addClass("is-clickable");
+      chip.setAttribute("role", "button");
+      chip.setAttribute("tabindex", "0");
+      chip.setAttribute("aria-pressed", String(isTracked));
+      const toggle = async () => {
+        const next = await this.journalingStorage.toggleTrackerDate(tracker, dateKey);
+        this.trackers = this.trackers.map((candidate) => (candidate.file.path === next.file.path ? next : candidate));
+        this.render();
+      };
+      chip.addEventListener("click", () => {
+        void toggle();
+      });
+      chip.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          void toggle();
+        }
+      });
+    }
   }
 
   private makeNavButton(label: string, onClick: () => Promise<void>): HTMLButtonElement {

@@ -36,6 +36,7 @@ export class NeuralGardenHomeView extends ItemView {
     leaf: WorkspaceLeaf,
     private readonly storage: TaskManagerStorage,
     private readonly openJournalingView: (makeActive: boolean, targetLeaf?: WorkspaceLeaf) => Promise<void>,
+    private readonly openMyNotesView: (makeActive: boolean, targetLeaf?: WorkspaceLeaf) => Promise<void>,
   ) {
     super(leaf);
   }
@@ -105,8 +106,8 @@ export class NeuralGardenHomeView extends ItemView {
     });
     categoryGrid.appendChild(journalButton);
 
-    const notesButton = this.makeCategoryButton("My Notes", "folder", () => {
-      new Notice("My Notes interface placeholder");
+    const notesButton = this.makeCategoryButton("MyNotes", "folder", () => {
+      void this.openMyNotesView(true, this.leaf);
     });
     categoryGrid.appendChild(notesButton);
 

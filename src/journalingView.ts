@@ -61,7 +61,15 @@ const UNPLEASANT_EMOTIONS = [
   "Discouraged",
   "Tense",
 ];
-const TRACKER_DAYS = 21;
+const TRACKER_DAYS = 15;
+const TRACKER_COLORS = [
+  { name: "Green", value: "#39E05A" },
+  { name: "Cyan", value: "#00F0FF" },
+  { name: "Blue", value: "#5B8CFF" },
+  { name: "Purple", value: "#A78BFA" },
+  { name: "Orange", value: "#EC9A63" },
+  { name: "Red", value: "#FF6565" },
+];
 
 export class NeuralGardenJournalingView extends ItemView {
   private calendarMonth = startOfMonth(new Date());
@@ -171,8 +179,7 @@ export class NeuralGardenJournalingView extends ItemView {
       }
       event.preventDefault();
       const delta = event.key === "ArrowLeft" || event.key === "ArrowUp" ? -1 : 1;
-      this.calendarMonth = addMonths(this.calendarMonth, delta);
-      this.render();
+      this.shiftCalendarMonth(delta);
     });
 
     const nextMonthButton = monthControls.createEl("button", { text: "-->" });
@@ -280,8 +287,24 @@ export class NeuralGardenJournalingView extends ItemView {
     card.createEl("h4", { cls: "ng-journal-preview-summary", text: "Summary" });
     this.renderMetrics(card, entry.frontmatter);
     this.renderEmotionList(card, entry.frontmatter.emotions, true);
+    this.renderTrackedTrackers(card, entry.frontmatter.date);
     this.renderTaskSnapshots(card, entry.frontmatter);
     this.renderBody(card, entry.body);
+  }
+
+  private renderTrackedTrackers(container: HTMLElement, dateKey: string): void {
+    const tracked = this.trackers.filter((tracker) => tracker.dates.includes(dateKey));
+    if (tracked.length === 0) {
+      return;
+    }
+    const block = container.createDiv({ cls: "ng-journal-tracker-block" });
+    block.createEl("h4", { text: "Tracker" });
+    const chips = block.createDiv({ cls: "ng-journal-tracker-chips" });
+    for (const tracker of tracked) {
+      const chip = chips.createDiv({ cls: "ng-journal-tracker-chip ng-journal-tracker-chip-preview" });
+      chip.style.setProperty("--ng-tracker-color", normalizeHexColor(tracker.color));
+      chip.createSpan({ text: tracker.name });
+    }
   }
 
   private renderMetrics(container: HTMLElement, frontmatter: JournalEntryFrontmatter): void {
@@ -364,25 +387,52 @@ export class NeuralGardenJournalingView extends ItemView {
 
   private renderTrackers(container: HTMLElement): void {
     const section = container.createDiv({ cls: "ng-journal-trackers" });
-    section.createEl("h3", { text: "Trackers" });
+    const head = section.createDiv({ cls: "ng-journal-tracker-head" });
+    head.createEl("h3", { text: "Tracker" });
+    const addButton = head.createEl("button", { text: "Add Tracker", cls: "ng-journal-tracker-add-toggle" });
+    addButton.setAttribute("aria-label", "Add Tracker");
 
-    const createRow = section.createDiv({ cls: "ng-journal-tracker-create-row" });
-    const nameInput = createRow.createEl("input", { type: "text", placeholder: "Tracker name" });
-    nameInput.classList.add("ng-journal-tracker-name");
-    const colorInput = createRow.createEl("input", { type: "color" });
-    colorInput.value = "#EC9A63";
-    const addButton = createRow.createEl("button", { text: "+" });
-    addButton.classList.add("ng-journal-tracker-add");
-    addButton.addEventListener("click", async () => {
+    const addRow = section.createDiv({ cls: "ng-note-header-add-row ng-journal-tracker-add-row" });
+    addRow.hide();
+    const nameInput = addRow.createEl("input", { type: "text", placeholder: "Tracker name..." });
+    nameInput.addClass("ng-task-input");
+    const colorRow = addRow.createDiv({ cls: "ng-journal-tracker-color-row" });
+    const submitTracker = async (color: string) => {
       const trackerName = nameInput.value.trim();
       if (!trackerName) {
-        new Notice("Please enter a tracker name first.");
+        nameInput.focus();
         return;
       }
-      await this.journalingStorage.upsertTracker(trackerName, colorInput.value);
+      await this.journalingStorage.upsertTracker(trackerName, color);
       nameInput.value = "";
+      addRow.hide();
       await this.reloadState();
       this.render();
+    };
+    for (const color of TRACKER_COLORS) {
+      const dot = colorRow.createDiv({ cls: "ng-journal-tracker-color-option" });
+      dot.style.backgroundColor = color.value;
+      dot.setAttribute("role", "button");
+      dot.setAttribute("tabindex", "0");
+      dot.setAttribute("aria-label", `Create tracker with ${color.name} color`);
+      dot.title = color.name;
+      dot.addEventListener("click", () => {
+        void submitTracker(color.value);
+      });
+      dot.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          void submitTracker(color.value);
+        }
+      });
+    }
+    addButton.addEventListener("click", () => {
+      if (addRow.isShown()) {
+        addRow.hide();
+        return;
+      }
+      addRow.show();
+      nameInput.focus();
     });
 
     const list = section.createDiv({ cls: "ng-journal-tracker-list" });
@@ -392,53 +442,88 @@ export class NeuralGardenJournalingView extends ItemView {
     }
 
     const visibleDates = buildTrackerWindow(TRACKER_DAYS);
+    const columns = `repeat(${visibleDates.length}, minmax(0, 1fr))`;
     const header = list.createDiv({ cls: "ng-journal-tracker-header ng-journal-tracker-row" });
     header.createDiv({ cls: "ng-journal-tracker-label ng-journal-tracker-label-empty" });
     const headerCells = header.createDiv({ cls: "ng-journal-tracker-cells" });
+    headerCells.style.gridTemplateColumns = columns;
     for (const date of visibleDates) {
       const cell = headerCells.createDiv({ cls: "ng-journal-tracker-header-cell" });
-      cell.createDiv({ cls: "ng-journal-tracker-day", text: String(date.day) });
+      cell.createSpan({ cls: "ng-journal-tracker-day", text: String(date.day) });
       if (date.dateKey === todayKey()) {
         cell.addClass("is-today");
       }
     }
 
     for (const tracker of this.trackers) {
+      const trackerColor = normalizeHexColor(tracker.color);
       const row = list.createDiv({ cls: "ng-journal-tracker-row" });
-      const label = row.createDiv({ cls: "ng-journal-tracker-label", text: tracker.name });
-      label.style.borderColor = tracker.color;
+      row.style.setProperty("--ng-tracker-color", trackerColor);
+      row.style.setProperty("--ng-tracker-streak-color", chooseReadableTextColor(trackerColor));
+      const label = row.createDiv({ cls: "ng-journal-tracker-label" });
       label.title = tracker.file.path;
+      const swatch = label.createSpan({ cls: "ng-journal-tracker-color-chip" });
+      swatch.style.backgroundColor = trackerColor;
+      swatch.setAttribute("role", "button");
+      swatch.setAttribute("tabindex", "0");
+      swatch.setAttribute("aria-label", `Change color of ${tracker.name}`);
+      swatch.title = "Change bubble color";
+      const hiddenColor = label.createEl("input", { type: "color" });
+      hiddenColor.addClass("ng-journal-tracker-color-hidden");
+      hiddenColor.value = trackerColor;
+      hiddenColor.tabIndex = -1;
+      hiddenColor.setAttribute("aria-hidden", "true");
+      hiddenColor.addEventListener("change", async () => {
+        await this.journalingStorage.upsertTracker(tracker.name, hiddenColor.value);
+        await this.reloadState();
+        this.render();
+      });
+      swatch.addEventListener("click", () => {
+        hiddenColor.click();
+      });
+      label.createSpan({ cls: "ng-journal-tracker-title", text: tracker.name });
+
       const cells = row.createDiv({ cls: "ng-journal-tracker-cells" });
+      cells.style.gridTemplateColumns = columns;
       for (let index = 0; index < visibleDates.length; index += 1) {
         const cellDate = visibleDates[index];
         const isTracked = tracker.dates.includes(cellDate.dateKey);
         const hasPrev = index > 0 && tracker.dates.includes(visibleDates[index - 1].dateKey);
         const hasNext = index < visibleDates.length - 1 && tracker.dates.includes(visibleDates[index + 1].dateKey);
-        const cell = cells.createEl("button");
-        cell.addClass("ng-journal-tracker-cell");
+        const cell = cells.createDiv({ cls: "ng-journal-tracker-cell" });
+        cell.setAttribute("role", "button");
+        cell.setAttribute("tabindex", "0");
+        cell.setAttribute("aria-pressed", String(isTracked));
+        cell.setAttribute("aria-label", `${tracker.name}, ${cellDate.dateKey}${isTracked ? ", tracked" : ""}`);
+        if (cellDate.dateKey === todayKey()) {
+          cell.addClass("is-today");
+        }
         if (isTracked) {
           cell.addClass("is-active");
-          cell.style.borderColor = tracker.color;
-          cell.style.backgroundColor = `${tracker.color}22`;
-          if (!hasPrev) {
-            cell.addClass("is-streak-start");
+          if (hasPrev) {
+            cell.addClass("has-prev");
           }
-          if (!hasNext) {
-            cell.addClass("is-streak-end");
-          }
-          if (hasPrev && hasNext) {
-            cell.addClass("is-streak-mid");
+          if (hasNext) {
+            cell.addClass("has-next");
           }
         }
-        cell.createDiv({ cls: "ng-journal-tracker-day", text: String(cellDate.day) });
-        const streak = streakEndingAt(tracker.dates, cellDate.dateKey);
-        if (streak > 1) {
-          cell.createDiv({ cls: "ng-journal-tracker-streak", text: String(streak) });
+        cell.createSpan({ cls: "ng-journal-tracker-dot" });
+        if (isTracked && !hasNext) {
+          const streak = streakEndingAt(tracker.dates, cellDate.dateKey);
+          if (streak > 1) {
+            cell.createSpan({ cls: "ng-journal-tracker-streak", text: String(streak) });
+          }
         }
         cell.addEventListener("click", async () => {
           const next = await this.journalingStorage.toggleTrackerDate(tracker, cellDate.dateKey);
           this.trackers = this.trackers.map((candidate) => (candidate.file.path === next.file.path ? next : candidate));
           this.render();
+        });
+        cell.addEventListener("keydown", (event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            cell.click();
+          }
         });
       }
     }
@@ -588,6 +673,49 @@ function buildTrackerWindow(days: number): Array<{ dateKey: string; day: number 
     cells.push({ dateKey: formatDateKey(date), day: date.getDate() });
   }
   return cells;
+}
+
+function normalizeHexColor(color: string): string {
+  return /^#[0-9a-fA-F]{6}$/.test(color) ? color : "#EC9A63";
+}
+
+function chooseReadableTextColor(backgroundHex: string): string {
+  const rgb = parseHexColor(backgroundHex);
+  if (!rgb) {
+    return "#ffffff";
+  }
+  const whiteContrast = contrastRatio(rgb, { r: 255, g: 255, b: 255 });
+  const blackContrast = contrastRatio(rgb, { r: 0, g: 0, b: 0 });
+  return whiteContrast >= blackContrast ? "#ffffff" : "#000000";
+}
+
+function parseHexColor(hex: string): { r: number; g: number; b: number } | null {
+  const match = hex.trim().match(/^#([0-9a-fA-F]{6})$/);
+  if (!match) {
+    return null;
+  }
+  const value = match[1];
+  return {
+    r: Number.parseInt(value.slice(0, 2), 16),
+    g: Number.parseInt(value.slice(2, 4), 16),
+    b: Number.parseInt(value.slice(4, 6), 16),
+  };
+}
+
+function contrastRatio(left: { r: number; g: number; b: number }, right: { r: number; g: number; b: number }): number {
+  const l1 = relativeLuminance(left);
+  const l2 = relativeLuminance(right);
+  const lighter = Math.max(l1, l2);
+  const darker = Math.min(l1, l2);
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
+function relativeLuminance(color: { r: number; g: number; b: number }): number {
+  const [r, g, b] = [color.r, color.g, color.b].map((channel) => {
+    const normalized = channel / 255;
+    return normalized <= 0.03928 ? normalized / 12.92 : ((normalized + 0.055) / 1.055) ** 2.4;
+  });
+  return (0.2126 * r) + (0.7152 * g) + (0.0722 * b);
 }
 
 function streakEndingAt(dates: string[], dateKey: string): number {

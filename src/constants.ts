@@ -3,13 +3,27 @@ import { EffortDefinition, EffortKey, TaskManagerState } from "./types";
 export const VIEW_TYPE_NEURAL_GARDEN_HOME = "neural-garden-home";
 export const VIEW_TYPE_NEURAL_GARDEN_JOURNALING = "neural-garden-journaling";
 export const VIEW_TYPE_NEURAL_GARDEN_JOURNAL_ENTRY = "neural-garden-journal-entry";
+export const VIEW_TYPE_NEURAL_GARDEN_MY_NOTES = "neural-garden-my-notes";
 export const TASK_MANAGER_FILE_PATH = "Maintenance/TaskManager/TaskManager.md";
 export const JOURNAL_DAILY_FOLDER = "Journal/Daily";
 export const JOURNAL_WEEKLY_FOLDER = "Journal/Weekly";
 export const JOURNAL_MONTHLY_FOLDER = "Journal/Monthly";
 export const TRACKER_FOLDER = "Maintenance/Tracker";
 export const NOTES_FOLDER = "Notes";
+export const MY_NOTES_MAINTENANCE_FOLDER = "Maintenance/MyNotes";
+export const MY_NOTES_CATEGORIES_FILE_PATH = "Maintenance/MyNotes/Categories.md";
 export const WEEKLY_RECAP_MIN_ENTRIES = 7;
+
+export const SUPPORT_CATEGORIES: { name: string; color: string }[] = [
+  { name: "Mood", color: "#39E05A" },
+  { name: "Sleep", color: "#3FD6FF" },
+  { name: "Regulation", color: "#A66BFF" },
+  { name: "Stress", color: "#F0A04C" },
+  { name: "Anxiety", color: "#FF6565" },
+  { name: "Exhaustion", color: "#3B82F6" },
+  { name: "Sensory Load", color: "#F5D742" },
+  { name: "Social Load", color: "#EC407A" },
+];
 
 export const EFFORTS: EffortDefinition[] = [
   { key: "easy-peasy", label: "Light", energy: 5, color: "#3FD6FF" },
