@@ -10,7 +10,7 @@ At first, Obsidian felt powerful but overwhelming. Too many possible workflows, 
 
 The first journal entries and mechanics were clunky and ran entirely by hand. I read through every journal entry, looked at the connected tags, and wrote summaries myself, always searching for a better way. Over the span of a few months it slowly became more pleasant to look at, but it still remained fully manual.
 
-In the past weeks and months, Neural Garden has moved toward a simpler interface with graphical inputs for specific actions. I experimented with sliders that wrote directly into a note's frontmatter, so the values could actually be stored, read, and processed later. At some point, the Home view became a pathway that led me through Obsidian. Still, some navigation chains stayed long, and things like starting a new topic felt tedious — sometimes it meant rebuilding parts of the notebook from scratch.
+In the past weeks and months, Neural Garden has moved toward a simpler interface with graphical inputs for specific actions. I experimented with sliders that wrote directly into a note's frontmatter, so the values could actually be stored, read, and processed later. At some point, the Home view became a pathway that led me through Obsidian. Still, some navigation chains stayed long, and things like starting a new topic felt tedious - sometimes it meant rebuilding parts of the notebook from scratch.
 
 ## From overload to structure
 
@@ -20,7 +20,7 @@ Journaling started in a strange way. I tried to use Obsidian's built-in features
 
 Journaling was the first real foundation of this journey. The notes I created along the way accompanied the whole process. Over the past months I focused heavily on self-reflection and wrote hundreds of notes about mental health, psychology, and related topics. Working on the notebook and its concept went hand in hand with working on myself. But I also spent an enormous amount of time doing it.
 
-Now that time is tighter and life circumstances have changed, the whole system needed to be reshaped: capture the current state quickly and reliably, and let supporting measures trigger based on the values that come in. Fast input in the present, useful processing in the background. Parts of that automation are still in progress, but the direction is clear — future feedback loops should adapt to behavior over time, including how the Task Manager responds.
+Now that time is tighter and life circumstances have changed, the whole system needed to be reshaped: capture the current state quickly and reliably, and let supporting measures trigger based on the values that come in. Fast input in the present, useful processing in the background. Parts of that automation are still in progress, but the direction is clear - future feedback loops should adapt to behavior over time, including how the Task Manager responds.
 
 The Task Manager grew out of one of my biggest problems: exhaustion and overload. It treats tasks as energy-bearing actions instead of plain checkboxes, tracks the day's total load, and steps in with forced breaks when strain runs too high. The exact calculation stays out of the way; what matters is that the system helps prevent another long overpush cycle.
 
@@ -30,7 +30,7 @@ The Task Manager grew out of one of my biggest problems: exhaustion and overload
 
 The journaling flow is split into a Hub and an Entry view.
 
-The Hub is calendar-based and built for quick navigation: browse entries by day, preview a selected day, and open full entries. It supports current-day writing and yesterday backfill (for writing after midnight). The week starts on Monday, and week numbers sit on the left side of the calendar. The day preview shows the entry's summary — metrics, emotions, tasks — and also lists which trackers were logged on that day.
+The Hub is calendar-based and built for quick navigation: browse entries by day, preview a selected day, and open full entries. It supports current-day writing and yesterday backfill (for writing after midnight). The week starts on Monday, and week numbers sit on the left side of the calendar. The day preview shows the entry's summary - metrics, emotions, tasks - and also lists which trackers were logged on that day.
 
 The Entry view is where the daily reflection happens. It includes symptom and state progress bars, emotion selection, a short note field, a compact tracker section, task snapshots, and free-form writing. The goal is to collect what matters quickly, without forcing a long manual process.
 
@@ -38,9 +38,9 @@ The Entry view is where the daily reflection happens. It includes symptom and st
 
 The Journal Hub contains a tracker section inspired by minimalist habit trackers, rebuilt to fit Neural Garden.
 
-Each tracker is a note in the vault, and each tracked day is a colored dot on a rolling window of recent days. Consecutive days connect into a streak line, with the current streak count shown inside the last dot — the text color adjusts automatically so it stays readable on any tracker color.
+Each tracker is a note in the vault, and each tracked day is a colored dot on a rolling window of recent days. Consecutive days connect into a streak line, with the current streak count shown inside the last dot - the text color adjusts automatically so it stays readable on any tracker color.
 
-Creating a tracker happens directly in the interface: open the create row, type a name, and pick one of the preset colors — the tracker is created the moment you click a color. The color of an existing tracker can be changed anytime through the small color dot next to its name.
+Creating a tracker happens directly in the interface: open the create row, type a name, and pick one of the preset colors - the tracker is created the moment you click a color. The color of an existing tracker can be changed anytime through the small color dot next to its name.
 
 A minimal version of the tracker also lives inside the Journal Entry view, so logging something for the day (a symptom, a habit, an event) is one click away while journaling. Past entries show which trackers were active that day without allowing changes.
 
@@ -60,7 +60,7 @@ MyNotes is the note management layer of Neural Garden.
 
 It brings all personal notes into one view, organized by categories and a set of colored support categories (like Mood or Anxiety) that mark what a note helps with. Notes can be favourited with a heart, searched directly, created and deleted from the same screen, and uncategorized notes stay tucked away in a collapsible section until needed.
 
-Every note in the Notes folder also gets a header injected at the top of the note itself. From there you can favourite the note, assign or create categories on the spot, and mark it as a Support Note — all without leaving the note. The header ends in a simple divider line, keeping the note itself clean.
+Every note in the Notes folder also gets a header injected at the top of the note itself. From there you can favourite the note, assign or create categories on the spot, and mark it as a Support Note - all without leaving the note. The header ends in a simple divider line, keeping the note itself clean.
 
 ### Home view
 
