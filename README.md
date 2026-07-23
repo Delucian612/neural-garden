@@ -78,4 +78,4 @@ Neural Garden is still evolving, but always toward the same promise: fewer decis
 
 ## Ending sentence
 
-This plugin exists because I exist, and I needed support in parts of my life. Realizing that this technology could help, I became determined to build what supports me — and maybe, over time, supports others too.
+This plugin exists because I exist, and I needed support in parts of my life. Realizing that this technology could help, I became determined to build what supports me - and maybe, over time, supports others too.
