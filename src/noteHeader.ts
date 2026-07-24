@@ -67,6 +67,11 @@ export class NoteHeaderManager {
     const addButton = categoriesActions.createEl("button", { cls: "ng-note-header-add-category-icon" });
     addButton.setAttribute("aria-label", "Add Category");
     addButton.setAttribute("title", "Add Category");
+
+    const supportButton = categoriesActions.createEl("button", { cls: "ng-note-header-support-toggle" });
+    supportButton.setAttribute("aria-label", "Toggle Support Note");
+    setIcon(supportButton, "shield-plus");
+
     const favouriteButton = categoriesActions.createEl("button", { cls: "ng-note-header-fav" });
     favouriteButton.setAttribute("aria-label", "Favourite");
     favouriteButton.setAttribute("title", "Favourite");
@@ -139,20 +144,10 @@ export class NoteHeaderManager {
     });
 
     const supportSection = box.createDiv({ cls: "ng-note-header-support" });
-    const supportToggle = supportSection.createDiv({ cls: "ng-note-header-support-label" });
-    supportToggle.setText("Support Note");
-    supportToggle.setAttribute("role", "button");
-    supportToggle.setAttribute("tabindex", "0");
-    supportSection.createDiv({
-      cls: "ng-note-header-support-hint",
-      text: "Press the above Support note to show support categories",
-    });
+    supportSection.createEl("h4", { text: "Support Note", cls: "ng-mynotes-section-title" });
     let supportActive = this.myNotesStorage.isSupportNote(file);
-    supportToggle.toggleClass("is-active", supportActive);
-    const supportHint = supportSection.querySelector(".ng-note-header-support-hint");
-    if (supportHint instanceof HTMLElement) {
-      supportHint.toggleClass("is-hidden", supportActive);
-    }
+    supportButton.toggleClass("is-active", supportActive);
+    supportSection.toggleClass("is-hidden", !supportActive);
 
     const supportPillRow = supportSection.createDiv({ cls: "ng-mynotes-pill-row" });
     const renderSupportPills = () => {
@@ -172,29 +167,22 @@ export class NoteHeaderManager {
 
     if (supportActive) {
       renderSupportPills();
-    } else {
-      supportPillRow.hide();
     }
 
     const toggleSupport = async () => {
       supportActive = !supportActive;
-      supportToggle.toggleClass("is-active", supportActive);
-      if (supportHint instanceof HTMLElement) {
-        supportHint.toggleClass("is-hidden", supportActive);
-      }
+      supportButton.toggleClass("is-active", supportActive);
+      supportSection.toggleClass("is-hidden", !supportActive);
       await this.myNotesStorage.setSupportNote(file, supportActive);
       if (supportActive) {
         renderSupportPills();
-        supportPillRow.show();
-      } else {
-        supportPillRow.hide();
       }
     };
 
-    supportToggle.addEventListener("click", () => {
+    supportButton.addEventListener("click", () => {
       void toggleSupport();
     });
-    supportToggle.addEventListener("keydown", (event) => {
+    supportButton.addEventListener("keydown", (event) => {
       if (event.key === "Enter" || event.key === " ") {
         event.preventDefault();
         void toggleSupport();

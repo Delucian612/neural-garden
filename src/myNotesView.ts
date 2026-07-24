@@ -336,7 +336,7 @@ export class NeuralGardenMyNotesView extends ItemView {
         new Notice("Could not create the note. Try a different name.");
         return;
       }
-      await this.app.workspace.getLeaf(true).openFile(file);
+      await this.leaf.openFile(file);
     };
 
     createButton.addEventListener("click", () => void submit());

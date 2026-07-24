@@ -1733,6 +1733,32 @@ export function injectNeuralGardenStyles(): void {
     .ng-note-header-fav.is-favourite svg * {
       fill: #ff6565 !important;
     }
+    .ng-note-header-support-toggle {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      border: none !important;
+      background: none !important;
+      box-shadow: none !important;
+      color: var(--text-muted);
+      cursor: pointer;
+    }
+    .ng-note-header-support-toggle svg {
+      width: 18px;
+      height: 18px;
+    }
+    .ng-note-header-support-toggle:hover {
+      color: #00f0ff;
+    }
+    .ng-note-header-support-toggle.is-active {
+      color: #00f0ff;
+    }
+    .ng-note-header-support-toggle.is-active svg,
+    .ng-note-header-support-toggle.is-active svg * {
+      stroke: #00f0ff;
+      fill: #00f0ff !important;
+    }
     .ng-note-header-nav {
       display: flex;
       flex-direction: column;
@@ -1756,35 +1782,8 @@ export function injectNeuralGardenStyles(): void {
       gap: 8px;
       margin-top: 4px;
     }
-    .ng-note-header-support-label {
-      align-self: flex-start;
-      background: none;
-      border: none;
-      box-shadow: none;
-      padding: 0;
-      margin: 0;
-      cursor: pointer;
-      color: var(--text-normal);
-      font-size: 1.3em;
-      font-weight: 600;
-      line-height: 1.2;
-      transition: color 0.15s ease;
-    }
-    .ng-note-header-support-hint {
-      margin-top: -2px;
-      font-style: italic;
-      color: var(--text-muted);
-      font-size: 0.92em;
-    }
-    .ng-note-header-support-hint.is-hidden {
+    .ng-note-header-support.is-hidden {
       display: none;
-    }
-    .ng-note-header-support-label:hover {
-      color: var(--text-normal);
-    }
-    .ng-note-header-support-label.is-active {
-      color: #ec407a;
-      background: none !important;
     }
     .ng-note-header-category-pill {
       border-color: color-mix(in srgb, var(--background-modifier-border) 55%, transparent);
