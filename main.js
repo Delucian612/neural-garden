@@ -1753,6 +1753,7 @@ function injectNeuralGardenStyles() {
       white-space: nowrap;
     }
     .ng-mynotes-note-heart,
+    .ng-mynotes-note-open-right,
     .ng-mynotes-note-delete {
       display: inline-flex;
       align-items: center;
@@ -1766,6 +1767,7 @@ function injectNeuralGardenStyles() {
       color: var(--text-muted);
     }
     .ng-mynotes-note-heart svg,
+    .ng-mynotes-note-open-right svg,
     .ng-mynotes-note-delete svg {
       width: 16px;
       height: 16px;
@@ -1787,6 +1789,16 @@ function injectNeuralGardenStyles() {
       0% { transform: scale(1); }
       45% { transform: scale(1.45); }
       100% { transform: scale(1); }
+    }
+    .ng-mynotes-note-open-right:hover {
+      color: #ec9a63;
+      filter: drop-shadow(0 0 4px rgba(236, 154, 99, 0.4));
+      transform: translateY(-0.5px);
+    }
+    .ng-mynotes-note-open-right:hover svg,
+    .ng-mynotes-note-open-right:hover svg * {
+      stroke: #ec9a63;
+      fill: #ec9a63;
     }
     .ng-mynotes-note-delete {
       color: #ff6565;
@@ -3948,6 +3960,16 @@ function openOverlay(title) {
 // src/myNotesView.ts
 var FAVOURITE_CATEGORY = "__favourite__";
 var SUPPORT_PREFIX = "support:";
+var OPEN_RIGHT_ICON_CANDIDATES = ["separator-vertical", "panel-right-open", "split-square-vertical"];
+function setOpenToRightIcon(el) {
+  for (const iconName of OPEN_RIGHT_ICON_CANDIDATES) {
+    (0, import_obsidian4.setIcon)(el, iconName);
+    if (el.querySelector("svg")) {
+      return;
+    }
+  }
+  el.setText(">");
+}
 var NeuralGardenMyNotesView = class extends import_obsidian4.ItemView {
   constructor(leaf, myNotesStorage, openHomeView) {
     super(leaf);
@@ -4171,6 +4193,14 @@ var NeuralGardenMyNotesView = class extends import_obsidian4.ItemView {
     });
     row.createDiv({ cls: "ng-mynotes-note-indicator" });
     row.createDiv({ cls: "ng-mynotes-note-title", text: file.basename });
+    const openRightButton = row.createEl("button", { cls: "ng-mynotes-note-open-right" });
+    openRightButton.setAttribute("aria-label", "Open to the right");
+    setOpenToRightIcon(openRightButton);
+    openRightButton.addEventListener("click", async (event) => {
+      event.stopPropagation();
+      const rightLeaf = this.app.workspace.getLeaf("split", "vertical");
+      await rightLeaf.openFile(file);
+    });
     const deleteButton = row.createEl("button", { cls: "ng-mynotes-note-delete" });
     (0, import_obsidian4.setIcon)(deleteButton, "x");
     deleteButton.addEventListener("click", (event) => {
@@ -4178,7 +4208,7 @@ var NeuralGardenMyNotesView = class extends import_obsidian4.ItemView {
       this.openDeleteOverlay(file, row);
     });
     row.addEventListener("click", async () => {
-      await this.app.workspace.getLeaf(true).openFile(file);
+      await this.leaf.openFile(file);
     });
   }
   openNewNoteOverlay() {
@@ -4723,6 +4753,13 @@ var NoteHeaderManager = class {
     const homeButton = navColumn.createEl("button", { text: "Home", cls: "ng-journal-nav-button" });
     homeButton.addEventListener("click", async () => {
       await this.openHomeView(true, leaf);
+    });
+    const myNotesButton = navColumn.createEl("button", { cls: "ng-journal-nav-button" });
+    const myNotesBackIcon = myNotesButton.createSpan();
+    (0, import_obsidian7.setIcon)(myNotesBackIcon, "arrow-left");
+    myNotesButton.createSpan({ text: "MyNotes" });
+    myNotesButton.addEventListener("click", async () => {
+      await this.openMyNotesView(true, leaf);
     });
     header.createDiv({ cls: "ng-note-header-spacer" });
     const box = header.createDiv({ cls: "ng-note-header-box" });

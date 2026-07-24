@@ -1532,6 +1532,7 @@ export function injectNeuralGardenStyles(): void {
       white-space: nowrap;
     }
     .ng-mynotes-note-heart,
+    .ng-mynotes-note-open-right,
     .ng-mynotes-note-delete {
       display: inline-flex;
       align-items: center;
@@ -1545,6 +1546,7 @@ export function injectNeuralGardenStyles(): void {
       color: var(--text-muted);
     }
     .ng-mynotes-note-heart svg,
+    .ng-mynotes-note-open-right svg,
     .ng-mynotes-note-delete svg {
       width: 16px;
       height: 16px;
@@ -1566,6 +1568,16 @@ export function injectNeuralGardenStyles(): void {
       0% { transform: scale(1); }
       45% { transform: scale(1.45); }
       100% { transform: scale(1); }
+    }
+    .ng-mynotes-note-open-right:hover {
+      color: #ec9a63;
+      filter: drop-shadow(0 0 4px rgba(236, 154, 99, 0.4));
+      transform: translateY(-0.5px);
+    }
+    .ng-mynotes-note-open-right:hover svg,
+    .ng-mynotes-note-open-right:hover svg * {
+      stroke: #ec9a63;
+      fill: #ec9a63;
     }
     .ng-mynotes-note-delete {
       color: #ff6565;

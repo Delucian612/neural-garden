@@ -10,6 +10,18 @@ import { searchNotesInFolder } from "./search";
 const FAVOURITE_CATEGORY = "__favourite__";
 const SUPPORT_PREFIX = "support:";
 
+const OPEN_RIGHT_ICON_CANDIDATES = ["separator-vertical", "panel-right-open", "split-square-vertical"];
+
+function setOpenToRightIcon(el: HTMLElement): void {
+  for (const iconName of OPEN_RIGHT_ICON_CANDIDATES) {
+    setIcon(el, iconName);
+    if (el.querySelector("svg")) {
+      return;
+    }
+  }
+  el.setText(">");
+}
+
 export class NeuralGardenMyNotesView extends ItemView {
   private selectedCategory: string | null = null;
   private searchQuery = "";
@@ -275,6 +287,15 @@ export class NeuralGardenMyNotesView extends ItemView {
 
     row.createDiv({ cls: "ng-mynotes-note-title", text: file.basename });
 
+    const openRightButton = row.createEl("button", { cls: "ng-mynotes-note-open-right" });
+    openRightButton.setAttribute("aria-label", "Open to the right");
+    setOpenToRightIcon(openRightButton);
+    openRightButton.addEventListener("click", async (event) => {
+      event.stopPropagation();
+      const rightLeaf = this.app.workspace.getLeaf("split", "vertical");
+      await rightLeaf.openFile(file);
+    });
+
     const deleteButton = row.createEl("button", { cls: "ng-mynotes-note-delete" });
     setIcon(deleteButton, "x");
     deleteButton.addEventListener("click", (event) => {
@@ -283,7 +304,7 @@ export class NeuralGardenMyNotesView extends ItemView {
     });
 
     row.addEventListener("click", async () => {
-      await this.app.workspace.getLeaf(true).openFile(file);
+      await this.leaf.openFile(file);
     });
   }
 

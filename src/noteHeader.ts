@@ -49,6 +49,13 @@ export class NoteHeaderManager {
     homeButton.addEventListener("click", async () => {
       await this.openHomeView(true, leaf);
     });
+    const myNotesButton = navColumn.createEl("button", { cls: "ng-journal-nav-button" });
+    const myNotesBackIcon = myNotesButton.createSpan();
+    setIcon(myNotesBackIcon, "arrow-left");
+    myNotesButton.createSpan({ text: "MyNotes" });
+    myNotesButton.addEventListener("click", async () => {
+      await this.openMyNotesView(true, leaf);
+    });
 
     header.createDiv({ cls: "ng-note-header-spacer" });
 
