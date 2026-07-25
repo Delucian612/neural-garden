@@ -215,7 +215,7 @@ export class NeuralGardenMyLearningView extends ItemView {
     }
 
     if (topics.length === 0) {
-      section.createDiv({ cls: "ng-empty", text: "No topics yet." });
+      section.createDiv({ cls: "ng-empty", text: "No topics yet. Click on the plus button on the right to add one." });
     }
 
     section.createDiv({ cls: "ng-mylearning-divider" });
