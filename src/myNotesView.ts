@@ -74,9 +74,6 @@ export class NeuralGardenMyNotesView extends ItemView {
     homeButton.addEventListener("click", async () => {
       await this.openHomeView(true, this.leaf);
     });
-    const learningButton = topBar.createEl("button", { text: "Learning", cls: "ng-journal-nav-button" });
-    learningButton.disabled = true;
-    learningButton.addClass("ng-mynotes-learning");
 
     wrapper.createEl("h2", { text: "MyNotes", cls: "ng-mynotes-heading" });
     this.searchHintEl = wrapper.createDiv({ cls: "ng-mynotes-heading-hint" });

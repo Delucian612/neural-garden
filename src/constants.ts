@@ -4,6 +4,7 @@ export const VIEW_TYPE_NEURAL_GARDEN_HOME = "neural-garden-home";
 export const VIEW_TYPE_NEURAL_GARDEN_JOURNALING = "neural-garden-journaling";
 export const VIEW_TYPE_NEURAL_GARDEN_JOURNAL_ENTRY = "neural-garden-journal-entry";
 export const VIEW_TYPE_NEURAL_GARDEN_MY_NOTES = "neural-garden-my-notes";
+export const VIEW_TYPE_NEURAL_GARDEN_MY_LEARNING = "neural-garden-my-learning";
 export const VIEW_TYPE_NEURAL_GARDEN_WEEKLY_RECAP = "neural-garden-weekly-recap";
 export const TASK_MANAGER_FILE_PATH = "Maintenance/TaskManager/TaskManager.md";
 export const JOURNAL_DAILY_FOLDER = "Journal/Daily";
@@ -13,6 +14,9 @@ export const TRACKER_FOLDER = "Maintenance/Tracker";
 export const NOTES_FOLDER = "Notes";
 export const MY_NOTES_MAINTENANCE_FOLDER = "Maintenance/MyNotes";
 export const MY_NOTES_CATEGORIES_FILE_PATH = "Maintenance/MyNotes/Categories.md";
+export const MY_LEARNING_MAINTENANCE_FOLDER = "Maintenance/MyLearning";
+export const MY_LEARNING_CONFIG_FILE_PATH = "Maintenance/MyLearning/MyLearning.md";
+export const LEARNING_FOLDER = "Learning";
 export const WEEKLY_RECAP_MIN_ENTRIES = 4;
 export const WEEKLY_RECAP_HOME_HINT_MIN_ENTRIES = 5;
 

@@ -93,11 +93,13 @@ export class NeuralGardenWeeklyRecapView extends ItemView {
 
     const wrap = contentEl.createDiv({ cls: "ng-weekly-view" });
     const top = wrap.createDiv({ cls: "ng-journal-topbar" });
-    const homeButton = top.createEl("button", { text: "Home", cls: "ng-journal-nav-button" });
+    const leftNav = top.createDiv({ cls: "ng-journal-topbar-left" });
+    const rightNav = top.createDiv({ cls: "ng-journal-topbar-right" });
+    const homeButton = rightNav.createEl("button", { text: "Home", cls: "ng-journal-nav-button" });
     homeButton.addEventListener("click", async () => {
       await this.openHomeView(true, this.leaf);
     });
-    const journalingButton = top.createEl("button", { text: "Back to Journaling", cls: "ng-journal-nav-button" });
+    const journalingButton = leftNav.createEl("button", { text: "<- Journaling", cls: "ng-journal-nav-button" });
     journalingButton.addEventListener("click", async () => {
       await this.openJournalingView(true, this.leaf);
     });

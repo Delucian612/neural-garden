@@ -484,6 +484,9 @@ export function injectNeuralGardenStyles(): void {
       color: var(--text-normal);
       text-align: center;
     }
+    .neural-garden-home .ng-search .ng-search-heading {
+      font-size: 1rem;
+    }
     .ng-search-heading {
       text-align: center !important;
     }
@@ -502,6 +505,9 @@ export function injectNeuralGardenStyles(): void {
     }
     .ng-search-row:hover {
       border-color: #ec9a63;
+    }
+    .ng-mylearning-search {
+      margin: 0 0 2px;
     }
     .ng-search-title {
       font-weight: 600;
@@ -841,6 +847,14 @@ export function injectNeuralGardenStyles(): void {
     }
     .ng-journal-topbar {
       align-items: flex-start;
+    }
+    .ng-journal-topbar-left,
+    .ng-journal-topbar-right {
+      display: inline-flex;
+      align-items: center;
+    }
+    .ng-journal-topbar-right {
+      margin-left: auto;
     }
     .ng-journal-title-wrap {
       flex: 1;
@@ -1774,6 +1788,531 @@ export function injectNeuralGardenStyles(): void {
       opacity: 0.5;
       cursor: default;
     }
+    .ng-mylearning {
+      max-width: 720px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      padding: 8px 0 24px;
+    }
+    .ng-mylearning-topbar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: space-between;
+    }
+    .ng-mylearning-heading-row {
+      display: block;
+    }
+    .ng-mylearning-heading-row .ng-mynotes-heading {
+      margin: 0;
+      text-align: center;
+    }
+    .ng-mylearning-label {
+      margin: 0;
+      color: var(--text-normal);
+      font-size: 1.46rem;
+      font-weight: 500;
+    }
+    .ng-mylearning-inline-create {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .ng-mylearning-header-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-left: auto;
+    }
+    .ng-mylearning-header-actions .ng-note-header-add-category-icon {
+      min-width: 18px;
+      width: 18px;
+      height: 20px;
+      padding: 0;
+    }
+    .ng-mylearning-inline-plus {
+      min-width: 18px;
+      width: 18px;
+      height: 20px;
+      padding: 0;
+      font-size: 1.25em;
+      color: color-mix(in srgb, #ec9a63 60%, white);
+    }
+    .ng-mylearning-inline-edit {
+      min-width: 18px;
+      width: 18px;
+      height: 20px;
+      padding: 0;
+      color: color-mix(in srgb, var(--text-muted) 72%, white);
+    }
+    .ng-mylearning-inline-edit.is-active {
+      color: #ec9a63;
+      text-shadow: 0 0 8px color-mix(in srgb, #ec9a63 36%, transparent);
+    }
+    .ng-mylearning-inline-edit svg {
+      width: 13px;
+      height: 13px;
+    }
+    .ng-mylearning-divider {
+      margin-top: 8px;
+      border-top: 1px solid color-mix(in srgb, var(--background-modifier-border) 82%, transparent);
+    }
+    .ng-mylearning-topic-pill {
+      font-size: 1.02rem;
+      padding: 8px 15px;
+    }
+    .ng-mylearning-topics .ng-mynotes-pill-row,
+    .ng-mylearning-categories .ng-mynotes-pill-row {
+      margin-top: 8px;
+    }
+    .ng-mylearning-notes {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .ng-mylearning-notes-header {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 8px;
+      min-height: 22px;
+    }
+    .ng-mylearning-notes-title-wrap {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .ng-mylearning-notes-title {
+      color: var(--text-normal);
+      font-size: 1.46rem;
+      font-weight: 500;
+    }
+    .ng-mylearning-quick-create {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      color: #ec9a63;
+      cursor: pointer;
+      border: none !important;
+      background: transparent !important;
+      box-shadow: none !important;
+      padding: 0 !important;
+      margin: 0;
+      line-height: 1;
+      appearance: none;
+      -webkit-appearance: none;
+      overflow: visible;
+      flex: 0 0 auto;
+    }
+    .ng-mylearning-quick-create:hover {
+      color: color-mix(in srgb, #ec9a63 75%, white);
+      background: transparent !important;
+      box-shadow: none !important;
+    }
+    .ng-mylearning-quick-create svg {
+      width: 47px;
+      height: 47px;
+      display: block;
+      fill: currentColor;
+      stroke: currentColor;
+    }
+    .ng-mylearning-quick-create .ng-mynotes-button-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 1;
+    }
+    .ng-mylearning-quick-create .ng-mynotes-button-icon svg,
+    .ng-mylearning-quick-create .ng-mynotes-button-icon svg * {
+      opacity: 1;
+      fill: currentColor !important;
+      stroke: currentColor !important;
+    }
+    .ng-mylearning-quick-create .ng-mynotes-button-icon svg {
+      width: 20px !important;
+      height: 20px !important;
+    }
+    .ng-mylearning .ng-mylearning-category-pill {
+      border-color: color-mix(in srgb, var(--ng-mylearning-category-color) 52%, var(--background-modifier-border));
+      background: color-mix(in srgb, var(--ng-mylearning-category-color) 4%, transparent);
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--ng-mylearning-category-color) 14%, transparent), 0 0 8px color-mix(in srgb, var(--ng-mylearning-category-color) 9%, transparent);
+    }
+    .ng-mylearning .ng-mylearning-category-pill:not(.is-active):hover {
+      border-color: color-mix(in srgb, var(--ng-mylearning-category-color) 78%, var(--background-modifier-border));
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--ng-mylearning-category-color) 22%, transparent), 0 0 10px color-mix(in srgb, var(--ng-mylearning-category-color) 14%, transparent);
+    }
+    .ng-mylearning .ng-mylearning-category-pill.is-active {
+      border-color: var(--ng-mylearning-category-color);
+      background: color-mix(in srgb, var(--ng-mylearning-category-color) 8%, var(--background-primary));
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--ng-mylearning-category-color) 30%, transparent), 0 0 12px color-mix(in srgb, var(--ng-mylearning-category-color) 20%, transparent);
+    }
+    .ng-mylearning .ng-mylearning-category-pill.is-help,
+    .ng-mylearning .ng-mylearning-category-pill.is-help:not(.is-active) {
+      border-color: color-mix(in srgb, #ae2929 68%, var(--background-modifier-border));
+    }
+    .ng-mylearning .ng-mylearning-category-pill.is-help:hover {
+      border-color: #ae2929;
+      box-shadow: 0 0 0 1px color-mix(in srgb, #ae2929 22%, transparent), 0 0 10px color-mix(in srgb, #ae2929 14%, transparent);
+    }
+    .ng-mylearning .ng-mylearning-category-pill.is-help.is-active {
+      border-color: #ae2929;
+      box-shadow: 0 0 0 2px color-mix(in srgb, #ae2929 24%, transparent), 0 0 12px color-mix(in srgb, #ae2929 16%, transparent);
+    }
+    .ng-mylearning .ng-mynotes-pill.is-edit-target {
+      border-style: dashed;
+      cursor: pointer;
+    }
+    .ng-mylearning-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      column-gap: 8px;
+      row-gap: 3px;
+      position: relative;
+      padding: 0 10px;
+    }
+    .ng-mylearning-grid-divider {
+      position: absolute;
+      left: calc(50% - 11px);
+      top: 0;
+      bottom: 0;
+      width: 1px;
+      background: color-mix(in srgb, var(--background-modifier-border) 82%, transparent);
+      pointer-events: none;
+      transform: translateX(-0.5px);
+    }
+    .ng-mylearning-grid .ng-mynotes-note-row {
+      margin: 0;
+      padding: 1px 7px;
+      gap: 8px;
+      width: calc(100% - 8px);
+      margin-right: 8px;
+      box-sizing: border-box;
+    }
+    .ng-mylearning-row-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 1px;
+      margin-left: auto;
+    }
+    .ng-mylearning-comprehension {
+      margin-top: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .ng-mylearning-comprehension > .ng-mynotes-subheading-toggle {
+      margin-top: 2px;
+    }
+    .ng-mylearning-comprehension-list {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .ng-mylearning-comprehension-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(140px, 220px);
+      align-items: center;
+      gap: 10px;
+      padding: 3px 8px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+    .ng-mylearning-comprehension-row:hover {
+      background: color-mix(in srgb, var(--text-normal) 6%, transparent);
+    }
+    .ng-mylearning-comprehension-text {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      min-width: 0;
+    }
+    .ng-mylearning-comprehension-title-line {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      min-width: 0;
+    }
+    .ng-mylearning-topic-badge-row {
+      display: inline-flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      align-items: center;
+    }
+    .ng-mylearning-topic-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      padding: 2px 8px;
+      font-size: 0.76rem;
+      line-height: 1.1;
+      color: color-mix(in srgb, var(--text-muted) 92%, var(--background-primary));
+      border: 1px solid color-mix(in srgb, var(--background-modifier-border) 82%, transparent);
+      background: color-mix(in srgb, var(--background-primary) 96%, transparent);
+      width: fit-content;
+    }
+    .ng-mylearning-category-badge {
+      border-color: color-mix(in srgb, var(--ng-mylearning-category-color) 34%, var(--background-modifier-border));
+      background: color-mix(in srgb, var(--ng-mylearning-category-color) 7%, var(--background-primary));
+      color: color-mix(in srgb, var(--text-muted) 80%, var(--ng-mylearning-category-color));
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--ng-mylearning-category-color) 14%, transparent), 0 0 10px color-mix(in srgb, var(--ng-mylearning-category-color) 8%, transparent);
+    }
+    .ng-mylearning-category-badge:hover {
+      border-color: color-mix(in srgb, var(--ng-mylearning-category-color) 52%, var(--background-modifier-border));
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--ng-mylearning-category-color) 18%, transparent), 0 0 12px color-mix(in srgb, var(--ng-mylearning-category-color) 12%, transparent);
+    }
+    .ng-mylearning-category-color-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: -2px 0 2px;
+    }
+    .ng-mylearning-category-color-row.is-centered {
+      justify-content: center;
+      width: 100%;
+      margin-top: 2px;
+    }
+    .ng-mylearning-category-color-row .ng-task-input {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+    .ng-mylearning-category-color-wrap {
+      position: relative;
+      flex: 0 0 auto;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .ng-mylearning-color-input {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      opacity: 0;
+      pointer-events: none;
+    }
+    .ng-mylearning-color-swatch {
+      width: 24px;
+      height: 24px;
+      display: inline-block;
+      flex: 0 0 auto;
+      border-radius: 999px;
+      border: 1px solid color-mix(in srgb, var(--ng-mylearning-picked-color) 54%, var(--background-modifier-border));
+      background: var(--ng-mylearning-picked-color);
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--ng-mylearning-picked-color) 18%, transparent), 0 0 10px color-mix(in srgb, var(--ng-mylearning-picked-color) 12%, transparent);
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .ng-mylearning-color-swatch:hover {
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--ng-mylearning-picked-color) 26%, transparent), 0 0 12px color-mix(in srgb, var(--ng-mylearning-picked-color) 16%, transparent);
+    }
+    .ng-mylearning-color-swatch:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--ng-mylearning-picked-color) 45%, transparent);
+    }
+    .ng-mylearning-mini-progress {
+      width: 100%;
+      height: 8px;
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--background-modifier-border) 85%, transparent);
+      overflow: hidden;
+    }
+    .ng-mylearning-mini-progress-fill {
+      height: 100%;
+      border-radius: inherit;
+      background: #00f0ff;
+      width: 0;
+      transition: width 180ms ease;
+    }
+    .ng-mylearning-uncategorized {
+      margin-top: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .ng-mylearning-uncategorized .ng-mynotes-note-row {
+      padding: 1px 7px;
+      gap: 8px;
+    }
+    .ng-learning-note-header {
+      gap: 10px;
+    }
+    .ng-learning-note-header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .ng-learning-note-header-top-left,
+    .ng-learning-note-header-top-right {
+      display: inline-flex;
+      align-items: center;
+    }
+    .ng-learning-note-header-top-right {
+      margin-left: auto;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 6px;
+    }
+    .ng-learning-topic-heading {
+      margin: 0;
+      text-align: center;
+      color: var(--text-normal);
+      cursor: pointer;
+      font-weight: 550;
+    }
+    .ng-learning-topic-heading.is-placeholder {
+      color: var(--text-muted);
+      font-style: italic;
+      font-weight: 500;
+    }
+    .ng-learning-topic-row {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .ng-learning-topic-edit,
+    .ng-learning-category-edit {
+      color: color-mix(in srgb, var(--text-muted) 72%, white);
+    }
+    .ng-learning-topic-edit.is-active,
+    .ng-learning-category-edit.is-active {
+      color: #ec9a63;
+      text-shadow: 0 0 8px color-mix(in srgb, #ec9a63 35%, transparent);
+    }
+    .ng-learning-topic-edit svg,
+    .ng-learning-category-edit svg {
+      width: 15px;
+      height: 15px;
+    }
+    .ng-learning-note-box {
+      gap: 10px;
+    }
+    .ng-learning-categories-left {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .ng-learning-help-toggle {
+      color: var(--text-muted);
+      border: none !important;
+      background: transparent !important;
+      box-shadow: none !important;
+    }
+    .ng-learning-note-header .ng-learning-help-toggle svg,
+    .ng-learning-note-header .ng-learning-help-toggle svg * {
+      fill: transparent !important;
+      stroke: currentColor !important;
+    }
+    .ng-learning-help-toggle:hover {
+      color: #ae2929;
+      background: transparent !important;
+      box-shadow: none !important;
+    }
+    .ng-learning-help-toggle.is-active {
+      color: #ae2929;
+      background: transparent !important;
+      box-shadow: none !important;
+    }
+    .ng-learning-help-toggle:hover svg,
+    .ng-learning-help-toggle:hover svg *,
+    .ng-learning-help-toggle.is-active svg,
+    .ng-learning-help-toggle.is-active svg * {
+      stroke: #ae2929 !important;
+      fill: #ae2929 !important;
+    }
+    .ng-learning-delete-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: none !important;
+      background: transparent !important;
+      box-shadow: none !important;
+      color: #FF6565;
+      cursor: pointer;
+      padding: 0;
+      line-height: 1;
+      font-size: 1.2rem;
+      font-weight: 700;
+    }
+    .ng-learning-delete-button:hover {
+      color: #fb2c36;
+      background: transparent !important;
+      box-shadow: none !important;
+    }
+    .ng-learning-progress-wrap {
+      width: min(430px, 100%);
+      margin: 2px auto 0;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      align-items: center;
+    }
+    .ng-learning-progress-heading {
+      margin: 0;
+      font-size: 0.95rem;
+      color: var(--text-normal);
+      font-weight: 600;
+    }
+    .ng-learning-progress-track {
+      width: 100%;
+      height: 12px;
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--background-modifier-border) 88%, transparent);
+      cursor: pointer;
+      overflow: hidden;
+      touch-action: none;
+    }
+    .ng-learning-progress-fill {
+      height: 100%;
+      width: 0;
+      border-radius: inherit;
+      background: #00f0ff;
+      transition: width 120ms ease;
+    }
+    @media (max-width: 680px) {
+      .ng-mylearning-grid {
+        grid-template-columns: 1fr;
+      }
+      .ng-mylearning-comprehension-row {
+        grid-template-columns: 1fr;
+      }
+      .ng-learning-note-header-top {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+      }
+      .ng-learning-note-header-top-left,
+      .ng-learning-note-header-top-right {
+        width: 100%;
+      }
+      .ng-learning-note-header-top-right {
+        justify-content: flex-end;
+      }
+    }
+    .ng-note-header-top,
+    .ng-note-header-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .ng-note-header-top-left,
+    .ng-note-header-top-right {
+      display: inline-flex;
+      align-items: center;
+    }
+    .ng-note-header-top-right {
+      margin-left: auto;
+    }
     .ng-mynotes-heading {
       text-align: center;
       margin: 0;
@@ -1816,8 +2355,16 @@ export function injectNeuralGardenStyles(): void {
       color: var(--text-normal);
       cursor: pointer;
     }
+    .ng-mylearning-topbar .ng-mynotes-new-button {
+      border-color: color-mix(in srgb, #ec9a63 32%, var(--background-modifier-border));
+      color: color-mix(in srgb, var(--text-normal) 92%, var(--text-muted));
+    }
     .ng-mynotes-new-button:hover {
       box-shadow: 0 0 0 2px rgba(236, 154, 99, 0.25);
+    }
+    .ng-mylearning-topbar .ng-mynotes-new-button:hover {
+      border-color: color-mix(in srgb, #ec9a63 46%, var(--background-modifier-border));
+      box-shadow: 0 0 0 1px color-mix(in srgb, #ec9a63 18%, transparent);
     }
     .ng-mynotes-button-icon {
       display: inline-flex;
@@ -2054,6 +2601,10 @@ export function injectNeuralGardenStyles(): void {
       gap: 12px;
       box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
     }
+    .ng-overlay-card.ng-mylearning-edit-overlay-wide {
+      min-width: min(420px, 92vw);
+      width: min(520px, 92vw);
+    }
     .ng-overlay-title {
       margin: 0;
       text-align: center;
@@ -2196,14 +2747,14 @@ export function injectNeuralGardenStyles(): void {
       width: 18px;
       height: 18px;
     }
-    .ng-note-header-support-toggle:hover {
+    .ng-note-header-support-toggle:not(.ng-learning-help-toggle):hover {
       color: #00f0ff;
     }
-    .ng-note-header-support-toggle.is-active {
+    .ng-note-header-support-toggle.is-active:not(.ng-learning-help-toggle) {
       color: #00f0ff;
     }
-    .ng-note-header-support-toggle.is-active svg,
-    .ng-note-header-support-toggle.is-active svg * {
+    .ng-note-header-support-toggle.is-active:not(.ng-learning-help-toggle) svg,
+    .ng-note-header-support-toggle.is-active:not(.ng-learning-help-toggle) svg * {
       stroke: #00f0ff;
       fill: #00f0ff !important;
     }
@@ -2236,6 +2787,24 @@ export function injectNeuralGardenStyles(): void {
     .ng-note-header-category-pill {
       border-color: color-mix(in srgb, var(--background-modifier-border) 55%, transparent);
       color: var(--text-muted);
+    }
+    .ng-learning-note-header .ng-note-header-category-pill {
+      border-color: color-mix(in srgb, var(--ng-mylearning-category-color) 52%, var(--background-modifier-border));
+      background: color-mix(in srgb, var(--ng-mylearning-category-color) 4%, transparent);
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--ng-mylearning-category-color) 13%, transparent), 0 0 8px color-mix(in srgb, var(--ng-mylearning-category-color) 8%, transparent);
+      color: var(--text-normal);
+    }
+    .ng-learning-note-header .ng-note-header-category-pill:not(.is-active):hover {
+      border-color: color-mix(in srgb, var(--ng-mylearning-category-color) 76%, var(--background-modifier-border));
+    }
+    .ng-learning-note-header .ng-note-header-category-pill.is-active {
+      border-color: var(--ng-mylearning-category-color);
+      background: color-mix(in srgb, var(--ng-mylearning-category-color) 8%, var(--background-primary));
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--ng-mylearning-category-color) 28%, transparent), 0 0 12px color-mix(in srgb, var(--ng-mylearning-category-color) 18%, transparent);
+    }
+    .ng-learning-note-header .ng-mynotes-pill.is-edit-target {
+      border-style: dashed;
+      cursor: pointer;
     }
   `;
   document.head.appendChild(style);

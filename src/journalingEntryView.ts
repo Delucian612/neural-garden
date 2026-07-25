@@ -202,8 +202,10 @@ export class NeuralGardenJournalEntryView extends ItemView {
 
     const wrapper = contentEl.createDiv({ cls: "ng-journal-entry-page" });
     const topBar = wrapper.createDiv({ cls: "ng-journal-topbar" });
-    topBar.appendChild(this.makeNavButton("Home", async () => this.openHomeView(true, this.leaf)));
-    topBar.appendChild(this.makeNavButton("Back to Journaling", async () => this.openJournalingView(true, this.leaf)));
+    const leftNav = topBar.createDiv({ cls: "ng-journal-topbar-left" });
+    leftNav.appendChild(this.makeNavButton("<- Journaling", async () => this.openJournalingView(true, this.leaf)));
+    const rightNav = topBar.createDiv({ cls: "ng-journal-topbar-right" });
+    rightNav.appendChild(this.makeNavButton("Home", async () => this.openHomeView(true, this.leaf)));
 
     const titleWrap = topBar.createDiv({ cls: "ng-journal-title-wrap" });
     titleWrap.createEl("h2", { text: `Journal Entry - ${formatReadableDate(this.entry.frontmatter.date)}` });

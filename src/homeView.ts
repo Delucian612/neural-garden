@@ -43,6 +43,7 @@ export class NeuralGardenHomeView extends ItemView {
     private readonly journalingStorage: JournalingStorage,
     private readonly openJournalingView: (makeActive: boolean, targetLeaf?: WorkspaceLeaf) => Promise<void>,
     private readonly openMyNotesView: (makeActive: boolean, targetLeaf?: WorkspaceLeaf) => Promise<void>,
+    private readonly openMyLearningView: (makeActive: boolean, targetLeaf?: WorkspaceLeaf) => Promise<void>,
   ) {
     super(leaf);
   }
@@ -125,15 +126,15 @@ export class NeuralGardenHomeView extends ItemView {
     });
     categoryGrid.appendChild(notesButton);
 
-    const settingsButton = this.makeCategoryButton("Settings", "settings", () => {
-      new Notice("Settings interface placeholder");
-    });
-    categoryGrid.appendChild(settingsButton);
-
     const quickNoteButton = this.makeCategoryButton("+ QuickNote", "pencil", () => {
       new Notice("QuickNote interface placeholder");
     });
     categoryGrid.appendChild(quickNoteButton);
+
+    const learningButton = this.makeCategoryButton("MyLearning", "brain", () => {
+      void this.openMyLearningView(true, this.leaf);
+    });
+    categoryGrid.appendChild(learningButton);
 
     const hintStrip = wrapper.createDiv({ cls: "ng-home-hints-strip" });
     void this.renderSupportHintsStrip(hintStrip);
@@ -147,6 +148,12 @@ export class NeuralGardenHomeView extends ItemView {
 
   private async renderSupportSection(container: HTMLElement): Promise<void> {
     container.empty();
+    const recap = await this.getLatestWeeklyRecapFrontmatter();
+    if (!recap || recap.supportNotes.length === 0) {
+      container.remove();
+      return;
+    }
+
     const heading = container.createEl("h3", { text: "Support Notes", cls: "ng-home-support-heading" });
     heading.style.textAlign = "center";
     heading.style.color = "var(--text-normal)";
@@ -159,39 +166,29 @@ export class NeuralGardenHomeView extends ItemView {
     copy.style.fontStyle = "italic";
     copy.style.fontSize = "0.86rem";
 
-    const recap = await this.getLatestWeeklyRecapFrontmatter();
-    if (!recap) {
-      container.createDiv({ cls: "ng-empty", text: "No weekly support generated yet." });
-      return;
-    }
-
     const noteList = container.createDiv({ cls: "ng-home-support-notes" });
-    if (recap.supportNotes.length === 0) {
-      noteList.createDiv({ cls: "ng-empty", text: "No support notes listed for the latest recap." });
-    } else {
-      for (const name of recap.supportNotes) {
-        const row = noteList.createDiv({ cls: "ng-home-support-note" });
-        row.textContent = name;
-        const baseColor = "#8fcf9d";
-        const hoverColor = "#47fc82";
+    for (const name of recap.supportNotes) {
+      const row = noteList.createDiv({ cls: "ng-home-support-note" });
+      row.textContent = name;
+      const baseColor = "#8fcf9d";
+      const hoverColor = "#47fc82";
+      row.style.setProperty("color", baseColor, "important");
+      row.addEventListener("mouseenter", () => {
+        row.style.setProperty("color", hoverColor, "important");
+      });
+      row.addEventListener("mouseleave", () => {
         row.style.setProperty("color", baseColor, "important");
-        row.addEventListener("mouseenter", () => {
-          row.style.setProperty("color", hoverColor, "important");
-        });
-        row.addEventListener("mouseleave", () => {
-          row.style.setProperty("color", baseColor, "important");
-        });
-        row.addEventListener("click", async () => {
-          const target = this.app.vault
-            .getMarkdownFiles()
-            .find((file) => file.basename === name && file.path.startsWith(`${NOTES_FOLDER}/`));
-          if (!target) {
-            new Notice(`Support note not found: ${name}`);
-            return;
-          }
-          await this.leaf.openFile(target);
-        });
-      }
+      });
+      row.addEventListener("click", async () => {
+        const target = this.app.vault
+          .getMarkdownFiles()
+          .find((file) => file.basename === name && file.path.startsWith(`${NOTES_FOLDER}/`));
+        if (!target) {
+          new Notice(`Support note not found: ${name}`);
+          return;
+        }
+        await this.leaf.openFile(target);
+      });
     }
   }
 
