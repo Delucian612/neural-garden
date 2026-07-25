@@ -11,6 +11,7 @@ import {
   JournalTaskSnapshot,
   JournalTrackerFrontmatter,
   JournalTrackerRecord,
+  WeeklyRecapFrontmatter,
 } from "./types";
 
 const FRONTMATTER_REGEX = /^---\n[\s\S]*?\n---\n?/;
@@ -51,6 +52,41 @@ export class JournalingStorage {
 
   async saveDailyEntry(file: TFile, frontmatter: JournalEntryFrontmatter, bodyText: string): Promise<void> {
     await this.app.vault.modify(file, this.buildDailyContent(frontmatter, bodyText));
+  }
+
+  async ensureWeeklyRecapFile(year: number, week: number): Promise<TFile> {
+    const path = this.weeklyRecapPath(year, week);
+    const existing = this.app.vault.getAbstractFileByPath(path);
+    if (existing instanceof TFile) {
+      return existing;
+    }
+    await this.ensureFolderExists(JOURNAL_WEEKLY_FOLDER);
+    const frontmatter = defaultWeeklyFrontmatter(year, week);
+    try {
+      return await this.app.vault.create(path, `${this.serializeFrontmatter(frontmatter)}\n`);
+    } catch {
+      const createdByOtherCall = this.app.vault.getAbstractFileByPath(path);
+      if (createdByOtherCall instanceof TFile) {
+        return createdByOtherCall;
+      }
+      throw new Error(`Failed to create weekly recap at ${path}`);
+    }
+  }
+
+  async readWeeklyRecap(file: TFile): Promise<{ frontmatter: WeeklyRecapFrontmatter; body: string }> {
+    const content = await this.app.vault.read(file);
+    const frontmatter = normalizeWeeklyFrontmatter(this.extractFrontmatter(content));
+    const body = content.replace(FRONTMATTER_REGEX, "").replace(/^\s+|\s+$/g, "");
+    return { frontmatter, body };
+  }
+
+  async saveWeeklyRecap(file: TFile, frontmatter: WeeklyRecapFrontmatter, body: string): Promise<void> {
+    const content = `${this.serializeFrontmatter(frontmatter)}\n${body.replace(/^\s+/, "")}`;
+    await this.app.vault.modify(file, content.replace(/\s+$/, "") + "\n");
+  }
+
+  weeklyRecapPath(year: number, week: number): string {
+    return `${JOURNAL_WEEKLY_FOLDER}/${year}-W${String(week).padStart(2, "0")}.md`;
   }
 
   async listTrackers(): Promise<JournalTrackerRecord[]> {
@@ -188,7 +224,6 @@ export class JournalingStorage {
       spentEnergy: numberOr(raw.spentEnergy, 0),
       completedTasks: snapshotArray(raw.completedTasks),
       uncompletedTasks: snapshotArray(raw.uncompletedTasks),
-      processed: booleanOr(raw.processed, false),
       todaysNote: stringOr(raw.todaysNote, ""),
       emotions: stringArrayOr(raw.emotions),
     };
@@ -236,9 +271,159 @@ function defaultDailyFrontmatter(dateKey: string): JournalEntryFrontmatter {
     spentEnergy: 0,
     completedTasks: [],
     uncompletedTasks: [],
-    processed: false,
     todaysNote: "",
     emotions: [],
+  };
+}
+
+function defaultWeeklyFrontmatter(year: number, week: number): WeeklyRecapFrontmatter {
+  return {
+    week,
+    year,
+    generatedAt: "",
+    processedDateRange: { start: "", end: "" },
+    journalLinks: [],
+    supportNotes: [],
+    supportNoteReasons: {},
+    missingSupportSymptoms: [],
+    criticalDays: {},
+    supportHints: [],
+    seeds: [],
+    averages: {
+      mood: 0,
+      sleep: 0,
+      regulation: 0,
+      stress: 0,
+      anxiety: 0,
+      exhaustion: 0,
+      sensoryLoad: 0,
+      socialLoad: 0,
+    },
+    emotionCounts: {
+      pleasant: {},
+      unpleasant: {},
+      pleasantTotal: 0,
+      unpleasantTotal: 0,
+    },
+    trackerCounts: {},
+    taskAdjustments: {
+      maxEnergy: { from: 100, to: 100 },
+      forcedBreakThreshold: { from: 70, to: 70 },
+      forcedBreakLength: { from: 20, to: 20 },
+    },
+  };
+}
+
+function normalizeWeeklyFrontmatter(raw: Record<string, unknown>): WeeklyRecapFrontmatter {
+  const year = numberOr(raw.year, new Date().getFullYear());
+  const week = numberOr(raw.week, 1);
+  const defaults = defaultWeeklyFrontmatter(year, week);
+  const averagesRaw = (raw.averages && typeof raw.averages === "object") ? raw.averages as Record<string, unknown> : {};
+  const emotionRaw = (raw.emotionCounts && typeof raw.emotionCounts === "object") ? raw.emotionCounts as Record<string, unknown> : {};
+  const taskRaw = (raw.taskAdjustments && typeof raw.taskAdjustments === "object") ? raw.taskAdjustments as Record<string, unknown> : {};
+  const processedRangeRaw = (raw.processedDateRange && typeof raw.processedDateRange === "object")
+    ? raw.processedDateRange as Record<string, unknown>
+    : {};
+  const journalLinks = stringArrayOr(raw.journalLinks);
+  const derivedRange = deriveProcessedDateRangeFromLinks(journalLinks);
+
+  return {
+    week,
+    year,
+    generatedAt: stringOr(raw.generatedAt, ""),
+    processedDateRange: {
+      start: stringOr(processedRangeRaw.start, derivedRange.start),
+      end: stringOr(processedRangeRaw.end, derivedRange.end),
+    },
+    journalLinks,
+    supportNotes: stringArrayOr(raw.supportNotes),
+    supportNoteReasons: normalizeStringMap(raw.supportNoteReasons),
+    missingSupportSymptoms: stringArrayOr(raw.missingSupportSymptoms),
+    criticalDays: normalizeStringArrayMap(raw.criticalDays),
+    supportHints: stringArrayOr(raw.supportHints),
+    seeds: stringArrayOr(raw.seeds),
+    averages: {
+      mood: numberOr(averagesRaw.mood, defaults.averages.mood),
+      sleep: numberOr(averagesRaw.sleep, defaults.averages.sleep),
+      regulation: numberOr(averagesRaw.regulation, defaults.averages.regulation),
+      stress: numberOr(averagesRaw.stress, defaults.averages.stress),
+      anxiety: numberOr(averagesRaw.anxiety, defaults.averages.anxiety),
+      exhaustion: numberOr(averagesRaw.exhaustion, defaults.averages.exhaustion),
+      sensoryLoad: numberOr(averagesRaw.sensoryLoad, defaults.averages.sensoryLoad),
+      socialLoad: numberOr(averagesRaw.socialLoad, defaults.averages.socialLoad),
+    },
+    emotionCounts: {
+      pleasant: normalizeCountMap(emotionRaw.pleasant),
+      unpleasant: normalizeCountMap(emotionRaw.unpleasant),
+      pleasantTotal: numberOr(emotionRaw.pleasantTotal, defaults.emotionCounts.pleasantTotal),
+      unpleasantTotal: numberOr(emotionRaw.unpleasantTotal, defaults.emotionCounts.unpleasantTotal),
+    },
+    trackerCounts: normalizeCountMap(raw.trackerCounts),
+    taskAdjustments: {
+      maxEnergy: normalizeDelta(taskRaw.maxEnergy, defaults.taskAdjustments.maxEnergy),
+      forcedBreakThreshold: normalizeDelta(taskRaw.forcedBreakThreshold, defaults.taskAdjustments.forcedBreakThreshold),
+      forcedBreakLength: normalizeDelta(taskRaw.forcedBreakLength, defaults.taskAdjustments.forcedBreakLength),
+    },
+  };
+}
+
+function deriveProcessedDateRangeFromLinks(journalLinks: string[]): { start: string; end: string } {
+  const dateKeys = journalLinks
+    .map((link) => {
+      const match = link.match(/\[\[(\d{4}-\d{2}-\d{2})\]\]/);
+      return match?.[1] ?? "";
+    })
+    .filter((value) => value.length > 0)
+    .sort();
+  if (dateKeys.length === 0) {
+    return { start: "", end: "" };
+  }
+  return { start: dateKeys[0], end: dateKeys[dateKeys.length - 1] };
+}
+
+function normalizeCountMap(value: unknown): Record<string, number> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return {};
+  }
+  const map: Record<string, number> = {};
+  for (const [key, raw] of Object.entries(value as Record<string, unknown>)) {
+    map[key] = numberOr(raw, 0);
+  }
+  return map;
+}
+
+function normalizeStringMap(value: unknown): Record<string, string> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return {};
+  }
+  const map: Record<string, string> = {};
+  for (const [key, raw] of Object.entries(value as Record<string, unknown>)) {
+    if (typeof raw === "string") {
+      map[key] = raw;
+    }
+  }
+  return map;
+}
+
+function normalizeStringArrayMap(value: unknown): Record<string, string[]> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return {};
+  }
+  const map: Record<string, string[]> = {};
+  for (const [key, raw] of Object.entries(value as Record<string, unknown>)) {
+    map[key] = stringArrayOr(raw);
+  }
+  return map;
+}
+
+function normalizeDelta(value: unknown, fallback: { from: number; to: number }): { from: number; to: number } {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return fallback;
+  }
+  const record = value as Record<string, unknown>;
+  return {
+    from: numberOr(record.from, fallback.from),
+    to: numberOr(record.to, fallback.to),
   };
 }
 

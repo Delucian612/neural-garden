@@ -1,10 +1,18 @@
-import { ItemView, Notice, WorkspaceLeaf } from "obsidian";
-import { TRACKER_FOLDER, VIEW_TYPE_NEURAL_GARDEN_JOURNALING } from "./constants";
+import { ItemView, TFile, WorkspaceLeaf } from "obsidian";
+import { TRACKER_FOLDER, VIEW_TYPE_NEURAL_GARDEN_JOURNALING, WEEKLY_RECAP_MIN_ENTRIES } from "./constants";
 import { JournalingStorage } from "./journalingStorage";
 import { injectNeuralGardenStyles } from "./styles";
 import { TaskManagerStorage } from "./storage";
 import { effortColor, effortLabel } from "./taskState";
-import { EffortKey, JournalEntryFrontmatter, JournalEntryRecord, JournalTrackerRecord } from "./types";
+import { EffortKey, JournalEntryFrontmatter, JournalEntryRecord, JournalTrackerRecord, WeeklyRecapFrontmatter } from "./types";
+
+type WeeklyPreviewState = {
+  key: string;
+  year: number;
+  week: number;
+  generated: boolean;
+  frontmatter: WeeklyRecapFrontmatter | null;
+};
 
 type MetricKey =
   | "mood"
@@ -23,14 +31,14 @@ type MetricDefinition = {
 };
 
 const METRICS: MetricDefinition[] = [
-  { key: "mood", label: "Mood", explanation: "How have you been feeling today?" },
-  { key: "sleep", label: "Sleep", explanation: "How rested did you feel after tonight's sleep?" },
-  { key: "regulation", label: "Regulation", explanation: "How well were you able to regulate yourself today?" },
-  { key: "stress", label: "Stress", explanation: "How stressed were you today?" },
-  { key: "anxiety", label: "Anxiety", explanation: "Have you been anxious today? How intense was it?" },
-  { key: "exhaustion", label: "Exhaustion", explanation: "How exhausted did you feel today?" },
+  { key: "mood", label: "Mood", explanation: "How have you been feeling?" },
+  { key: "sleep", label: "Sleep", explanation: "How rested did you feel after sleeping?" },
+  { key: "regulation", label: "Regulation", explanation: "How well were you able to regulate yourself?" },
+  { key: "stress", label: "Stress", explanation: "How stressed were you?" },
+  { key: "anxiety", label: "Anxiety", explanation: "Have you been anxious? How intense was it?" },
+  { key: "exhaustion", label: "Exhaustion", explanation: "How exhausted did you feel?" },
   { key: "sensoryLoad", label: "Sensory Load", explanation: "Have you had any sensory issues? How intense were they?" },
-  { key: "socialLoad", label: "Social Load", explanation: "How demanding were social interactions today?" },
+  { key: "socialLoad", label: "Social Load", explanation: "How demanding were social interactions?" },
 ];
 
 const PLEASANT_EMOTIONS = [
@@ -77,6 +85,9 @@ export class NeuralGardenJournalingView extends ItemView {
   private dailyEntries: JournalEntryRecord[] = [];
   private trackers: JournalTrackerRecord[] = [];
   private selectedEntry: JournalEntryRecord | null = null;
+  private selectedWeekKey: string | null = null;
+  private weeklyPreview: WeeklyPreviewState | null = null;
+  private generatedWeeklyRecaps = new Set<string>();
 
   constructor(
     leaf: WorkspaceLeaf,
@@ -84,6 +95,7 @@ export class NeuralGardenJournalingView extends ItemView {
     private readonly journalingStorage: JournalingStorage,
     private readonly openHomeView: (makeActive: boolean, targetLeaf?: WorkspaceLeaf) => Promise<void>,
     private readonly openJournalEntryView: (dateKey: string, editable: boolean, targetLeaf?: WorkspaceLeaf) => Promise<void>,
+    private readonly openWeeklyRecap: (year: number, week: number, targetLeaf?: WorkspaceLeaf) => Promise<void>,
   ) {
     super(leaf);
   }
@@ -109,12 +121,15 @@ export class NeuralGardenJournalingView extends ItemView {
   async onClose(): Promise<void> {
     this.selectedEntry = null;
     this.selectedDateKey = null;
+    this.selectedWeekKey = null;
+    this.weeklyPreview = null;
   }
 
   private async reloadState(): Promise<void> {
     await this.journalingStorage.ensureJournalFolders();
     this.dailyEntries = await this.journalingStorage.listDailyEntries();
     this.trackers = (await this.journalingStorage.listTrackers()).slice(0, 18);
+    this.generatedWeeklyRecaps = await this.loadGeneratedWeeklyRecapKeys();
 
     if (this.selectedDateKey) {
       if (!this.dailyEntries.some((entry) => entry.frontmatter.date === this.selectedDateKey)) {
@@ -205,7 +220,7 @@ export class NeuralGardenJournalingView extends ItemView {
     this.renderCalendar(calendar);
 
     const details = section.createDiv({ cls: "ng-journal-detail-panel" });
-    this.renderSelectedEntry(details);
+    this.renderSelectionPreview(details);
 
     const trackerSection = section.createDiv({ cls: "ng-tracker-section" });
     this.renderTrackers(trackerSection);
@@ -221,15 +236,36 @@ export class NeuralGardenJournalingView extends ItemView {
     }
 
     for (const week of weeks) {
+      const weekKey = `${week.weekYear}-W${String(week.weekNumber).padStart(2, "0")}`;
+      const wasSelectedWeek = this.selectedWeekKey === weekKey;
+      const isGenerated = this.generatedWeeklyRecaps.has(weekKey);
       const weekButton = grid.createEl("button");
       weekButton.type = "button";
       weekButton.addClass("ng-journal-week-cell");
       weekButton.textContent = String(week.weekNumber);
-      weekButton.title = week.entryCount >= 4 ? `Week ${week.weekNumber}: ${week.entryCount} entries` : `Week ${week.weekNumber}: ${week.entryCount} entries (need 4)`;
-      if (week.entryCount >= 4) {
-        weekButton.addClass("is-available");
-        weekButton.addEventListener("click", () => {
-          new Notice(`Weekly reflection for week ${week.weekNumber} is ready.`);
+      if (isGenerated) {
+        weekButton.title = `Week ${week.weekNumber}: recap already created`;
+      } else {
+        weekButton.title = week.entryCount >= WEEKLY_RECAP_MIN_ENTRIES
+          ? `Week ${week.weekNumber}: ${week.entryCount} entries`
+          : `Week ${week.weekNumber}: ${week.entryCount} entries (need ${WEEKLY_RECAP_MIN_ENTRIES})`;
+      }
+
+      if (isGenerated || week.entryCount >= WEEKLY_RECAP_MIN_ENTRIES) {
+        if (isGenerated) {
+          weekButton.addClass("is-generated");
+        } else {
+          weekButton.addClass("is-available");
+        }
+        if (wasSelectedWeek) {
+          weekButton.addClass("is-selected");
+        }
+        weekButton.addEventListener("click", async () => {
+          if (wasSelectedWeek) {
+            await this.openWeeklyRecap(week.weekYear, week.weekNumber, this.leaf);
+            return;
+          }
+          await this.selectWeekPreview(week.weekYear, week.weekNumber);
         });
       } else {
         weekButton.disabled = true;
@@ -258,6 +294,8 @@ export class NeuralGardenJournalingView extends ItemView {
           button.createDiv({ cls: "ng-journal-day-dot" });
         }
         button.addEventListener("click", async (event) => {
+          this.selectedWeekKey = null;
+          this.weeklyPreview = null;
           this.selectedDateKey = cell.dateKey;
           this.calendarMonth = startOfMonth(parseDateKey(cell.dateKey) ?? new Date());
           this.selectedEntry = this.dailyEntries.find((entry) => entry.frontmatter.date === cell.dateKey) ?? null;
@@ -274,7 +312,12 @@ export class NeuralGardenJournalingView extends ItemView {
     }
   }
 
-  private renderSelectedEntry(container: HTMLElement): void {
+  private renderSelectionPreview(container: HTMLElement): void {
+    if (this.weeklyPreview) {
+      this.renderWeeklyPreview(container, this.weeklyPreview);
+      return;
+    }
+
     const entry = this.selectedEntry;
     const card = container.createDiv({ cls: "ng-journal-entry-card" });
     if (!entry) {
@@ -290,6 +333,119 @@ export class NeuralGardenJournalingView extends ItemView {
     this.renderTrackedTrackers(card, entry.frontmatter.date);
     this.renderTaskSnapshots(card, entry.frontmatter);
     this.renderBody(card, entry.body);
+  }
+
+  private renderWeeklyPreview(container: HTMLElement, weekly: WeeklyPreviewState): void {
+    const card = container.createDiv({ cls: "ng-journal-entry-card" });
+    card.createEl("h3", { text: `Weekly Recap - ${weekly.year}-W${String(weekly.week).padStart(2, "0")}` });
+    card.createEl("h4", { cls: "ng-journal-preview-summary", text: "Summary" });
+
+    if (!weekly.generated || !weekly.frontmatter) {
+      card.createDiv({ cls: "ng-empty", text: "No generated recap yet. Click this week again to generate and open it." });
+      return;
+    }
+
+    const frontmatter = weekly.frontmatter;
+    card.createDiv({
+      cls: "ng-journal-body-copy",
+      text: `Processed dates: ${frontmatter.processedDateRange.start || "-"} to ${frontmatter.processedDateRange.end || "-"}`,
+    });
+
+    const metrics = card.createDiv({ cls: "ng-journal-metrics" });
+    const rows: Array<{ label: string; value: number; highIsBad: boolean }> = [
+      { label: "Mood", value: frontmatter.averages.mood, highIsBad: false },
+      { label: "Sleep", value: frontmatter.averages.sleep, highIsBad: false },
+      { label: "Regulation", value: frontmatter.averages.regulation, highIsBad: false },
+      { label: "Stress", value: frontmatter.averages.stress, highIsBad: true },
+      { label: "Anxiety", value: frontmatter.averages.anxiety, highIsBad: true },
+      { label: "Exhaustion", value: frontmatter.averages.exhaustion, highIsBad: true },
+      { label: "Sensory Load", value: frontmatter.averages.sensoryLoad, highIsBad: true },
+      { label: "Social Load", value: frontmatter.averages.socialLoad, highIsBad: true },
+    ];
+    for (const row of rows) {
+      const entry = metrics.createDiv({ cls: "ng-journal-metric" });
+      const meta = entry.createDiv({ cls: "ng-journal-metric-meta" });
+      meta.createDiv({ cls: "ng-journal-metric-label", text: row.label });
+      const bar = entry.createDiv({ cls: "ng-journal-progress ng-journal-progress-readonly" });
+      const fill = bar.createDiv({ cls: "ng-journal-progress-fill" });
+      fill.style.width = `${Math.max(0, Math.min(100, row.value))}%`;
+      fill.style.backgroundColor = weeklyMetricColor(row.value, row.highIsBad);
+    }
+
+    const emotions = card.createDiv({ cls: "ng-journal-emotion-list" });
+    emotions.addClass("ng-weekly-preview-emotions");
+    const sortedEmotions = [
+      ...Object.entries(frontmatter.emotionCounts.unpleasant).map(([emotion, count]) => ({ emotion, count, tone: "unpleasant" })),
+      ...Object.entries(frontmatter.emotionCounts.pleasant).map(([emotion, count]) => ({ emotion, count, tone: "pleasant" })),
+    ].sort((a, b) => b.count - a.count).slice(0, 8);
+    if (sortedEmotions.length === 0) {
+      emotions.createDiv({ cls: "ng-empty", text: "No emotions recorded." });
+    } else {
+      for (const item of sortedEmotions) {
+        const chip = emotions.createSpan({ cls: "ng-journal-emotion-chip", text: item.emotion });
+        chip.addClass(item.tone);
+      }
+    }
+
+    const trackerCloud = card.createDiv({ cls: "ng-weekly-tracker-cloud" });
+    trackerCloud.addClass("ng-weekly-preview-tracker-cloud");
+    const trackers = Object.entries(frontmatter.trackerCounts)
+      .sort((a, b) => b[1] - a[1])
+      .filter(([, count]) => count > 0)
+      .slice(0, 6);
+    for (const [name, count] of trackers) {
+      const pill = trackerCloud.createDiv({ cls: "ng-weekly-tracker-pill", text: `${name} · ${count}` });
+      pill.addClass("ng-weekly-preview-pill");
+    }
+
+    card.createDiv({ cls: "ng-journal-body-copy", text: `Support suggestions: ${frontmatter.supportNotes.length}` });
+  }
+
+  private async selectWeekPreview(weekYear: number, weekNumber: number): Promise<void> {
+    const key = `${weekYear}-W${String(weekNumber).padStart(2, "0")}`;
+    this.selectedWeekKey = key;
+    this.selectedDateKey = null;
+    this.selectedEntry = null;
+
+    const path = this.journalingStorage.weeklyRecapPath(weekYear, weekNumber);
+    const file = this.app.vault.getAbstractFileByPath(path);
+    if (!(file instanceof TFile)) {
+      this.weeklyPreview = {
+        key,
+        year: weekYear,
+        week: weekNumber,
+        generated: false,
+        frontmatter: null,
+      };
+      this.render();
+      return;
+    }
+
+    const recap = await this.journalingStorage.readWeeklyRecap(file);
+    this.weeklyPreview = {
+      key,
+      year: weekYear,
+      week: weekNumber,
+      generated: recap.body.trim().length > 0,
+      frontmatter: recap.frontmatter,
+    };
+    this.render();
+  }
+
+  private async loadGeneratedWeeklyRecapKeys(): Promise<Set<string>> {
+    const keys = new Set<string>();
+    const files = this.app.vault
+      .getFiles()
+      .filter((file) => file.path.startsWith("Journal/Weekly/") && file.extension === "md");
+
+    for (const file of files) {
+      const recap = await this.journalingStorage.readWeeklyRecap(file);
+      if (recap.body.trim().length > 0) {
+        keys.add(`${recap.frontmatter.year}-W${String(recap.frontmatter.week).padStart(2, "0")}`);
+      }
+    }
+
+    return keys;
   }
 
   private renderTrackedTrackers(container: HTMLElement, dateKey: string): void {
@@ -369,7 +525,6 @@ export class NeuralGardenJournalingView extends ItemView {
 
   private renderEntryMeta(container: HTMLElement, frontmatter: JournalEntryFrontmatter): void {
     const meta = container.createDiv({ cls: "ng-journal-meta-grid" });
-    meta.createDiv({ text: `Processed: ${frontmatter.processed ? "Yes" : "No"}` });
     meta.createDiv({ text: `Mood value: ${valueOrDash(frontmatter.mood)}` });
     meta.createDiv({ text: `Sleep value: ${valueOrDash(frontmatter.sleep)}` });
     meta.createDiv({ text: `Stress value: ${valueOrDash(frontmatter.stress)}` });
@@ -610,11 +765,11 @@ function ordinalSuffix(day: number): string {
 function buildCalendarWeeks(
   month: Date,
   entryDates: Set<string>,
-): Array<{ weekNumber: number; entryCount: number; days: Array<{ dateKey: string; day: number; outsideMonth: boolean }> }> {
+): Array<{ weekNumber: number; weekYear: number; entryCount: number; days: Array<{ dateKey: string; day: number; outsideMonth: boolean }> }> {
   const monthStart = startOfMonth(month);
   const monthEnd = endOfMonth(month);
   const start = startOfWeek(monthStart);
-  const weeks: Array<{ weekNumber: number; entryCount: number; days: Array<{ dateKey: string; day: number; outsideMonth: boolean }> }> = [];
+  const weeks: Array<{ weekNumber: number; weekYear: number; entryCount: number; days: Array<{ dateKey: string; day: number; outsideMonth: boolean }> }> = [];
 
   for (let cursor = new Date(start); cursor <= monthEnd; cursor.setDate(cursor.getDate() + 7)) {
     const weekStart = new Date(cursor);
@@ -637,6 +792,7 @@ function buildCalendarWeeks(
 
     weeks.push({
       weekNumber: getIsoWeekNumber(weekStart),
+      weekYear: getIsoWeekYear(weekStart),
       entryCount,
       days,
     });
@@ -662,6 +818,13 @@ function getIsoWeekNumber(date: Date): number {
   utcDate.setUTCDate(utcDate.getUTCDate() + 4 - dayNumber);
   const yearStart = new Date(Date.UTC(utcDate.getUTCFullYear(), 0, 1));
   return Math.ceil((((utcDate.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+}
+
+function getIsoWeekYear(date: Date): number {
+  const utcDate = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNumber = utcDate.getUTCDay() || 7;
+  utcDate.setUTCDate(utcDate.getUTCDate() + 4 - dayNumber);
+  return utcDate.getUTCFullYear();
 }
 
 function buildTrackerWindow(days: number): Array<{ dateKey: string; day: number }> {
@@ -774,6 +937,20 @@ function metricColor(metric: MetricKey, value: number): string {
     return "#39E05A";
   }
   return "#39E05A";
+}
+
+function weeklyMetricColor(value: number, highIsBad: boolean): string {
+  const v = Math.max(0, Math.min(100, value));
+  if (highIsBad) {
+    if (v >= 80) return "#FF6565";
+    if (v >= 60) return "#F0A04C";
+    if (v >= 40) return "#F4D35E";
+    return "#39E05A";
+  }
+  if (v >= 80) return "#39E05A";
+  if (v >= 60) return "#A8D56E";
+  if (v >= 40) return "#F4D35E";
+  return "#FF6565";
 }
 
 function getEmotionToneClass(emotion: string): string {

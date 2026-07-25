@@ -29,6 +29,13 @@ export function injectNeuralGardenStyles(): void {
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 8px;
     }
+    .ng-weekly-available-hint {
+      text-align: center;
+      color: #00f0ff;
+      font-size: 0.92rem;
+      letter-spacing: 0.02em;
+      margin-bottom: 2px;
+    }
     .ng-weekly-recap-row {
       width: min(420px, 100%);
       align-self: center;
@@ -37,12 +44,448 @@ export function injectNeuralGardenStyles(): void {
     .ng-task-manager {
       background: transparent;
     }
+    .ng-home-support {
+      border-top: 1px solid color-mix(in srgb, var(--background-modifier-border) 78%, transparent);
+      margin-top: 10px;
+      padding-top: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .ng-home-hints-strip {
+      margin-top: 4px;
+      margin-bottom: -8px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 46px;
+    }
+    .ng-home-support h3 {
+      margin: 0;
+      text-align: center;
+      color: var(--text-normal);
+    }
+    .ng-home-support-heading {
+      text-align: center !important;
+      color: var(--text-normal) !important;
+      font-size: 1.3em;
+    }
+    .ng-home-support-copy {
+      font-size: 0.86rem;
+      color: var(--text-muted);
+      text-align: center;
+      font-style: italic;
+    }
+    .ng-home-support-notes {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      align-items: center;
+    }
+    .ng-home-support-note {
+      border: none;
+      border-radius: 9px;
+      padding: 8px 10px;
+      cursor: pointer;
+      transition: color 180ms ease;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      width: fit-content;
+      min-width: 220px;
+      max-width: min(100%, 560px);
+      font-size: 1.3em;
+      line-height: 1.32;
+      color: color-mix(in srgb, #39e05a 56%, var(--text-normal));
+    }
+    .ng-home-support-note:hover {
+      background: transparent;
+      color: color-mix(in srgb, #39e05a 88%, var(--text-normal));
+    }
+    .ng-home-support-hint {
+      opacity: 0;
+      min-height: 42px;
+      padding: 8px 10px;
+      font-style: italic;
+      transition: opacity 2200ms ease;
+      color: var(--text-normal);
+      text-align: center;
+      font-size: 1.3em;
+    }
+    .ng-home-support-hint.is-visible {
+      opacity: 1;
+    }
+    .ng-weekly-overlay {
+      margin: 12px auto;
+      width: min(660px, 100%);
+      display: flex;
+      justify-content: center;
+      pointer-events: none;
+    }
+    .ng-weekly-overlay-card {
+      width: 100%;
+      border: 1px solid color-mix(in srgb, #00f0ff 48%, var(--background-modifier-border));
+      border-radius: 12px;
+      padding: 18px 18px 16px;
+      background: color-mix(in srgb, var(--background-primary) 90%, transparent);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      pointer-events: auto;
+    }
+    .ng-weekly-overlay-title {
+      margin: 0;
+      opacity: 0;
+      animation: ng-fade-in-slow 600ms ease forwards;
+    }
+    .ng-weekly-overlay-generate {
+      border: none !important;
+      background: transparent !important;
+      color: var(--text-normal);
+      box-shadow: none !important;
+      cursor: pointer;
+      font-size: 0.98rem;
+      transition: color 140ms ease;
+    }
+    .ng-weekly-overlay-generate:hover {
+      color: #00f0ff;
+    }
+    .ng-weekly-breath-label,
+    .ng-weekly-breath-count {
+      opacity: 1;
+      transition: opacity 1200ms ease;
+    }
+    .ng-weekly-breath-label {
+      font-size: 1.1rem;
+    }
+    .ng-weekly-breath-count {
+      font-size: 1.6rem;
+      line-height: 1;
+    }
+    .ng-weekly-breath-label.is-fading,
+    .ng-weekly-breath-count.is-fading {
+      opacity: 0;
+    }
+    .ng-weekly-seed-form {
+      width: 100%;
+      display: grid;
+      grid-template-columns: 1fr 1fr auto;
+      gap: 6px;
+      align-items: center;
+    }
+    .ng-weekly-seed-submit {
+      border: 1px solid #ec9a63;
+      border-radius: 8px;
+      background: transparent;
+      cursor: pointer;
+      padding: 7px 11px;
+      color: var(--text-normal);
+    }
+    .ng-weekly-seed-form.is-locked {
+      opacity: 0.45;
+    }
+    .ng-weekly-view {
+      max-width: 720px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding: 8px 0 24px;
+    }
+    .ng-weekly-intro h3 {
+      margin: 0;
+      text-align: center;
+      font-size: 1.46rem;
+      color: var(--text-normal);
+    }
+    .ng-weekly-intro-subtitle {
+      margin-top: 2px;
+      text-align: center;
+      font-size: 1.02rem;
+      font-style: italic;
+      color: var(--text-muted);
+    }
+    .ng-weekly-section {
+      border: 1px solid var(--background-modifier-border);
+      border-radius: 12px;
+      padding: 12px;
+      background: color-mix(in srgb, var(--background-primary) 15%, transparent);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      transition: opacity 840ms ease, transform 840ms ease;
+    }
+    .ng-weekly-section.ng-weekly-scroll-hidden {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    .ng-weekly-section.is-visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .ng-weekly-section h4 {
+      margin: 0;
+      text-align: center;
+      color: var(--text-normal);
+      font-size: 1.3rem;
+    }
+    .ng-weekly-section-heading {
+      letter-spacing: 0.01em;
+    }
+    .ng-weekly-section.is-hidden,
+    .ng-weekly-symptom.is-hidden,
+    .ng-weekly-fragment-hidden {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    .ng-weekly-symptom {
+      display: grid;
+      gap: 4px;
+      transition: opacity 840ms ease, transform 840ms ease;
+    }
+    .ng-weekly-symptom .ng-journal-progress {
+      transition: opacity 1200ms ease, transform 1200ms ease;
+    }
+    .ng-weekly-symptom .ng-journal-metric-label {
+      transition: opacity 1100ms ease, transform 1100ms ease;
+    }
+    .ng-weekly-view .ng-journal-progress-fill {
+      transition: width 1200ms ease, background-color 700ms ease;
+    }
+    .ng-weekly-symptom-copy,
+    .ng-weekly-inline-copy {
+      font-size: 0.92rem;
+      color: var(--text-muted);
+      text-align: center;
+      transition: opacity 850ms ease, transform 850ms ease;
+    }
+    .ng-weekly-symptom-copy {
+      transition: opacity 1200ms ease, transform 1200ms ease;
+    }
+    .ng-weekly-fragment-hidden {
+      pointer-events: none;
+    }
+    .ng-weekly-emotion-counters {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .ng-weekly-emotion-counters-sep {
+      opacity: 0.7;
+      margin: 0 3px;
+    }
+    .ng-weekly-emotion-cloud {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      margin-top: 8px;
+      min-height: 88px;
+    }
+    .ng-weekly-emotion-balance {
+      position: relative;
+      height: 12px;
+      border-radius: 999px;
+      background: linear-gradient(
+        90deg,
+        color-mix(in srgb, #ff6565 70%, transparent) 0%,
+        color-mix(in srgb, #ff6565 24%, transparent) 50%,
+        color-mix(in srgb, #39e05a 24%, transparent) 50%,
+        color-mix(in srgb, #39e05a 70%, transparent) 100%
+      );
+      overflow: hidden;
+      margin-bottom: 4px;
+    }
+    .ng-weekly-emotion-pointer {
+      position: absolute;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--text-normal);
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--background-primary) 72%, transparent);
+    }
+    .ng-weekly-emotion-token {
+      display: inline-flex;
+      align-items: center;
+      line-height: 1;
+      white-space: nowrap;
+      border-radius: 999px;
+      padding: 6px 10px;
+      transition: opacity 900ms ease, transform 900ms cubic-bezier(0.15, 1.35, 0.25, 1);
+      animation-name: ng-weekly-float;
+      animation-iteration-count: infinite;
+      animation-direction: alternate;
+      animation-timing-function: ease-in-out;
+      transform-origin: center;
+    }
+    .ng-weekly-emotion-token.is-negative {
+      color: color-mix(in srgb, #ff6565 80%, var(--text-normal));
+      background: color-mix(in srgb, #ff6565 14%, transparent);
+      border: 1px solid color-mix(in srgb, #ff6565 28%, transparent);
+    }
+    .ng-weekly-emotion-token.is-positive {
+      color: color-mix(in srgb, #39e05a 82%, var(--text-normal));
+      background: color-mix(in srgb, #39e05a 14%, transparent);
+      border: 1px solid color-mix(in srgb, #39e05a 28%, transparent);
+    }
+    .ng-weekly-tracker-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      border-radius: 8px;
+      padding: 6px 8px;
+      background: color-mix(in srgb, var(--background-primary) 25%, transparent);
+    }
+    .ng-weekly-tracker-cloud {
+      min-height: 58px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      justify-content: center;
+      align-items: center;
+    }
+    .ng-weekly-tracker-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      padding: 5px 7px;
+      border: 1px solid color-mix(in srgb, #ec9a63 40%, var(--background-modifier-border));
+      background: color-mix(in srgb, #ec9a63 11%, transparent);
+      color: var(--text-normal);
+      animation-name: ng-weekly-float;
+      animation-iteration-count: infinite;
+      animation-direction: alternate;
+      animation-timing-function: ease-in-out;
+      transition: opacity 900ms ease, transform 900ms cubic-bezier(0.15, 1.35, 0.25, 1);
+      transform-origin: center;
+    }
+    .ng-weekly-tracker-pill.ng-weekly-fragment-hidden,
+    .ng-weekly-emotion-token.ng-weekly-fragment-hidden {
+      transform: scale(0.62) translateY(10px);
+    }
+    .ng-weekly-tracker-pill.is-winner {
+      box-shadow: 0 0 0 1px color-mix(in srgb, #f5d742 60%, transparent), 0 0 18px color-mix(in srgb, #f5d742 25%, transparent);
+      background: color-mix(in srgb, #f5d742 12%, transparent);
+    }
+    .ng-weekly-tracker-row.is-winner {
+      box-shadow: 0 0 0 1px color-mix(in srgb, #f5d742 60%, transparent), 0 0 18px color-mix(in srgb, #f5d742 25%, transparent);
+    }
+    .ng-weekly-tracker-count {
+      color: #ec9a63;
+      font-weight: 700;
+    }
+    .ng-weekly-support-chip {
+      border: 1px solid color-mix(in srgb, #39e05a 45%, var(--background-modifier-border));
+      border-radius: 999px;
+      padding: 6px 10px;
+      text-align: center;
+      color: color-mix(in srgb, #39e05a 65%, var(--text-normal));
+    }
+    .ng-weekly-support-link {
+      all: unset;
+      appearance: none;
+      -webkit-appearance: none;
+      color: #8fcf9d;
+      cursor: pointer;
+      font-size: 1.25rem;
+      line-height: 1.3;
+      text-decoration: none;
+      padding: 0;
+      margin: 0;
+      font-weight: 500;
+      display: inline;
+    }
+    .ng-weekly-support-link:hover {
+      color: #47fc82;
+    }
+    .ng-weekly-support-link:focus,
+    .ng-weekly-support-link:focus-visible {
+      outline: none !important;
+      box-shadow: none !important;
+    }
+    .ng-weekly-support-intro {
+      transition: opacity 1700ms ease, transform 1700ms ease;
+    }
+    .ng-weekly-support-reason {
+      color: #FF6565;
+    }
+    .ng-weekly-critical-title,
+    .ng-weekly-critical-line {
+      color: #FF6565;
+    }
+    .ng-weekly-task-status {
+      display: flex;
+      justify-content: center;
+      gap: 3px;
+    }
+    .ng-weekly-task-status-value {
+      font-weight: 700;
+      text-transform: capitalize;
+    }
+    .ng-weekly-task-status-value.is-increased {
+      color: color-mix(in srgb, #ec9a63 60%, var(--text-normal));
+    }
+    .ng-weekly-task-status-value.is-decreased {
+      color: color-mix(in srgb, #ec9a63 60%, var(--text-normal));
+    }
+    .ng-weekly-task-status-value.is-unchanged {
+      color: inherit;
+      font-weight: 600;
+    }
+    .ng-weekly-task-status-value.is-at-max {
+      color: #00F0FF;
+      font-weight: 700;
+    }
+    .ng-weekly-support-row {
+      display: grid;
+      gap: 4px;
+      justify-items: center;
+      padding: 4px 0;
+      transition: opacity 640ms ease, transform 640ms ease;
+    }
+    .ng-weekly-preview-card {
+      margin-top: 4px;
+    }
+    .ng-weekly-preview-emotions {
+      margin-top: 8px;
+    }
+    .ng-weekly-preview-tracker-cloud {
+      margin-top: 14px;
+      margin-bottom: 6px;
+      gap: 6px;
+    }
+    .ng-weekly-preview-pill {
+      padding: 5px 9px;
+      font-size: 0.82rem;
+      min-height: 24px;
+    }
+    @keyframes ng-weekly-float {
+      from { transform: translateY(0px); }
+      to { transform: translateY(-8px); }
+    }
+    @keyframes ng-fade-in-slow {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
     .ng-search {
-      margin-top: 7px;
+      margin-top: 0;
     }
     .ng-search h3 {
       margin: 0 0 4px;
       color: var(--text-normal);
+      text-align: center;
+    }
+    .ng-search-heading {
+      text-align: center !important;
     }
     .ng-search-results {
       margin-top: 8px;
@@ -62,7 +505,7 @@ export function injectNeuralGardenStyles(): void {
     }
     .ng-search-title {
       font-weight: 600;
-      font-size: 1.2em;
+      font-size: 0.95rem;
     }
     .ng-task-heading {
       display: flex;
@@ -632,6 +1075,11 @@ export function injectNeuralGardenStyles(): void {
       border-color: #00f0ff;
       background: color-mix(in srgb, var(--background-primary) 16%, transparent);
       box-shadow: 0 0 0 2px rgba(0, 240, 255, 0.18);
+    }
+    .ng-journal-week-cell.is-generated {
+      border-color: #39e05a;
+      background: color-mix(in srgb, #39e05a 10%, var(--background-primary));
+      box-shadow: 0 0 0 2px rgba(57, 224, 90, 0.18);
     }
     .ng-journal-week-cell.is-available::after {
       content: "+";

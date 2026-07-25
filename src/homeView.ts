@@ -4,10 +4,12 @@ import {
   DEFAULT_STATE,
   EFFORTS,
   ENERGY_STOPS,
+  JOURNAL_WEEKLY_FOLDER,
   NOTES_FOLDER,
   VIEW_TYPE_NEURAL_GARDEN_HOME,
-  WEEKLY_RECAP_MIN_ENTRIES,
+  WEEKLY_RECAP_HOME_HINT_MIN_ENTRIES,
 } from "./constants";
+import { JournalingStorage } from "./journalingStorage";
 import { searchNotesInFolder } from "./search";
 import { TaskManagerStorage } from "./storage";
 import { injectNeuralGardenStyles } from "./styles";
@@ -20,8 +22,7 @@ import {
   getEffectiveMaxEnergy,
   recalculateTotals,
 } from "./taskState";
-import { TaskItem, TaskManagerState } from "./types";
-
+import { TaskItem, TaskManagerState, WeeklyRecapFrontmatter } from "./types";
 export class NeuralGardenHomeView extends ItemView {
   state: TaskManagerState = { ...DEFAULT_STATE };
   searchDebounceTimer: number | null = null;
@@ -30,11 +31,16 @@ export class NeuralGardenHomeView extends ItemView {
   breakTimerEl: HTMLElement | null = null;
   breakMessageEl: HTMLElement | null = null;
   lastBreakMessageIndex: number | null = null;
+  supportHintTimer: number | null = null;
+  supportHintEl: HTMLElement | null = null;
+  supportHints: string[] = [];
+  lastSupportHintIndex: number | null = null;
   refocusTaskInputAfterRender = false;
 
   constructor(
     leaf: WorkspaceLeaf,
     private readonly storage: TaskManagerStorage,
+    private readonly journalingStorage: JournalingStorage,
     private readonly openJournalingView: (makeActive: boolean, targetLeaf?: WorkspaceLeaf) => Promise<void>,
     private readonly openMyNotesView: (makeActive: boolean, targetLeaf?: WorkspaceLeaf) => Promise<void>,
   ) {
@@ -77,7 +83,12 @@ export class NeuralGardenHomeView extends ItemView {
       window.clearInterval(this.breakMessageTimer);
       this.breakMessageTimer = null;
     }
+    if (this.supportHintTimer) {
+      window.clearInterval(this.supportHintTimer);
+      this.supportHintTimer = null;
+    }
     this.lastBreakMessageIndex = null;
+    this.lastSupportHintIndex = null;
   }
 
   private startBreakTicker(): void {
@@ -100,6 +111,9 @@ export class NeuralGardenHomeView extends ItemView {
     wrapper.createEl("h2", { text: "Home" });
 
     const categories = wrapper.createDiv({ cls: "ng-categories" });
+    if (this.shouldShowWeeklyRecapHint()) {
+      categories.createDiv({ cls: "ng-weekly-available-hint", text: "Weekly Recap Available" });
+    }
     const categoryGrid = categories.createDiv({ cls: "ng-category-grid" });
     const journalButton = this.makeCategoryButton("Journaling", "book-open", () => {
       void this.openJournalingView(true, this.leaf);
@@ -121,28 +135,124 @@ export class NeuralGardenHomeView extends ItemView {
     });
     categoryGrid.appendChild(quickNoteButton);
 
-    if (this.shouldShowWeeklyRecapButton()) {
-      const recapContainer = categories.createDiv({ cls: "ng-weekly-recap-row" });
-      const weeklyRecapButton = this.makeCategoryButton(
-        "Weekly Recap",
-        "sparkles",
-        () => {
-          new Notice("Weekly recap will be implemented in a later step");
-        },
-        "#00F0FF",
-      );
-      recapContainer.appendChild(weeklyRecapButton);
-    }
-
+    const hintStrip = wrapper.createDiv({ cls: "ng-home-hints-strip" });
+    void this.renderSupportHintsStrip(hintStrip);
     this.renderSearchSection(wrapper);
     this.renderTaskManager(wrapper);
+    const supportSection = wrapper.createDiv({ cls: "ng-home-support" });
+    void this.renderSupportSection(supportSection);
     injectNeuralGardenStyles();
     this.syncBreakLiveUpdates();
   }
 
+  private async renderSupportSection(container: HTMLElement): Promise<void> {
+    container.empty();
+    const heading = container.createEl("h3", { text: "Support Notes", cls: "ng-home-support-heading" });
+    heading.style.textAlign = "center";
+    heading.style.color = "var(--text-normal)";
+    const copy = container.createDiv({
+      cls: "ng-home-support-copy",
+      text: "Considering your current symptoms, take a look at the following notes.",
+    });
+    copy.style.textAlign = "center";
+    copy.style.setProperty("color", "var(--text-muted)", "important");
+    copy.style.fontStyle = "italic";
+    copy.style.fontSize = "0.86rem";
+
+    const recap = await this.getLatestWeeklyRecapFrontmatter();
+    if (!recap) {
+      container.createDiv({ cls: "ng-empty", text: "No weekly support generated yet." });
+      return;
+    }
+
+    const noteList = container.createDiv({ cls: "ng-home-support-notes" });
+    if (recap.supportNotes.length === 0) {
+      noteList.createDiv({ cls: "ng-empty", text: "No support notes listed for the latest recap." });
+    } else {
+      for (const name of recap.supportNotes) {
+        const row = noteList.createDiv({ cls: "ng-home-support-note" });
+        row.textContent = name;
+        const baseColor = "#8fcf9d";
+        const hoverColor = "#47fc82";
+        row.style.setProperty("color", baseColor, "important");
+        row.addEventListener("mouseenter", () => {
+          row.style.setProperty("color", hoverColor, "important");
+        });
+        row.addEventListener("mouseleave", () => {
+          row.style.setProperty("color", baseColor, "important");
+        });
+        row.addEventListener("click", async () => {
+          const target = this.app.vault
+            .getMarkdownFiles()
+            .find((file) => file.basename === name && file.path.startsWith(`${NOTES_FOLDER}/`));
+          if (!target) {
+            new Notice(`Support note not found: ${name}`);
+            return;
+          }
+          await this.leaf.openFile(target);
+        });
+      }
+    }
+  }
+
+  private async renderSupportHintsStrip(container: HTMLElement): Promise<void> {
+    container.empty();
+    const recap = await this.getLatestWeeklyRecapFrontmatter();
+    this.supportHintEl = container.createDiv({ cls: "ng-home-support-hint" });
+    this.supportHints = recap?.supportHints ?? [];
+    if (this.supportHints.length === 0) {
+      this.supportHintEl.textContent = "";
+      return;
+    }
+
+    this.supportHintEl.textContent = this.getNextSupportHint();
+    if (this.supportHintTimer) {
+      window.clearInterval(this.supportHintTimer);
+      this.supportHintTimer = null;
+    }
+    this.supportHintTimer = window.setInterval(() => {
+      if (!this.supportHintEl) {
+        return;
+      }
+      this.supportHintEl.classList.remove("is-visible");
+      window.setTimeout(() => {
+        if (!this.supportHintEl) {
+          return;
+        }
+        this.supportHintEl.textContent = this.getNextSupportHint();
+        this.supportHintEl.classList.add("is-visible");
+      }, 2200);
+    }, 7800);
+    this.supportHintEl.classList.add("is-visible");
+  }
+
+  private async getLatestWeeklyRecapFrontmatter(): Promise<WeeklyRecapFrontmatter | null> {
+    const recaps = this.app.vault
+      .getFiles()
+      .filter((file) => file.path.startsWith(`${JOURNAL_WEEKLY_FOLDER}/`) && file.extension === "md");
+    if (recaps.length === 0) {
+      return null;
+    }
+
+    let latestFrontmatter: WeeklyRecapFrontmatter | null = null;
+    let latestTime = 0;
+
+    for (const recapFile of recaps) {
+      const recap = await this.journalingStorage.readWeeklyRecap(recapFile);
+      const stamp = Date.parse(recap.frontmatter.generatedAt || "");
+      if (!latestFrontmatter || stamp > latestTime) {
+        latestFrontmatter = recap.frontmatter;
+        latestTime = stamp;
+      }
+    }
+
+    return latestFrontmatter;
+  }
+
   private renderSearchSection(parent: HTMLElement): void {
     const searchSection = parent.createDiv({ cls: "ng-search" });
-    searchSection.createEl("h3", { text: "Search Notes" });
+    const heading = searchSection.createEl("h3", { text: "Search Notes", cls: "ng-search-heading" });
+    heading.style.textAlign = "center";
 
     const input = searchSection.createEl("input", {
       type: "text",
@@ -150,7 +260,7 @@ export class NeuralGardenHomeView extends ItemView {
     });
     input.addClass("ng-task-input");
 
-    const results = searchSection.createDiv({ cls: "ng-search-results" });
+    const results = searchSection.createDiv({ cls: "ng-search-results ng-mynotes-list" });
 
     input.addEventListener("input", () => {
       if (this.searchDebounceTimer) {
@@ -185,8 +295,9 @@ export class NeuralGardenHomeView extends ItemView {
     }
 
     for (const file of matches) {
-      const row = container.createDiv({ cls: "ng-search-row" });
-      row.createDiv({ cls: "ng-search-title", text: file.basename });
+      const row = container.createDiv({ cls: "ng-mynotes-note-row ng-home-search-note-row" });
+      row.createDiv({ cls: "ng-mynotes-note-indicator" });
+      row.createDiv({ cls: "ng-mynotes-note-title", text: file.basename });
       row.addEventListener("click", async () => {
         await this.app.workspace.getLeaf(true).openFile(file);
       });
@@ -550,11 +661,45 @@ export class NeuralGardenHomeView extends ItemView {
     return Math.max(1, Math.round(this.state.forcedBreakTime));
   }
 
-  private shouldShowWeeklyRecapButton(): boolean {
+  private shouldShowWeeklyRecapHint(): boolean {
+    const today = new Date();
+    const week = isoWeekInfo(today);
+    const recapPath = this.journalingStorage.weeklyRecapPath(week.year, week.week);
+    const recapFile = this.app.vault.getAbstractFileByPath(recapPath);
+    if (recapFile) {
+      return false;
+    }
+
     const dailyCandidates = this.app.vault
       .getFiles()
-      .filter((file) => file.path.toLowerCase().includes("daily") || file.path.toLowerCase().includes("journal"));
-    return dailyCandidates.length >= WEEKLY_RECAP_MIN_ENTRIES;
+      .filter((file) => file.path.startsWith("Journal/Daily/") && file.extension === "md");
+
+    const currentWeekEntries = dailyCandidates.filter((file) => {
+      const date = parseDateFromDailyFileName(file.basename);
+      if (!date) {
+        return false;
+      }
+      const info = isoWeekInfo(date);
+      return info.year === week.year && info.week === week.week;
+    });
+
+    return currentWeekEntries.length >= WEEKLY_RECAP_HOME_HINT_MIN_ENTRIES;
+  }
+
+  private getNextSupportHint(): string {
+    if (this.supportHints.length === 0) {
+      return "";
+    }
+    if (this.supportHints.length === 1) {
+      this.lastSupportHintIndex = 0;
+      return this.supportHints[0];
+    }
+    let next = Math.floor(Math.random() * this.supportHints.length);
+    if (this.lastSupportHintIndex !== null && next === this.lastSupportHintIndex) {
+      next = (next + 1 + Math.floor(Math.random() * (this.supportHints.length - 1))) % this.supportHints.length;
+    }
+    this.lastSupportHintIndex = next;
+    return this.supportHints[next];
   }
 
   private makeCategoryButton(label: string, iconName: string, onClick: () => void, color = "#EC9A63"): HTMLButtonElement {
@@ -603,6 +748,23 @@ export class NeuralGardenHomeView extends ItemView {
     btn.onclick = onClick;
     return btn;
   }
+}
+
+function parseDateFromDailyFileName(baseName: string): Date | null {
+  const match = baseName.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) {
+    return null;
+  }
+  return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+}
+
+function isoWeekInfo(date: Date): { year: number; week: number } {
+  const utcDate = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNumber = utcDate.getUTCDay() || 7;
+  utcDate.setUTCDate(utcDate.getUTCDate() + 4 - dayNumber);
+  const yearStart = new Date(Date.UTC(utcDate.getUTCFullYear(), 0, 1));
+  const week = Math.ceil((((utcDate.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+  return { year: utcDate.getUTCFullYear(), week };
 }
 
 function toMutedButtonColor(hex: string, saturationFactor = 0.7, lightnessFactor = 0.6, alpha = 1): string {

@@ -25,7 +25,7 @@ __export(main_exports, {
 module.exports = __toCommonJS(main_exports);
 
 // src/plugin.ts
-var import_obsidian9 = require("obsidian");
+var import_obsidian11 = require("obsidian");
 
 // src/homeView.ts
 var import_obsidian = require("obsidian");
@@ -35,6 +35,7 @@ var VIEW_TYPE_NEURAL_GARDEN_HOME = "neural-garden-home";
 var VIEW_TYPE_NEURAL_GARDEN_JOURNALING = "neural-garden-journaling";
 var VIEW_TYPE_NEURAL_GARDEN_JOURNAL_ENTRY = "neural-garden-journal-entry";
 var VIEW_TYPE_NEURAL_GARDEN_MY_NOTES = "neural-garden-my-notes";
+var VIEW_TYPE_NEURAL_GARDEN_WEEKLY_RECAP = "neural-garden-weekly-recap";
 var TASK_MANAGER_FILE_PATH = "Maintenance/TaskManager/TaskManager.md";
 var JOURNAL_DAILY_FOLDER = "Journal/Daily";
 var JOURNAL_WEEKLY_FOLDER = "Journal/Weekly";
@@ -43,7 +44,8 @@ var TRACKER_FOLDER = "Maintenance/Tracker";
 var NOTES_FOLDER = "Notes";
 var MY_NOTES_MAINTENANCE_FOLDER = "Maintenance/MyNotes";
 var MY_NOTES_CATEGORIES_FILE_PATH = "Maintenance/MyNotes/Categories.md";
-var WEEKLY_RECAP_MIN_ENTRIES = 7;
+var WEEKLY_RECAP_MIN_ENTRIES = 4;
+var WEEKLY_RECAP_HOME_HINT_MIN_ENTRIES = 5;
 var SUPPORT_CATEGORIES = [
   { name: "Mood", color: "#39E05A" },
   { name: "Sleep", color: "#3FD6FF" },
@@ -99,13 +101,16 @@ var DEFAULT_STATE = {
   forcedBreakAdd: 0,
   forcedBreakLength: 20,
   forcedBreakTime: 20,
-  forcedBreakEnd: void 0
+  forcedBreakEnd: void 0,
+  baseTaskEnergy: 120,
+  lastWeeklyRecap: void 0
 };
 
 // src/taskState.ts
 function normalizeState(raw) {
+  var _a;
   const parsedTasks = Array.isArray(raw.tasks) ? raw.tasks.map((task) => {
-    var _a, _b;
+    var _a2, _b;
     const mapped = task;
     if (!mapped || typeof mapped !== "object") {
       return void 0;
@@ -114,7 +119,7 @@ function normalizeState(raw) {
     return {
       id: typeof mapped.id === "string" ? mapped.id : createId(),
       taskName: typeof mapped.taskName === "string" ? mapped.taskName : "Untitled Task",
-      effort: (_a = effort == null ? void 0 : effort.key) != null ? _a : "easy",
+      effort: (_a2 = effort == null ? void 0 : effort.key) != null ? _a2 : "easy",
       energy: typeof mapped.energy === "number" ? mapped.energy : (_b = effort == null ? void 0 : effort.energy) != null ? _b : 15,
       completed: Boolean(mapped.completed),
       completedAt: typeof mapped.completedAt === "number" ? mapped.completedAt : void 0
@@ -136,7 +141,9 @@ function normalizeState(raw) {
     forcedBreakAdd: numberOr(raw.forcedBreakAdd, DEFAULT_STATE.forcedBreakAdd),
     forcedBreakLength: numberOr(raw.forcedBreakLength, DEFAULT_STATE.forcedBreakLength),
     forcedBreakTime: numberOr(raw.forcedBreakTime, DEFAULT_STATE.forcedBreakTime),
-    forcedBreakEnd: numberOrUndefined(raw.forcedBreakEnd)
+    forcedBreakEnd: numberOrUndefined(raw.forcedBreakEnd),
+    baseTaskEnergy: numberOr(raw.baseTaskEnergy, (_a = DEFAULT_STATE.baseTaskEnergy) != null ? _a : 120),
+    lastWeeklyRecap: stringOrUndefined(raw.lastWeeklyRecap)
   };
   recalculateTotals(state);
   return state;
@@ -182,6 +189,9 @@ function boolOr(value, fallback) {
 }
 function numberOrUndefined(value) {
   return typeof value === "number" && Number.isFinite(value) ? value : void 0;
+}
+function stringOrUndefined(value) {
+  return typeof value === "string" && value.trim().length > 0 ? value : void 0;
 }
 
 // src/search.ts
@@ -250,6 +260,13 @@ function injectNeuralGardenStyles() {
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 8px;
     }
+    .ng-weekly-available-hint {
+      text-align: center;
+      color: #00f0ff;
+      font-size: 0.92rem;
+      letter-spacing: 0.02em;
+      margin-bottom: 2px;
+    }
     .ng-weekly-recap-row {
       width: min(420px, 100%);
       align-self: center;
@@ -258,12 +275,448 @@ function injectNeuralGardenStyles() {
     .ng-task-manager {
       background: transparent;
     }
+    .ng-home-support {
+      border-top: 1px solid color-mix(in srgb, var(--background-modifier-border) 78%, transparent);
+      margin-top: 10px;
+      padding-top: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .ng-home-hints-strip {
+      margin-top: 4px;
+      margin-bottom: -8px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 46px;
+    }
+    .ng-home-support h3 {
+      margin: 0;
+      text-align: center;
+      color: var(--text-normal);
+    }
+    .ng-home-support-heading {
+      text-align: center !important;
+      color: var(--text-normal) !important;
+      font-size: 1.3em;
+    }
+    .ng-home-support-copy {
+      font-size: 0.86rem;
+      color: var(--text-muted);
+      text-align: center;
+      font-style: italic;
+    }
+    .ng-home-support-notes {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      align-items: center;
+    }
+    .ng-home-support-note {
+      border: none;
+      border-radius: 9px;
+      padding: 8px 10px;
+      cursor: pointer;
+      transition: color 180ms ease;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      width: fit-content;
+      min-width: 220px;
+      max-width: min(100%, 560px);
+      font-size: 1.3em;
+      line-height: 1.32;
+      color: color-mix(in srgb, #39e05a 56%, var(--text-normal));
+    }
+    .ng-home-support-note:hover {
+      background: transparent;
+      color: color-mix(in srgb, #39e05a 88%, var(--text-normal));
+    }
+    .ng-home-support-hint {
+      opacity: 0;
+      min-height: 42px;
+      padding: 8px 10px;
+      font-style: italic;
+      transition: opacity 2200ms ease;
+      color: var(--text-normal);
+      text-align: center;
+      font-size: 1.3em;
+    }
+    .ng-home-support-hint.is-visible {
+      opacity: 1;
+    }
+    .ng-weekly-overlay {
+      margin: 12px auto;
+      width: min(660px, 100%);
+      display: flex;
+      justify-content: center;
+      pointer-events: none;
+    }
+    .ng-weekly-overlay-card {
+      width: 100%;
+      border: 1px solid color-mix(in srgb, #00f0ff 48%, var(--background-modifier-border));
+      border-radius: 12px;
+      padding: 18px 18px 16px;
+      background: color-mix(in srgb, var(--background-primary) 90%, transparent);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      pointer-events: auto;
+    }
+    .ng-weekly-overlay-title {
+      margin: 0;
+      opacity: 0;
+      animation: ng-fade-in-slow 600ms ease forwards;
+    }
+    .ng-weekly-overlay-generate {
+      border: none !important;
+      background: transparent !important;
+      color: var(--text-normal);
+      box-shadow: none !important;
+      cursor: pointer;
+      font-size: 0.98rem;
+      transition: color 140ms ease;
+    }
+    .ng-weekly-overlay-generate:hover {
+      color: #00f0ff;
+    }
+    .ng-weekly-breath-label,
+    .ng-weekly-breath-count {
+      opacity: 1;
+      transition: opacity 1200ms ease;
+    }
+    .ng-weekly-breath-label {
+      font-size: 1.1rem;
+    }
+    .ng-weekly-breath-count {
+      font-size: 1.6rem;
+      line-height: 1;
+    }
+    .ng-weekly-breath-label.is-fading,
+    .ng-weekly-breath-count.is-fading {
+      opacity: 0;
+    }
+    .ng-weekly-seed-form {
+      width: 100%;
+      display: grid;
+      grid-template-columns: 1fr 1fr auto;
+      gap: 6px;
+      align-items: center;
+    }
+    .ng-weekly-seed-submit {
+      border: 1px solid #ec9a63;
+      border-radius: 8px;
+      background: transparent;
+      cursor: pointer;
+      padding: 7px 11px;
+      color: var(--text-normal);
+    }
+    .ng-weekly-seed-form.is-locked {
+      opacity: 0.45;
+    }
+    .ng-weekly-view {
+      max-width: 720px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding: 8px 0 24px;
+    }
+    .ng-weekly-intro h3 {
+      margin: 0;
+      text-align: center;
+      font-size: 1.46rem;
+      color: var(--text-normal);
+    }
+    .ng-weekly-intro-subtitle {
+      margin-top: 2px;
+      text-align: center;
+      font-size: 1.02rem;
+      font-style: italic;
+      color: var(--text-muted);
+    }
+    .ng-weekly-section {
+      border: 1px solid var(--background-modifier-border);
+      border-radius: 12px;
+      padding: 12px;
+      background: color-mix(in srgb, var(--background-primary) 15%, transparent);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      transition: opacity 840ms ease, transform 840ms ease;
+    }
+    .ng-weekly-section.ng-weekly-scroll-hidden {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    .ng-weekly-section.is-visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .ng-weekly-section h4 {
+      margin: 0;
+      text-align: center;
+      color: var(--text-normal);
+      font-size: 1.3rem;
+    }
+    .ng-weekly-section-heading {
+      letter-spacing: 0.01em;
+    }
+    .ng-weekly-section.is-hidden,
+    .ng-weekly-symptom.is-hidden,
+    .ng-weekly-fragment-hidden {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    .ng-weekly-symptom {
+      display: grid;
+      gap: 4px;
+      transition: opacity 840ms ease, transform 840ms ease;
+    }
+    .ng-weekly-symptom .ng-journal-progress {
+      transition: opacity 1200ms ease, transform 1200ms ease;
+    }
+    .ng-weekly-symptom .ng-journal-metric-label {
+      transition: opacity 1100ms ease, transform 1100ms ease;
+    }
+    .ng-weekly-view .ng-journal-progress-fill {
+      transition: width 1200ms ease, background-color 700ms ease;
+    }
+    .ng-weekly-symptom-copy,
+    .ng-weekly-inline-copy {
+      font-size: 0.92rem;
+      color: var(--text-muted);
+      text-align: center;
+      transition: opacity 850ms ease, transform 850ms ease;
+    }
+    .ng-weekly-symptom-copy {
+      transition: opacity 1200ms ease, transform 1200ms ease;
+    }
+    .ng-weekly-fragment-hidden {
+      pointer-events: none;
+    }
+    .ng-weekly-emotion-counters {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .ng-weekly-emotion-counters-sep {
+      opacity: 0.7;
+      margin: 0 3px;
+    }
+    .ng-weekly-emotion-cloud {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      margin-top: 8px;
+      min-height: 88px;
+    }
+    .ng-weekly-emotion-balance {
+      position: relative;
+      height: 12px;
+      border-radius: 999px;
+      background: linear-gradient(
+        90deg,
+        color-mix(in srgb, #ff6565 70%, transparent) 0%,
+        color-mix(in srgb, #ff6565 24%, transparent) 50%,
+        color-mix(in srgb, #39e05a 24%, transparent) 50%,
+        color-mix(in srgb, #39e05a 70%, transparent) 100%
+      );
+      overflow: hidden;
+      margin-bottom: 4px;
+    }
+    .ng-weekly-emotion-pointer {
+      position: absolute;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--text-normal);
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--background-primary) 72%, transparent);
+    }
+    .ng-weekly-emotion-token {
+      display: inline-flex;
+      align-items: center;
+      line-height: 1;
+      white-space: nowrap;
+      border-radius: 999px;
+      padding: 6px 10px;
+      transition: opacity 900ms ease, transform 900ms cubic-bezier(0.15, 1.35, 0.25, 1);
+      animation-name: ng-weekly-float;
+      animation-iteration-count: infinite;
+      animation-direction: alternate;
+      animation-timing-function: ease-in-out;
+      transform-origin: center;
+    }
+    .ng-weekly-emotion-token.is-negative {
+      color: color-mix(in srgb, #ff6565 80%, var(--text-normal));
+      background: color-mix(in srgb, #ff6565 14%, transparent);
+      border: 1px solid color-mix(in srgb, #ff6565 28%, transparent);
+    }
+    .ng-weekly-emotion-token.is-positive {
+      color: color-mix(in srgb, #39e05a 82%, var(--text-normal));
+      background: color-mix(in srgb, #39e05a 14%, transparent);
+      border: 1px solid color-mix(in srgb, #39e05a 28%, transparent);
+    }
+    .ng-weekly-tracker-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      border-radius: 8px;
+      padding: 6px 8px;
+      background: color-mix(in srgb, var(--background-primary) 25%, transparent);
+    }
+    .ng-weekly-tracker-cloud {
+      min-height: 58px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      justify-content: center;
+      align-items: center;
+    }
+    .ng-weekly-tracker-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      padding: 5px 7px;
+      border: 1px solid color-mix(in srgb, #ec9a63 40%, var(--background-modifier-border));
+      background: color-mix(in srgb, #ec9a63 11%, transparent);
+      color: var(--text-normal);
+      animation-name: ng-weekly-float;
+      animation-iteration-count: infinite;
+      animation-direction: alternate;
+      animation-timing-function: ease-in-out;
+      transition: opacity 900ms ease, transform 900ms cubic-bezier(0.15, 1.35, 0.25, 1);
+      transform-origin: center;
+    }
+    .ng-weekly-tracker-pill.ng-weekly-fragment-hidden,
+    .ng-weekly-emotion-token.ng-weekly-fragment-hidden {
+      transform: scale(0.62) translateY(10px);
+    }
+    .ng-weekly-tracker-pill.is-winner {
+      box-shadow: 0 0 0 1px color-mix(in srgb, #f5d742 60%, transparent), 0 0 18px color-mix(in srgb, #f5d742 25%, transparent);
+      background: color-mix(in srgb, #f5d742 12%, transparent);
+    }
+    .ng-weekly-tracker-row.is-winner {
+      box-shadow: 0 0 0 1px color-mix(in srgb, #f5d742 60%, transparent), 0 0 18px color-mix(in srgb, #f5d742 25%, transparent);
+    }
+    .ng-weekly-tracker-count {
+      color: #ec9a63;
+      font-weight: 700;
+    }
+    .ng-weekly-support-chip {
+      border: 1px solid color-mix(in srgb, #39e05a 45%, var(--background-modifier-border));
+      border-radius: 999px;
+      padding: 6px 10px;
+      text-align: center;
+      color: color-mix(in srgb, #39e05a 65%, var(--text-normal));
+    }
+    .ng-weekly-support-link {
+      all: unset;
+      appearance: none;
+      -webkit-appearance: none;
+      color: #8fcf9d;
+      cursor: pointer;
+      font-size: 1.25rem;
+      line-height: 1.3;
+      text-decoration: none;
+      padding: 0;
+      margin: 0;
+      font-weight: 500;
+      display: inline;
+    }
+    .ng-weekly-support-link:hover {
+      color: #47fc82;
+    }
+    .ng-weekly-support-link:focus,
+    .ng-weekly-support-link:focus-visible {
+      outline: none !important;
+      box-shadow: none !important;
+    }
+    .ng-weekly-support-intro {
+      transition: opacity 1700ms ease, transform 1700ms ease;
+    }
+    .ng-weekly-support-reason {
+      color: #FF6565;
+    }
+    .ng-weekly-critical-title,
+    .ng-weekly-critical-line {
+      color: #FF6565;
+    }
+    .ng-weekly-task-status {
+      display: flex;
+      justify-content: center;
+      gap: 3px;
+    }
+    .ng-weekly-task-status-value {
+      font-weight: 700;
+      text-transform: capitalize;
+    }
+    .ng-weekly-task-status-value.is-increased {
+      color: color-mix(in srgb, #ec9a63 60%, var(--text-normal));
+    }
+    .ng-weekly-task-status-value.is-decreased {
+      color: color-mix(in srgb, #ec9a63 60%, var(--text-normal));
+    }
+    .ng-weekly-task-status-value.is-unchanged {
+      color: inherit;
+      font-weight: 600;
+    }
+    .ng-weekly-task-status-value.is-at-max {
+      color: #00F0FF;
+      font-weight: 700;
+    }
+    .ng-weekly-support-row {
+      display: grid;
+      gap: 4px;
+      justify-items: center;
+      padding: 4px 0;
+      transition: opacity 640ms ease, transform 640ms ease;
+    }
+    .ng-weekly-preview-card {
+      margin-top: 4px;
+    }
+    .ng-weekly-preview-emotions {
+      margin-top: 8px;
+    }
+    .ng-weekly-preview-tracker-cloud {
+      margin-top: 14px;
+      margin-bottom: 6px;
+      gap: 6px;
+    }
+    .ng-weekly-preview-pill {
+      padding: 5px 9px;
+      font-size: 0.82rem;
+      min-height: 24px;
+    }
+    @keyframes ng-weekly-float {
+      from { transform: translateY(0px); }
+      to { transform: translateY(-8px); }
+    }
+    @keyframes ng-fade-in-slow {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
     .ng-search {
-      margin-top: 7px;
+      margin-top: 0;
     }
     .ng-search h3 {
       margin: 0 0 4px;
       color: var(--text-normal);
+      text-align: center;
+    }
+    .ng-search-heading {
+      text-align: center !important;
     }
     .ng-search-results {
       margin-top: 8px;
@@ -283,7 +736,7 @@ function injectNeuralGardenStyles() {
     }
     .ng-search-title {
       font-weight: 600;
-      font-size: 1.2em;
+      font-size: 0.95rem;
     }
     .ng-task-heading {
       display: flex;
@@ -853,6 +1306,11 @@ function injectNeuralGardenStyles() {
       border-color: #00f0ff;
       background: color-mix(in srgb, var(--background-primary) 16%, transparent);
       box-shadow: 0 0 0 2px rgba(0, 240, 255, 0.18);
+    }
+    .ng-journal-week-cell.is-generated {
+      border-color: #39e05a;
+      background: color-mix(in srgb, #39e05a 10%, var(--background-primary));
+      box-shadow: 0 0 0 2px rgba(57, 224, 90, 0.18);
     }
     .ng-journal-week-cell.is-available::after {
       content: "+";
@@ -2016,9 +2474,10 @@ function injectNeuralGardenStyles() {
 
 // src/homeView.ts
 var NeuralGardenHomeView = class extends import_obsidian.ItemView {
-  constructor(leaf, storage, openJournalingView, openMyNotesView) {
+  constructor(leaf, storage, journalingStorage, openJournalingView, openMyNotesView) {
     super(leaf);
     this.storage = storage;
+    this.journalingStorage = journalingStorage;
     this.openJournalingView = openJournalingView;
     this.openMyNotesView = openMyNotesView;
     this.state = { ...DEFAULT_STATE };
@@ -2028,6 +2487,10 @@ var NeuralGardenHomeView = class extends import_obsidian.ItemView {
     this.breakTimerEl = null;
     this.breakMessageEl = null;
     this.lastBreakMessageIndex = null;
+    this.supportHintTimer = null;
+    this.supportHintEl = null;
+    this.supportHints = [];
+    this.lastSupportHintIndex = null;
     this.refocusTaskInputAfterRender = false;
   }
   getViewType() {
@@ -2062,7 +2525,12 @@ var NeuralGardenHomeView = class extends import_obsidian.ItemView {
       window.clearInterval(this.breakMessageTimer);
       this.breakMessageTimer = null;
     }
+    if (this.supportHintTimer) {
+      window.clearInterval(this.supportHintTimer);
+      this.supportHintTimer = null;
+    }
     this.lastBreakMessageIndex = null;
+    this.lastSupportHintIndex = null;
   }
   startBreakTicker() {
     this.syncBreakLiveUpdates();
@@ -2080,6 +2548,9 @@ var NeuralGardenHomeView = class extends import_obsidian.ItemView {
     const wrapper = contentEl.createDiv({ cls: "neural-garden-home" });
     wrapper.createEl("h2", { text: "Home" });
     const categories = wrapper.createDiv({ cls: "ng-categories" });
+    if (this.shouldShowWeeklyRecapHint()) {
+      categories.createDiv({ cls: "ng-weekly-available-hint", text: "Weekly Recap Available" });
+    }
     const categoryGrid = categories.createDiv({ cls: "ng-category-grid" });
     const journalButton = this.makeCategoryButton("Journaling", "book-open", () => {
       void this.openJournalingView(true, this.leaf);
@@ -2097,32 +2568,117 @@ var NeuralGardenHomeView = class extends import_obsidian.ItemView {
       new import_obsidian.Notice("QuickNote interface placeholder");
     });
     categoryGrid.appendChild(quickNoteButton);
-    if (this.shouldShowWeeklyRecapButton()) {
-      const recapContainer = categories.createDiv({ cls: "ng-weekly-recap-row" });
-      const weeklyRecapButton = this.makeCategoryButton(
-        "Weekly Recap",
-        "sparkles",
-        () => {
-          new import_obsidian.Notice("Weekly recap will be implemented in a later step");
-        },
-        "#00F0FF"
-      );
-      recapContainer.appendChild(weeklyRecapButton);
-    }
+    const hintStrip = wrapper.createDiv({ cls: "ng-home-hints-strip" });
+    void this.renderSupportHintsStrip(hintStrip);
     this.renderSearchSection(wrapper);
     this.renderTaskManager(wrapper);
+    const supportSection = wrapper.createDiv({ cls: "ng-home-support" });
+    void this.renderSupportSection(supportSection);
     injectNeuralGardenStyles();
     this.syncBreakLiveUpdates();
   }
+  async renderSupportSection(container) {
+    container.empty();
+    const heading = container.createEl("h3", { text: "Support Notes", cls: "ng-home-support-heading" });
+    heading.style.textAlign = "center";
+    heading.style.color = "var(--text-normal)";
+    const copy = container.createDiv({
+      cls: "ng-home-support-copy",
+      text: "Considering your current symptoms, take a look at the following notes."
+    });
+    copy.style.textAlign = "center";
+    copy.style.setProperty("color", "var(--text-muted)", "important");
+    copy.style.fontStyle = "italic";
+    copy.style.fontSize = "0.86rem";
+    const recap = await this.getLatestWeeklyRecapFrontmatter();
+    if (!recap) {
+      container.createDiv({ cls: "ng-empty", text: "No weekly support generated yet." });
+      return;
+    }
+    const noteList = container.createDiv({ cls: "ng-home-support-notes" });
+    if (recap.supportNotes.length === 0) {
+      noteList.createDiv({ cls: "ng-empty", text: "No support notes listed for the latest recap." });
+    } else {
+      for (const name of recap.supportNotes) {
+        const row = noteList.createDiv({ cls: "ng-home-support-note" });
+        row.textContent = name;
+        const baseColor = "#8fcf9d";
+        const hoverColor = "#47fc82";
+        row.style.setProperty("color", baseColor, "important");
+        row.addEventListener("mouseenter", () => {
+          row.style.setProperty("color", hoverColor, "important");
+        });
+        row.addEventListener("mouseleave", () => {
+          row.style.setProperty("color", baseColor, "important");
+        });
+        row.addEventListener("click", async () => {
+          const target = this.app.vault.getMarkdownFiles().find((file) => file.basename === name && file.path.startsWith(`${NOTES_FOLDER}/`));
+          if (!target) {
+            new import_obsidian.Notice(`Support note not found: ${name}`);
+            return;
+          }
+          await this.leaf.openFile(target);
+        });
+      }
+    }
+  }
+  async renderSupportHintsStrip(container) {
+    var _a;
+    container.empty();
+    const recap = await this.getLatestWeeklyRecapFrontmatter();
+    this.supportHintEl = container.createDiv({ cls: "ng-home-support-hint" });
+    this.supportHints = (_a = recap == null ? void 0 : recap.supportHints) != null ? _a : [];
+    if (this.supportHints.length === 0) {
+      this.supportHintEl.textContent = "";
+      return;
+    }
+    this.supportHintEl.textContent = this.getNextSupportHint();
+    if (this.supportHintTimer) {
+      window.clearInterval(this.supportHintTimer);
+      this.supportHintTimer = null;
+    }
+    this.supportHintTimer = window.setInterval(() => {
+      if (!this.supportHintEl) {
+        return;
+      }
+      this.supportHintEl.classList.remove("is-visible");
+      window.setTimeout(() => {
+        if (!this.supportHintEl) {
+          return;
+        }
+        this.supportHintEl.textContent = this.getNextSupportHint();
+        this.supportHintEl.classList.add("is-visible");
+      }, 2200);
+    }, 7800);
+    this.supportHintEl.classList.add("is-visible");
+  }
+  async getLatestWeeklyRecapFrontmatter() {
+    const recaps = this.app.vault.getFiles().filter((file) => file.path.startsWith(`${JOURNAL_WEEKLY_FOLDER}/`) && file.extension === "md");
+    if (recaps.length === 0) {
+      return null;
+    }
+    let latestFrontmatter = null;
+    let latestTime = 0;
+    for (const recapFile of recaps) {
+      const recap = await this.journalingStorage.readWeeklyRecap(recapFile);
+      const stamp = Date.parse(recap.frontmatter.generatedAt || "");
+      if (!latestFrontmatter || stamp > latestTime) {
+        latestFrontmatter = recap.frontmatter;
+        latestTime = stamp;
+      }
+    }
+    return latestFrontmatter;
+  }
   renderSearchSection(parent) {
     const searchSection = parent.createDiv({ cls: "ng-search" });
-    searchSection.createEl("h3", { text: "Search Notes" });
+    const heading = searchSection.createEl("h3", { text: "Search Notes", cls: "ng-search-heading" });
+    heading.style.textAlign = "center";
     const input = searchSection.createEl("input", {
       type: "text",
       placeholder: "Search Notes..."
     });
     input.addClass("ng-task-input");
-    const results = searchSection.createDiv({ cls: "ng-search-results" });
+    const results = searchSection.createDiv({ cls: "ng-search-results ng-mynotes-list" });
     input.addEventListener("input", () => {
       if (this.searchDebounceTimer) {
         window.clearTimeout(this.searchDebounceTimer);
@@ -2151,8 +2707,9 @@ var NeuralGardenHomeView = class extends import_obsidian.ItemView {
       return;
     }
     for (const file of matches) {
-      const row = container.createDiv({ cls: "ng-search-row" });
-      row.createDiv({ cls: "ng-search-title", text: file.basename });
+      const row = container.createDiv({ cls: "ng-mynotes-note-row ng-home-search-note-row" });
+      row.createDiv({ cls: "ng-mynotes-note-indicator" });
+      row.createDiv({ cls: "ng-mynotes-note-title", text: file.basename });
       row.addEventListener("click", async () => {
         await this.app.workspace.getLeaf(true).openFile(file);
       });
@@ -2467,9 +3024,39 @@ var NeuralGardenHomeView = class extends import_obsidian.ItemView {
     this.updateForcedBreakValues();
     return Math.max(1, Math.round(this.state.forcedBreakTime));
   }
-  shouldShowWeeklyRecapButton() {
-    const dailyCandidates = this.app.vault.getFiles().filter((file) => file.path.toLowerCase().includes("daily") || file.path.toLowerCase().includes("journal"));
-    return dailyCandidates.length >= WEEKLY_RECAP_MIN_ENTRIES;
+  shouldShowWeeklyRecapHint() {
+    const today = /* @__PURE__ */ new Date();
+    const week = isoWeekInfo(today);
+    const recapPath = this.journalingStorage.weeklyRecapPath(week.year, week.week);
+    const recapFile = this.app.vault.getAbstractFileByPath(recapPath);
+    if (recapFile) {
+      return false;
+    }
+    const dailyCandidates = this.app.vault.getFiles().filter((file) => file.path.startsWith("Journal/Daily/") && file.extension === "md");
+    const currentWeekEntries = dailyCandidates.filter((file) => {
+      const date = parseDateFromDailyFileName(file.basename);
+      if (!date) {
+        return false;
+      }
+      const info = isoWeekInfo(date);
+      return info.year === week.year && info.week === week.week;
+    });
+    return currentWeekEntries.length >= WEEKLY_RECAP_HOME_HINT_MIN_ENTRIES;
+  }
+  getNextSupportHint() {
+    if (this.supportHints.length === 0) {
+      return "";
+    }
+    if (this.supportHints.length === 1) {
+      this.lastSupportHintIndex = 0;
+      return this.supportHints[0];
+    }
+    let next = Math.floor(Math.random() * this.supportHints.length);
+    if (this.lastSupportHintIndex !== null && next === this.lastSupportHintIndex) {
+      next = (next + 1 + Math.floor(Math.random() * (this.supportHints.length - 1))) % this.supportHints.length;
+    }
+    this.lastSupportHintIndex = next;
+    return this.supportHints[next];
   }
   makeCategoryButton(label, iconName, onClick, color = "#EC9A63") {
     var _a, _b;
@@ -2515,6 +3102,21 @@ var NeuralGardenHomeView = class extends import_obsidian.ItemView {
     return btn;
   }
 };
+function parseDateFromDailyFileName(baseName) {
+  const match = baseName.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) {
+    return null;
+  }
+  return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+}
+function isoWeekInfo(date) {
+  const utcDate = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNumber = utcDate.getUTCDay() || 7;
+  utcDate.setUTCDate(utcDate.getUTCDate() + 4 - dayNumber);
+  const yearStart = new Date(Date.UTC(utcDate.getUTCFullYear(), 0, 1));
+  const week = Math.ceil(((utcDate.getTime() - yearStart.getTime()) / 864e5 + 1) / 7);
+  return { year: utcDate.getUTCFullYear(), week };
+}
 function toMutedButtonColor(hex, saturationFactor = 0.7, lightnessFactor = 0.6, alpha = 1) {
   const normalized = hex.replace("#", "");
   if (!/^[0-9a-fA-F]{6}$/.test(normalized)) {
@@ -2701,14 +3303,14 @@ function hslToRgb(h, s, l) {
 // src/journalingEntryView.ts
 var import_obsidian2 = require("obsidian");
 var METRICS = [
-  { key: "mood", label: "Mood", explanation: "How have you been feeling today?" },
-  { key: "sleep", label: "Sleep", explanation: "How rested did you feel after tonight's sleep?" },
-  { key: "regulation", label: "Regulation", explanation: "How well were you able to regulate yourself today?" },
-  { key: "stress", label: "Stress", explanation: "How stressed were you today?" },
-  { key: "anxiety", label: "Anxiety", explanation: "Have you been anxious today? How intense was it?" },
-  { key: "exhaustion", label: "Exhaustion", explanation: "How exhausted did you feel today?" },
+  { key: "mood", label: "Mood", explanation: "How have you been feeling?" },
+  { key: "sleep", label: "Sleep", explanation: "How rested did you feel after sleeping?" },
+  { key: "regulation", label: "Regulation", explanation: "How well were you able to regulate yourself?" },
+  { key: "stress", label: "Stress", explanation: "How stressed were you?" },
+  { key: "anxiety", label: "Anxiety", explanation: "Have you been anxious? How intense was it?" },
+  { key: "exhaustion", label: "Exhaustion", explanation: "How exhausted did you feel?" },
   { key: "sensoryLoad", label: "Sensory Load", explanation: "Have you had any sensory issues? How intense were they?" },
-  { key: "socialLoad", label: "Social Load", explanation: "How demanding were social interactions today?" }
+  { key: "socialLoad", label: "Social Load", explanation: "How demanding were social interactions?" }
 ];
 var PLEASANT_EMOTIONS = [
   "Happy",
@@ -2803,7 +3405,6 @@ var NeuralGardenJournalEntryView = class extends import_obsidian2.ItemView {
       spentEnergy: taskState.spentEnergy,
       completedTasks: completedSnapshots,
       uncompletedTasks: uncompletedSnapshots,
-      processed: false,
       todaysNote: "",
       emotions: []
     };
@@ -3213,54 +3814,56 @@ function getMetricFeedback(metric, value) {
     if (value >= 80) return "I've been doing great.";
     if (value >= 51) return "I've been doing fine.";
     if (value >= 36) return "I've been alright.";
-    return "I've been having a hard time today.";
+    return "I've been having a hard time.";
   }
   if (metric === "sleep") {
-    if (value >= 70) return "My sleep was great, I feel well rested.";
-    if (value >= 51) return "My sleep was good, I feel rested.";
-    if (value >= 36) return "My sleep was alright.";
+    if (value >= 80) return "My sleep was great, I feel well rested.";
+    if (value >= 61) return "My sleep was good, I feel rested.";
+    if (value >= 41) return "My sleep was alright.";
+    if (value >= 21) return "I didn't really sleep well.";
     return "I've had a terrible night.";
   }
   if (metric === "regulation") {
-    if (value >= 70) return "Regulation felt strong and steady today.";
-    if (value >= 51) return "I was mostly able to regulate myself today.";
+    if (value >= 70) return "Regulation felt strong and steady.";
+    if (value >= 51) return "I was mostly able to regulate myself.";
     if (value >= 36) return "Regulation was mixed, with some difficult moments.";
-    return "I felt overwhelmed and dysregulated today.";
+    return "I felt overwhelmed and dysregulated.";
   }
   if (metric === "stress") {
-    if (value >= 75) return "I've been constantly stressed today.";
-    if (value >= 65) return "I was really stressed today.";
-    if (value >= 41) return "Stress was present today, but I was able to manage it.";
-    return "Stress has been fairly low today.";
+    if (value >= 80) return "I've been constantly stressed.";
+    if (value >= 60) return "I was really stressed.";
+    if (value >= 41) return "Stress was present, but I was able to manage it.";
+    return "Stress has been fairly low.";
   }
   if (metric === "anxiety") {
-    if (value >= 75) return "I've been constantly and severely anxious today.";
-    if (value >= 55) return "I was really anxious today.";
+    if (value >= 80) return "I've been constantly and severely anxious.";
+    if (value >= 60) return "I was really anxious.";
     if (value >= 41) return "I've experienced anxiety here and there.";
     return "I had low or no anxiety.";
   }
   if (metric === "exhaustion") {
-    if (value >= 70) return "I've felt extremely exhausted all day.";
-    if (value >= 46) return "I felt heavily exhausted today.";
+    if (value >= 80) return "I've felt extremely exhausted.";
+    if (value >= 60) return "I felt heavily exhausted.";
     if (value >= 31) return "I was noticeably tired, but still functioning.";
-    return "My energy felt steady today.";
+    return "My energy felt steady.";
   }
   if (metric === "sensoryLoad") {
-    if (value >= 70) return "I was in sensory overload today.";
-    if (value >= 46) return "I've had demanding sensory issues today.";
+    if (value >= 80) return "I was in sensory overload.";
+    if (value >= 60) return "I've had demanding sensory issues.";
     if (value >= 31) return "I've had fair sensory issues.";
     return "I've had no or low sensory issues.";
   }
   if (metric === "socialLoad") {
-    if (value >= 70) return "Social interactions were highly demanding, wearing me out.";
-    if (value >= 46) return "Social interactions were exhausting.";
-    if (value >= 31) return "Social interactions were tiring today.";
+    if (value >= 80) return "Social interactions were highly demanding, wearing me out.";
+    if (value >= 65) return "Social interactions were exhausting.";
+    if (value >= 51) return "Social interactions were tiring.";
+    if (value >= 30) return "Social interactions were alright.";
     return "Social interactions felt good, easy, and natural.";
   }
-  if (value >= 70) return "Regulation felt strong and steady today.";
-  if (value >= 51) return "I was mostly able to regulate myself today.";
+  if (value >= 70) return "Regulation felt strong and steady.";
+  if (value >= 51) return "I was mostly able to regulate myself.";
   if (value >= 36) return "Regulation was mixed, with some difficult moments.";
-  return "I felt overwhelmed and dysregulated today.";
+  return "I felt overwhelmed and dysregulated.";
 }
 function getEmotionToneClass(emotion) {
   return PLEASANT_EMOTIONS.includes(emotion) ? "pleasant" : "unpleasant";
@@ -3269,14 +3872,14 @@ function getEmotionToneClass(emotion) {
 // src/journalingView.ts
 var import_obsidian3 = require("obsidian");
 var METRICS2 = [
-  { key: "mood", label: "Mood", explanation: "How have you been feeling today?" },
-  { key: "sleep", label: "Sleep", explanation: "How rested did you feel after tonight's sleep?" },
-  { key: "regulation", label: "Regulation", explanation: "How well were you able to regulate yourself today?" },
-  { key: "stress", label: "Stress", explanation: "How stressed were you today?" },
-  { key: "anxiety", label: "Anxiety", explanation: "Have you been anxious today? How intense was it?" },
-  { key: "exhaustion", label: "Exhaustion", explanation: "How exhausted did you feel today?" },
+  { key: "mood", label: "Mood", explanation: "How have you been feeling?" },
+  { key: "sleep", label: "Sleep", explanation: "How rested did you feel after sleeping?" },
+  { key: "regulation", label: "Regulation", explanation: "How well were you able to regulate yourself?" },
+  { key: "stress", label: "Stress", explanation: "How stressed were you?" },
+  { key: "anxiety", label: "Anxiety", explanation: "Have you been anxious? How intense was it?" },
+  { key: "exhaustion", label: "Exhaustion", explanation: "How exhausted did you feel?" },
   { key: "sensoryLoad", label: "Sensory Load", explanation: "Have you had any sensory issues? How intense were they?" },
-  { key: "socialLoad", label: "Social Load", explanation: "How demanding were social interactions today?" }
+  { key: "socialLoad", label: "Social Load", explanation: "How demanding were social interactions?" }
 ];
 var PLEASANT_EMOTIONS2 = [
   "Happy",
@@ -3302,17 +3905,21 @@ var TRACKER_COLORS = [
   { name: "Red", value: "#FF6565" }
 ];
 var NeuralGardenJournalingView = class extends import_obsidian3.ItemView {
-  constructor(leaf, taskStorage, journalingStorage, openHomeView, openJournalEntryView) {
+  constructor(leaf, taskStorage, journalingStorage, openHomeView, openJournalEntryView, openWeeklyRecap) {
     super(leaf);
     this.taskStorage = taskStorage;
     this.journalingStorage = journalingStorage;
     this.openHomeView = openHomeView;
     this.openJournalEntryView = openJournalEntryView;
+    this.openWeeklyRecap = openWeeklyRecap;
     this.calendarMonth = startOfMonth(/* @__PURE__ */ new Date());
     this.selectedDateKey = null;
     this.dailyEntries = [];
     this.trackers = [];
     this.selectedEntry = null;
+    this.selectedWeekKey = null;
+    this.weeklyPreview = null;
+    this.generatedWeeklyRecaps = /* @__PURE__ */ new Set();
   }
   getViewType() {
     return VIEW_TYPE_NEURAL_GARDEN_JOURNALING;
@@ -3331,12 +3938,15 @@ var NeuralGardenJournalingView = class extends import_obsidian3.ItemView {
   async onClose() {
     this.selectedEntry = null;
     this.selectedDateKey = null;
+    this.selectedWeekKey = null;
+    this.weeklyPreview = null;
   }
   async reloadState() {
     var _a, _b;
     await this.journalingStorage.ensureJournalFolders();
     this.dailyEntries = await this.journalingStorage.listDailyEntries();
     this.trackers = (await this.journalingStorage.listTrackers()).slice(0, 18);
+    this.generatedWeeklyRecaps = await this.loadGeneratedWeeklyRecapKeys();
     if (this.selectedDateKey) {
       if (!this.dailyEntries.some((entry) => entry.frontmatter.date === this.selectedDateKey)) {
         const latest = this.dailyEntries[this.dailyEntries.length - 1];
@@ -3414,7 +4024,7 @@ var NeuralGardenJournalingView = class extends import_obsidian3.ItemView {
     }
     this.renderCalendar(calendar);
     const details = section.createDiv({ cls: "ng-journal-detail-panel" });
-    this.renderSelectedEntry(details);
+    this.renderSelectionPreview(details);
     const trackerSection = section.createDiv({ cls: "ng-tracker-section" });
     this.renderTrackers(trackerSection);
   }
@@ -3427,15 +4037,33 @@ var NeuralGardenJournalingView = class extends import_obsidian3.ItemView {
       grid.createDiv({ cls: "ng-journal-calendar-weekday", text: label });
     }
     for (const week of weeks) {
+      const weekKey = `${week.weekYear}-W${String(week.weekNumber).padStart(2, "0")}`;
+      const wasSelectedWeek = this.selectedWeekKey === weekKey;
+      const isGenerated = this.generatedWeeklyRecaps.has(weekKey);
       const weekButton = grid.createEl("button");
       weekButton.type = "button";
       weekButton.addClass("ng-journal-week-cell");
       weekButton.textContent = String(week.weekNumber);
-      weekButton.title = week.entryCount >= 4 ? `Week ${week.weekNumber}: ${week.entryCount} entries` : `Week ${week.weekNumber}: ${week.entryCount} entries (need 4)`;
-      if (week.entryCount >= 4) {
-        weekButton.addClass("is-available");
-        weekButton.addEventListener("click", () => {
-          new import_obsidian3.Notice(`Weekly reflection for week ${week.weekNumber} is ready.`);
+      if (isGenerated) {
+        weekButton.title = `Week ${week.weekNumber}: recap already created`;
+      } else {
+        weekButton.title = week.entryCount >= WEEKLY_RECAP_MIN_ENTRIES ? `Week ${week.weekNumber}: ${week.entryCount} entries` : `Week ${week.weekNumber}: ${week.entryCount} entries (need ${WEEKLY_RECAP_MIN_ENTRIES})`;
+      }
+      if (isGenerated || week.entryCount >= WEEKLY_RECAP_MIN_ENTRIES) {
+        if (isGenerated) {
+          weekButton.addClass("is-generated");
+        } else {
+          weekButton.addClass("is-available");
+        }
+        if (wasSelectedWeek) {
+          weekButton.addClass("is-selected");
+        }
+        weekButton.addEventListener("click", async () => {
+          if (wasSelectedWeek) {
+            await this.openWeeklyRecap(week.weekYear, week.weekNumber, this.leaf);
+            return;
+          }
+          await this.selectWeekPreview(week.weekYear, week.weekNumber);
         });
       } else {
         weekButton.disabled = true;
@@ -3464,6 +4092,8 @@ var NeuralGardenJournalingView = class extends import_obsidian3.ItemView {
         }
         button.addEventListener("click", async (event) => {
           var _a, _b;
+          this.selectedWeekKey = null;
+          this.weeklyPreview = null;
           this.selectedDateKey = cell.dateKey;
           this.calendarMonth = startOfMonth((_a = parseDateKey(cell.dateKey)) != null ? _a : /* @__PURE__ */ new Date());
           this.selectedEntry = (_b = this.dailyEntries.find((entry) => entry.frontmatter.date === cell.dateKey)) != null ? _b : null;
@@ -3479,7 +4109,11 @@ var NeuralGardenJournalingView = class extends import_obsidian3.ItemView {
       }
     }
   }
-  renderSelectedEntry(container) {
+  renderSelectionPreview(container) {
+    if (this.weeklyPreview) {
+      this.renderWeeklyPreview(container, this.weeklyPreview);
+      return;
+    }
     const entry = this.selectedEntry;
     const card = container.createDiv({ cls: "ng-journal-entry-card" });
     if (!entry) {
@@ -3494,6 +4128,101 @@ var NeuralGardenJournalingView = class extends import_obsidian3.ItemView {
     this.renderTrackedTrackers(card, entry.frontmatter.date);
     this.renderTaskSnapshots(card, entry.frontmatter);
     this.renderBody(card, entry.body);
+  }
+  renderWeeklyPreview(container, weekly) {
+    const card = container.createDiv({ cls: "ng-journal-entry-card" });
+    card.createEl("h3", { text: `Weekly Recap - ${weekly.year}-W${String(weekly.week).padStart(2, "0")}` });
+    card.createEl("h4", { cls: "ng-journal-preview-summary", text: "Summary" });
+    if (!weekly.generated || !weekly.frontmatter) {
+      card.createDiv({ cls: "ng-empty", text: "No generated recap yet. Click this week again to generate and open it." });
+      return;
+    }
+    const frontmatter = weekly.frontmatter;
+    card.createDiv({
+      cls: "ng-journal-body-copy",
+      text: `Processed dates: ${frontmatter.processedDateRange.start || "-"} to ${frontmatter.processedDateRange.end || "-"}`
+    });
+    const metrics = card.createDiv({ cls: "ng-journal-metrics" });
+    const rows = [
+      { label: "Mood", value: frontmatter.averages.mood, highIsBad: false },
+      { label: "Sleep", value: frontmatter.averages.sleep, highIsBad: false },
+      { label: "Regulation", value: frontmatter.averages.regulation, highIsBad: false },
+      { label: "Stress", value: frontmatter.averages.stress, highIsBad: true },
+      { label: "Anxiety", value: frontmatter.averages.anxiety, highIsBad: true },
+      { label: "Exhaustion", value: frontmatter.averages.exhaustion, highIsBad: true },
+      { label: "Sensory Load", value: frontmatter.averages.sensoryLoad, highIsBad: true },
+      { label: "Social Load", value: frontmatter.averages.socialLoad, highIsBad: true }
+    ];
+    for (const row of rows) {
+      const entry = metrics.createDiv({ cls: "ng-journal-metric" });
+      const meta = entry.createDiv({ cls: "ng-journal-metric-meta" });
+      meta.createDiv({ cls: "ng-journal-metric-label", text: row.label });
+      const bar = entry.createDiv({ cls: "ng-journal-progress ng-journal-progress-readonly" });
+      const fill = bar.createDiv({ cls: "ng-journal-progress-fill" });
+      fill.style.width = `${Math.max(0, Math.min(100, row.value))}%`;
+      fill.style.backgroundColor = weeklyMetricColor(row.value, row.highIsBad);
+    }
+    const emotions = card.createDiv({ cls: "ng-journal-emotion-list" });
+    emotions.addClass("ng-weekly-preview-emotions");
+    const sortedEmotions = [
+      ...Object.entries(frontmatter.emotionCounts.unpleasant).map(([emotion, count]) => ({ emotion, count, tone: "unpleasant" })),
+      ...Object.entries(frontmatter.emotionCounts.pleasant).map(([emotion, count]) => ({ emotion, count, tone: "pleasant" }))
+    ].sort((a, b) => b.count - a.count).slice(0, 8);
+    if (sortedEmotions.length === 0) {
+      emotions.createDiv({ cls: "ng-empty", text: "No emotions recorded." });
+    } else {
+      for (const item of sortedEmotions) {
+        const chip = emotions.createSpan({ cls: "ng-journal-emotion-chip", text: item.emotion });
+        chip.addClass(item.tone);
+      }
+    }
+    const trackerCloud = card.createDiv({ cls: "ng-weekly-tracker-cloud" });
+    trackerCloud.addClass("ng-weekly-preview-tracker-cloud");
+    const trackers = Object.entries(frontmatter.trackerCounts).sort((a, b) => b[1] - a[1]).filter(([, count]) => count > 0).slice(0, 6);
+    for (const [name, count] of trackers) {
+      const pill = trackerCloud.createDiv({ cls: "ng-weekly-tracker-pill", text: `${name} \xB7 ${count}` });
+      pill.addClass("ng-weekly-preview-pill");
+    }
+    card.createDiv({ cls: "ng-journal-body-copy", text: `Support suggestions: ${frontmatter.supportNotes.length}` });
+  }
+  async selectWeekPreview(weekYear, weekNumber) {
+    const key = `${weekYear}-W${String(weekNumber).padStart(2, "0")}`;
+    this.selectedWeekKey = key;
+    this.selectedDateKey = null;
+    this.selectedEntry = null;
+    const path = this.journalingStorage.weeklyRecapPath(weekYear, weekNumber);
+    const file = this.app.vault.getAbstractFileByPath(path);
+    if (!(file instanceof import_obsidian3.TFile)) {
+      this.weeklyPreview = {
+        key,
+        year: weekYear,
+        week: weekNumber,
+        generated: false,
+        frontmatter: null
+      };
+      this.render();
+      return;
+    }
+    const recap = await this.journalingStorage.readWeeklyRecap(file);
+    this.weeklyPreview = {
+      key,
+      year: weekYear,
+      week: weekNumber,
+      generated: recap.body.trim().length > 0,
+      frontmatter: recap.frontmatter
+    };
+    this.render();
+  }
+  async loadGeneratedWeeklyRecapKeys() {
+    const keys = /* @__PURE__ */ new Set();
+    const files = this.app.vault.getFiles().filter((file) => file.path.startsWith("Journal/Weekly/") && file.extension === "md");
+    for (const file of files) {
+      const recap = await this.journalingStorage.readWeeklyRecap(file);
+      if (recap.body.trim().length > 0) {
+        keys.add(`${recap.frontmatter.year}-W${String(recap.frontmatter.week).padStart(2, "0")}`);
+      }
+    }
+    return keys;
   }
   renderTrackedTrackers(container, dateKey) {
     const tracked = this.trackers.filter((tracker) => tracker.dates.includes(dateKey));
@@ -3564,7 +4293,6 @@ var NeuralGardenJournalingView = class extends import_obsidian3.ItemView {
   }
   renderEntryMeta(container, frontmatter) {
     const meta = container.createDiv({ cls: "ng-journal-meta-grid" });
-    meta.createDiv({ text: `Processed: ${frontmatter.processed ? "Yes" : "No"}` });
     meta.createDiv({ text: `Mood value: ${valueOrDash(frontmatter.mood)}` });
     meta.createDiv({ text: `Sleep value: ${valueOrDash(frontmatter.sleep)}` });
     meta.createDiv({ text: `Stress value: ${valueOrDash(frontmatter.stress)}` });
@@ -3802,6 +4530,7 @@ function buildCalendarWeeks(month, entryDates) {
     }
     weeks.push({
       weekNumber: getIsoWeekNumber(weekStart),
+      weekYear: getIsoWeekYear(weekStart),
       entryCount,
       days
     });
@@ -3823,6 +4552,12 @@ function getIsoWeekNumber(date) {
   utcDate.setUTCDate(utcDate.getUTCDate() + 4 - dayNumber);
   const yearStart = new Date(Date.UTC(utcDate.getUTCFullYear(), 0, 1));
   return Math.ceil(((utcDate.getTime() - yearStart.getTime()) / 864e5 + 1) / 7);
+}
+function getIsoWeekYear(date) {
+  const utcDate = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNumber = utcDate.getUTCDay() || 7;
+  utcDate.setUTCDate(utcDate.getUTCDate() + 4 - dayNumber);
+  return utcDate.getUTCFullYear();
 }
 function buildTrackerWindow(days) {
   const today = /* @__PURE__ */ new Date();
@@ -3925,6 +4660,19 @@ function metricColor2(metric, value) {
     return "#39E05A";
   }
   return "#39E05A";
+}
+function weeklyMetricColor(value, highIsBad) {
+  const v = Math.max(0, Math.min(100, value));
+  if (highIsBad) {
+    if (v >= 80) return "#FF6565";
+    if (v >= 60) return "#F0A04C";
+    if (v >= 40) return "#F4D35E";
+    return "#39E05A";
+  }
+  if (v >= 80) return "#39E05A";
+  if (v >= 60) return "#A8D56E";
+  if (v >= 40) return "#F4D35E";
+  return "#FF6565";
 }
 function getEmotionToneClass2(emotion) {
   return PLEASANT_EMOTIONS2.includes(emotion) ? "pleasant" : "unpleasant";
@@ -4266,8 +5014,510 @@ var NeuralGardenMyNotesView = class extends import_obsidian4.ItemView {
   }
 };
 
-// src/journalingStorage.ts
+// src/weeklyRecapView.ts
 var import_obsidian5 = require("obsidian");
+var WEEKLY_ANIMATION_SCALE = 2;
+var NeuralGardenWeeklyRecapView = class extends import_obsidian5.ItemView {
+  constructor(leaf, journalingStorage, weeklyRecapManager, openHomeView, openJournalingView) {
+    super(leaf);
+    this.journalingStorage = journalingStorage;
+    this.weeklyRecapManager = weeklyRecapManager;
+    this.openHomeView = openHomeView;
+    this.openJournalingView = openJournalingView;
+    this.currentYear = null;
+    this.currentWeek = null;
+    this.currentFilePath = null;
+    this.currentFrontmatter = null;
+    this.currentBody = "";
+    this.sectionObserver = null;
+    this.supportRevealPlayed = false;
+    this.revealTimeouts = [];
+  }
+  getViewType() {
+    return VIEW_TYPE_NEURAL_GARDEN_WEEKLY_RECAP;
+  }
+  getDisplayText() {
+    return "Weekly Recap";
+  }
+  getIcon() {
+    return "sparkles";
+  }
+  async onOpen() {
+    injectNeuralGardenStyles();
+    this.renderLoading("Open a week from Journaling to view recap.");
+  }
+  async onClose() {
+    var _a;
+    (_a = this.sectionObserver) == null ? void 0 : _a.disconnect();
+    this.sectionObserver = null;
+    this.supportRevealPlayed = false;
+    this.revealTimeouts.forEach((id) => window.clearTimeout(id));
+    this.revealTimeouts = [];
+  }
+  async openForWeek(year, week) {
+    this.currentYear = year;
+    this.currentWeek = week;
+    this.renderLoading("Preparing your weekly recap...");
+    const data = await this.weeklyRecapManager.ensureWeeklyRecapData(year, week);
+    this.currentFilePath = data.file.path;
+    this.currentFrontmatter = data.frontmatter;
+    this.currentBody = data.body;
+    await this.renderRecap(data.frontmatter, data.generatedNow);
+  }
+  renderLoading(text) {
+    const { contentEl } = this;
+    contentEl.empty();
+    contentEl.addClass("neural-garden-root");
+    const wrap = contentEl.createDiv({ cls: "ng-weekly-view" });
+    wrap.createDiv({ cls: "ng-empty", text });
+  }
+  async renderRecap(frontmatter, animateIn) {
+    var _a, _b;
+    const { contentEl } = this;
+    contentEl.empty();
+    contentEl.addClass("neural-garden-root");
+    const wrap = contentEl.createDiv({ cls: "ng-weekly-view" });
+    const top = wrap.createDiv({ cls: "ng-journal-topbar" });
+    const homeButton = top.createEl("button", { text: "Home", cls: "ng-journal-nav-button" });
+    homeButton.addEventListener("click", async () => {
+      await this.openHomeView(true, this.leaf);
+    });
+    const journalingButton = top.createEl("button", { text: "Back to Journaling", cls: "ng-journal-nav-button" });
+    journalingButton.addEventListener("click", async () => {
+      await this.openJournalingView(true, this.leaf);
+    });
+    const intro = wrap.createDiv({ cls: "ng-weekly-intro" });
+    intro.createEl("h3", { text: "This is your Weekly Recap" });
+    const start = frontmatter.processedDateRange.start;
+    const end = frontmatter.processedDateRange.end;
+    if (start && end) {
+      intro.createDiv({ cls: "ng-weekly-intro-subtitle", text: `${start} to ${end}` });
+    }
+    const symptoms = wrap.createDiv({ cls: "ng-weekly-section" });
+    symptoms.createEl("h4", { text: "Symptom Recap", cls: "ng-weekly-section-heading" });
+    const symptomRows = [
+      { label: "Mood", value: frontmatter.averages.mood, highIsBad: false },
+      { label: "Sleep", value: frontmatter.averages.sleep, highIsBad: false },
+      { label: "Regulation", value: frontmatter.averages.regulation, highIsBad: false },
+      { label: "Stress", value: frontmatter.averages.stress, highIsBad: true },
+      { label: "Anxiety", value: frontmatter.averages.anxiety, highIsBad: true },
+      { label: "Exhaustion", value: frontmatter.averages.exhaustion, highIsBad: true },
+      { label: "Sensory Load", value: frontmatter.averages.sensoryLoad, highIsBad: true },
+      { label: "Social Load", value: frontmatter.averages.socialLoad, highIsBad: true }
+    ];
+    const symptomBlocks = [];
+    for (const row of symptomRows) {
+      const block = symptoms.createDiv({ cls: "ng-weekly-symptom" });
+      const name = block.createDiv({ cls: "ng-journal-metric-label", text: row.label });
+      const bar = block.createDiv({ cls: "ng-journal-progress ng-journal-progress-readonly" });
+      const fill = bar.createDiv({ cls: "ng-journal-progress-fill" });
+      fill.dataset.targetWidth = String(Math.max(0, Math.min(100, row.value)));
+      fill.style.width = "0%";
+      fill.style.backgroundColor = weeklyMetricColor2(row.value, row.highIsBad);
+      const copy = block.createDiv({ cls: "ng-weekly-symptom-copy", text: describeSymptom(row.label, row.value, row.highIsBad) });
+      name.addClass("ng-weekly-fragment-hidden");
+      bar.addClass("ng-weekly-fragment-hidden");
+      copy.addClass("ng-weekly-fragment-hidden");
+      symptomBlocks.push({ block, name, bar, copy });
+    }
+    const emotions = wrap.createDiv({ cls: "ng-weekly-section" });
+    emotions.createEl("h4", { text: "Emotions", cls: "ng-weekly-section-heading" });
+    const emotionalBalance = frontmatter.emotionCounts.pleasantTotal - frontmatter.emotionCounts.unpleasantTotal;
+    const polarity = Math.max(-100, Math.min(100, emotionalBalance * 12));
+    const balance = emotions.createDiv({ cls: "ng-weekly-emotion-balance" });
+    const pointer = balance.createDiv({ cls: "ng-weekly-emotion-pointer" });
+    pointer.style.left = `${50 + polarity / 2}%`;
+    const emotionCounters = emotions.createDiv({ cls: "ng-weekly-inline-copy ng-weekly-emotion-counters" });
+    emotionCounters.createSpan({ text: `Unpleasant Emotions: ${frontmatter.emotionCounts.unpleasantTotal}` });
+    emotionCounters.createSpan({ cls: "ng-weekly-emotion-counters-sep", text: "\xB7" });
+    emotionCounters.createSpan({ text: `Pleasant Emotions: ${frontmatter.emotionCounts.pleasantTotal}` });
+    const emotionCloud = emotions.createDiv({ cls: "ng-weekly-emotion-cloud" });
+    const emotionTokens = renderMixedEmotionCloud(emotionCloud, frontmatter.emotionCounts.unpleasant, frontmatter.emotionCounts.pleasant);
+    emotionTokens.forEach((token) => token.addClass("ng-weekly-fragment-hidden"));
+    const trackers = wrap.createDiv({ cls: "ng-weekly-section" });
+    trackers.createEl("h4", { text: "Tracker", cls: "ng-weekly-section-heading" });
+    const trackerRows = Object.entries(frontmatter.trackerCounts).sort((a, b) => b[1] - a[1]).filter(([, count]) => count > 0);
+    if (trackerRows.length === 0) {
+      trackers.createDiv({ cls: "ng-empty", text: "No tracker activity in this week." });
+    } else {
+      const maxCount = trackerRows[0][1];
+      const cloud = trackers.createDiv({ cls: "ng-weekly-tracker-cloud" });
+      for (const [name, count] of trackerRows) {
+        const row = cloud.createDiv({ cls: "ng-weekly-tracker-pill ng-weekly-fragment-hidden" });
+        const label = row.createSpan({ text: `${name} \xB7 ${count}` });
+        const size = Math.min(1.12, 0.65 + count / Math.max(1, maxCount) * 0.43);
+        label.style.fontSize = `${size}rem`;
+        if (count === maxCount && maxCount > 0) {
+          row.addClass("is-winner");
+        }
+        row.style.animationDuration = `${6 + Math.random() * 5}s`;
+        row.style.animationDelay = `${Math.random() * 1.4}s`;
+      }
+    }
+    const support = wrap.createDiv({ cls: "ng-weekly-section" });
+    support.dataset.weeklySection = "support";
+    const supportHeading = support.createEl("h4", { text: "Support Notes", cls: "ng-weekly-section-heading" });
+    const supportCopy = support.createDiv({
+      cls: "ng-weekly-inline-copy",
+      text: "Considering your current situation, you should take a look at the following notes."
+    });
+    supportCopy.addClass("ng-weekly-support-intro");
+    supportHeading.addClass("ng-weekly-fragment-hidden");
+    supportCopy.addClass("ng-weekly-fragment-hidden");
+    const supportNoteFragments = [];
+    const supportRemainderRows = [];
+    if (frontmatter.supportNotes.length === 0) {
+      const empty = support.createDiv({ cls: "ng-empty", text: "No support notes triggered." });
+      empty.addClass("ng-weekly-fragment-hidden");
+      supportRemainderRows.push({ row: empty, elements: [empty] });
+    } else {
+      for (const note of frontmatter.supportNotes) {
+        const reason = (_a = frontmatter.supportNoteReasons[note]) != null ? _a : "symptom support";
+        const row = support.createDiv({ cls: "ng-weekly-support-row ng-weekly-fragment-hidden" });
+        const link = row.createSpan({ cls: "ng-weekly-support-link", text: note });
+        link.addClass("ng-weekly-fragment-hidden");
+        link.setAttribute("role", "button");
+        link.setAttribute("tabindex", "0");
+        link.addEventListener("click", async () => {
+          const target = this.app.vault.getMarkdownFiles().find((file) => file.basename === note && file.path.startsWith(`${NOTES_FOLDER}/`));
+          if (!target) {
+            new import_obsidian5.Notice(`Support note not found: ${note}`);
+            return;
+          }
+          await this.app.workspace.getLeaf(true).openFile(target);
+        });
+        link.addEventListener("keydown", async (event) => {
+          if (event.key !== "Enter" && event.key !== " ") {
+            return;
+          }
+          event.preventDefault();
+          const target = this.app.vault.getMarkdownFiles().find((file) => file.basename === note && file.path.startsWith(`${NOTES_FOLDER}/`));
+          if (!target) {
+            new import_obsidian5.Notice(`Support note not found: ${note}`);
+            return;
+          }
+          await this.app.workspace.getLeaf(true).openFile(target);
+        });
+        const reasonEl = row.createDiv({ cls: "ng-weekly-inline-copy ng-weekly-fragment-hidden ng-weekly-support-reason", text: `Triggered by: ${reason}` });
+        supportNoteFragments.push({ row, note: link, reason: reasonEl });
+      }
+      for (const symptom of frontmatter.missingSupportSymptoms) {
+        const row = support.createDiv({ cls: "ng-weekly-support-row ng-weekly-fragment-hidden" });
+        const item = row.createDiv({ cls: "ng-weekly-inline-copy ng-weekly-fragment-hidden", text: `${symptom}: consider creating a support note for this.` });
+        supportRemainderRows.push({ row, elements: [item] });
+      }
+      const criticalEntries = Object.entries(frontmatter.criticalDays).filter(([, days]) => days.length > 0);
+      if (criticalEntries.length > 0) {
+        const criticalBlock = support.createDiv({ cls: "ng-weekly-support-row ng-weekly-fragment-hidden" });
+        const fragments = [];
+        const title = criticalBlock.createDiv({ cls: "ng-weekly-inline-copy ng-weekly-critical-title ng-weekly-fragment-hidden", text: "Critical days:" });
+        fragments.push(title);
+        for (const [symptom, days] of criticalEntries) {
+          const line = criticalBlock.createDiv({ cls: "ng-weekly-inline-copy ng-weekly-critical-line ng-weekly-fragment-hidden", text: `${symptom}: ${days.join(", ")}` });
+          fragments.push(line);
+        }
+        supportRemainderRows.push({ row: criticalBlock, elements: fragments });
+      }
+    }
+    const tasks = wrap.createDiv({ cls: "ng-weekly-section" });
+    tasks.createEl("h4", { text: "Tasks", cls: "ng-weekly-section-heading" });
+    renderTaskDeltaLine(tasks, "Weekly energy capacity", frontmatter.taskAdjustments.maxEnergy.from, frontmatter.taskAdjustments.maxEnergy.to, 200);
+    renderTaskDeltaLine(tasks, "Break frequency", frontmatter.taskAdjustments.forcedBreakThreshold.from, frontmatter.taskAdjustments.forcedBreakThreshold.to, 100);
+    renderTaskDeltaLine(tasks, "Break length", frontmatter.taskAdjustments.forcedBreakLength.from, frontmatter.taskAdjustments.forcedBreakLength.to, 60);
+    const seeds = wrap.createDiv({ cls: "ng-weekly-section" });
+    seeds.createEl("h4", { text: "Next Month's Topics", cls: "ng-weekly-section-heading" });
+    seeds.createDiv({
+      cls: "ng-weekly-inline-copy",
+      text: "These two short topics seed your next Monthly Reflection so you can revisit what mattered across the month."
+    });
+    if (((_b = frontmatter.seeds) != null ? _b : []).length >= 2) {
+      for (const seed of frontmatter.seeds) {
+        seeds.createDiv({ cls: "ng-weekly-support-chip", text: seed });
+      }
+    } else {
+      const row = seeds.createDiv({ cls: "ng-weekly-seed-form" });
+      const one = row.createEl("input", { type: "text", placeholder: "Topic 1" });
+      const two = row.createEl("input", { type: "text", placeholder: "Topic 2" });
+      one.maxLength = 15;
+      two.maxLength = 15;
+      one.addClass("ng-task-input");
+      two.addClass("ng-task-input");
+      const submit = row.createEl("button", { text: "Save Topics", cls: "ng-weekly-seed-submit" });
+      submit.addEventListener("click", async () => {
+        const seedOne = one.value.slice(0, 15);
+        const seedTwo = two.value.slice(0, 15);
+        if (!seedOne || !seedTwo || !this.currentFilePath || !this.currentFrontmatter) {
+          new import_obsidian5.Notice("Please fill both topics.");
+          return;
+        }
+        this.currentFrontmatter.seeds = [seedOne, seedTwo];
+        const file = this.app.vault.getAbstractFileByPath(this.currentFilePath);
+        if (!(file instanceof import_obsidian5.TFile)) {
+          return;
+        }
+        await this.journalingStorage.saveWeeklyRecap(file, this.currentFrontmatter, this.currentBody);
+        await this.renderRecap(this.currentFrontmatter, false);
+      });
+    }
+    const sections = [symptoms, emotions, trackers, support, tasks, seeds];
+    if (animateIn) {
+      this.supportRevealPlayed = false;
+      this.revealTimeouts.forEach((id) => window.clearTimeout(id));
+      this.revealTimeouts = [];
+      sections.slice(1).forEach((section) => section.addClass("ng-weekly-scroll-hidden"));
+      await this.playSymptomBuildup(symptoms, symptomBlocks);
+      await this.playSequentialSectionReveal(
+        [emotions, trackers, support, tasks, seeds],
+        support,
+        supportHeading,
+        supportCopy,
+        emotionTokens,
+        supportNoteFragments,
+        supportRemainderRows
+      );
+      return;
+    }
+    this.revealAllImmediate(
+      symptomBlocks,
+      supportHeading,
+      supportCopy,
+      supportNoteFragments,
+      supportRemainderRows,
+      sections.slice(1)
+    );
+  }
+  async playSymptomBuildup(section, blocks) {
+    var _a;
+    section.addClass("is-visible");
+    for (const row of blocks) {
+      row.name.removeClass("ng-weekly-fragment-hidden");
+      await wait(320);
+      row.bar.removeClass("ng-weekly-fragment-hidden");
+      await wait(90);
+      const fill = row.bar.querySelector(".ng-journal-progress-fill");
+      if (fill) {
+        const target = Number.parseFloat((_a = fill.dataset.targetWidth) != null ? _a : "0");
+        fill.style.width = `${target}%`;
+      }
+      await wait(360);
+      row.copy.removeClass("ng-weekly-fragment-hidden");
+      await wait(320);
+    }
+  }
+  async playSupportSequentialReveal(heading, copy, noteFragments, remainderRows) {
+    heading.removeClass("ng-weekly-fragment-hidden");
+    await wait(700);
+    copy.removeClass("ng-weekly-fragment-hidden");
+    await wait(1e3);
+    for (const fragment of noteFragments) {
+      fragment.row.removeClass("ng-weekly-fragment-hidden");
+      fragment.note.removeClass("ng-weekly-fragment-hidden");
+    }
+    await wait(650);
+    for (const fragment of noteFragments) {
+      fragment.reason.removeClass("ng-weekly-fragment-hidden");
+    }
+    await wait(450);
+    for (const row of remainderRows) {
+      row.row.removeClass("ng-weekly-fragment-hidden");
+      for (const element of row.elements) {
+        element.removeClass("ng-weekly-fragment-hidden");
+        await wait(140);
+      }
+      await wait(180);
+    }
+  }
+  async playSequentialSectionReveal(orderedSections, supportSection, supportHeading, supportCopy, emotionTokens, supportNoteFragments, supportRemainderRows) {
+    var _a;
+    (_a = this.sectionObserver) == null ? void 0 : _a.disconnect();
+    for (let index = 0; index < orderedSections.length; index += 1) {
+      const section = orderedSections[index];
+      await this.waitForSectionReady(section, 2200 + index * 1400);
+      section.classList.add("is-visible");
+      section.classList.remove("ng-weekly-scroll-hidden");
+      if (index === 0) {
+        await this.revealEmotionTokens(emotionTokens);
+      }
+      if (index === 1) {
+        await this.revealTrackerBubbles(section);
+      }
+      if (section === supportSection && !this.supportRevealPlayed) {
+        this.supportRevealPlayed = true;
+        await this.playSupportSequentialReveal(
+          supportHeading,
+          supportCopy,
+          supportNoteFragments,
+          supportRemainderRows
+        );
+      }
+      if (index < orderedSections.length - 1) {
+        await wait(260);
+      }
+    }
+  }
+  async revealEmotionTokens(tokens) {
+    await this.revealBubbles(tokens);
+  }
+  async revealTrackerBubbles(section) {
+    const pills = shuffle(Array.from(section.querySelectorAll(".ng-weekly-tracker-pill")));
+    await this.revealBubbles(pills);
+  }
+  async revealBubbles(bubbles) {
+    for (const bubble of shuffle(bubbles)) {
+      bubble.style.animationName = "none";
+      const animation = bubble.animate([
+        { opacity: 0, transform: "scale(0.45) translateY(10px)" },
+        { opacity: 1, transform: "scale(1.08) translateY(-1px)", offset: 0.78 },
+        { opacity: 1, transform: "scale(1) translateY(0)" }
+      ], {
+        duration: 640,
+        easing: "cubic-bezier(0.16, 1, 0.3, 1)"
+      });
+      bubble.removeClass("ng-weekly-fragment-hidden");
+      animation.addEventListener("finish", () => {
+        bubble.style.animationName = "ng-weekly-float";
+      }, { once: true });
+      await wait(randomBetween(120, 190));
+    }
+  }
+  async waitForSectionReady(section, fallbackMs) {
+    return new Promise((resolve) => {
+      let done = false;
+      const finish = () => {
+        if (done) {
+          return;
+        }
+        done = true;
+        observer.disconnect();
+        window.clearTimeout(timeoutId);
+        resolve();
+      };
+      const observer = new IntersectionObserver((entries) => {
+        for (const entry of entries) {
+          if (entry.target === section && entry.isIntersecting) {
+            finish();
+            break;
+          }
+        }
+      }, { root: null, threshold: 0.25 });
+      observer.observe(section);
+      const timeoutId = window.setTimeout(finish, fallbackMs * WEEKLY_ANIMATION_SCALE);
+      this.revealTimeouts.push(timeoutId);
+    });
+  }
+  revealAllImmediate(blocks, supportHeading, supportCopy, supportNoteFragments, supportRemainderRows, tailSections) {
+    var _a;
+    for (const row of blocks) {
+      row.name.removeClass("ng-weekly-fragment-hidden");
+      row.bar.removeClass("ng-weekly-fragment-hidden");
+      row.copy.removeClass("ng-weekly-fragment-hidden");
+      const fill = row.bar.querySelector(".ng-journal-progress-fill");
+      if (fill) {
+        const target = Number.parseFloat((_a = fill.dataset.targetWidth) != null ? _a : "0");
+        fill.style.width = `${target}%`;
+      }
+    }
+    supportHeading.removeClass("ng-weekly-fragment-hidden");
+    supportCopy.removeClass("ng-weekly-fragment-hidden");
+    supportNoteFragments.forEach((fragment) => {
+      fragment.row.removeClass("ng-weekly-fragment-hidden");
+      fragment.note.removeClass("ng-weekly-fragment-hidden");
+      fragment.reason.removeClass("ng-weekly-fragment-hidden");
+    });
+    supportRemainderRows.forEach((row) => {
+      row.row.removeClass("ng-weekly-fragment-hidden");
+      row.elements.forEach((element) => element.removeClass("ng-weekly-fragment-hidden"));
+    });
+    tailSections.forEach((section) => {
+      section.classList.add("is-visible");
+      section.classList.remove("ng-weekly-scroll-hidden");
+      section.dataset.weeklyRevealed = "true";
+      section.querySelectorAll(".ng-weekly-emotion-token, .ng-weekly-tracker-pill").forEach((bubble) => {
+        bubble.removeClass("ng-weekly-fragment-hidden");
+      });
+    });
+  }
+};
+function renderMixedEmotionCloud(container, negative, positive) {
+  const entries = [
+    ...Object.entries(negative).map(([emotion, count]) => ({ emotion, count, positive: false })),
+    ...Object.entries(positive).map(([emotion, count]) => ({ emotion, count, positive: true }))
+  ].sort((a, b) => b.count - a.count || Math.random() - 0.5);
+  if (entries.length === 0) {
+    container.createDiv({ cls: "ng-weekly-inline-copy", text: "No emotions logged." });
+    return [];
+  }
+  const max = entries[0].count;
+  const tokens = [];
+  for (const entry of entries) {
+    const chip = container.createSpan({ cls: `ng-weekly-emotion-token ${entry.positive ? "is-positive" : "is-negative"}`, text: entry.emotion });
+    const count = entry.count;
+    const scale = 0.85 + count / Math.max(1, max) * 0.95;
+    chip.style.fontSize = `${scale}rem`;
+    chip.style.animationDuration = `${6 + Math.random() * 4}s`;
+    chip.style.animationDelay = `${Math.random() * 1.3}s`;
+    tokens.push(chip);
+  }
+  return tokens;
+}
+function weeklyMetricColor2(value, highIsBad) {
+  const v = Math.max(0, Math.min(100, value));
+  if (highIsBad) {
+    if (v >= 80) return "#FF6565";
+    if (v >= 60) return "#F0A04C";
+    if (v >= 40) return "#F4D35E";
+    return "#39E05A";
+  }
+  if (v >= 80) return "#39E05A";
+  if (v >= 60) return "#A8D56E";
+  if (v >= 40) return "#F4D35E";
+  return "#FF6565";
+}
+function describeSymptom(label, value, highIsBad) {
+  const v = Math.round(value);
+  if (highIsBad) {
+    if (v >= 80) return `${label} has been very high this week. Please prioritize recovery.`;
+    if (v >= 60) return `${label} has been elevated. Keep support routines close.`;
+    if (v >= 40) return `${label} has been manageable, with some pressure.`;
+    return `${label} looks stable this week.`;
+  }
+  if (v >= 80) return `Your ${label.toLowerCase()} has been great. Keep what helps you grounded.`;
+  if (v >= 60) return `Your ${label.toLowerCase()} has been good and fairly stable.`;
+  if (v >= 40) return `${label} was mixed this week. Gentle consistency may help.`;
+  return `${label} has been low. Extra care and support could help next week.`;
+}
+function deltaLine(from, to, maxValue) {
+  if (typeof maxValue === "number" && to >= maxValue - 0.01) {
+    return "at-max";
+  }
+  if (Math.abs(from - to) < 0.01) {
+    return "unchanged";
+  }
+  return to > from ? "increased" : "decreased";
+}
+function renderTaskDeltaLine(parent, label, from, to, maxValue) {
+  const status = deltaLine(from, to, maxValue);
+  const row = parent.createDiv({ cls: "ng-weekly-inline-copy ng-weekly-task-status" });
+  row.createSpan({ text: `${label}: ` });
+  row.createSpan({ cls: `ng-weekly-task-status-value is-${status}`, text: status === "at-max" ? "at maximum" : status });
+}
+function wait(ms) {
+  return new Promise((resolve) => window.setTimeout(resolve, ms * WEEKLY_ANIMATION_SCALE));
+}
+function randomBetween(min, max) {
+  return min + Math.random() * (max - min);
+}
+function shuffle(items) {
+  const copy = [...items];
+  for (let index = copy.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [copy[index], copy[swapIndex]] = [copy[swapIndex], copy[index]];
+  }
+  return copy;
+}
+
+// src/journalingStorage.ts
+var import_obsidian6 = require("obsidian");
 var FRONTMATTER_REGEX = /^---\n[\s\S]*?\n---\n?/;
 var ENTRY_HEADING_REGEX = /^# Entry\s*(?:\n|\r\n)+/i;
 var JournalingStorage = class {
@@ -4287,7 +5537,7 @@ var JournalingStorage = class {
   }
   async readDailyEntryByDate(dateKey) {
     const file = this.app.vault.getAbstractFileByPath(`${JOURNAL_DAILY_FOLDER}/${dateKey}.md`);
-    if (!(file instanceof import_obsidian5.TFile)) {
+    if (!(file instanceof import_obsidian6.TFile)) {
       return null;
     }
     return this.readDailyEntry(file);
@@ -4300,6 +5550,39 @@ var JournalingStorage = class {
   async saveDailyEntry(file, frontmatter, bodyText) {
     await this.app.vault.modify(file, this.buildDailyContent(frontmatter, bodyText));
   }
+  async ensureWeeklyRecapFile(year, week) {
+    const path = this.weeklyRecapPath(year, week);
+    const existing = this.app.vault.getAbstractFileByPath(path);
+    if (existing instanceof import_obsidian6.TFile) {
+      return existing;
+    }
+    await this.ensureFolderExists(JOURNAL_WEEKLY_FOLDER);
+    const frontmatter = defaultWeeklyFrontmatter(year, week);
+    try {
+      return await this.app.vault.create(path, `${this.serializeFrontmatter(frontmatter)}
+`);
+    } catch (e) {
+      const createdByOtherCall = this.app.vault.getAbstractFileByPath(path);
+      if (createdByOtherCall instanceof import_obsidian6.TFile) {
+        return createdByOtherCall;
+      }
+      throw new Error(`Failed to create weekly recap at ${path}`);
+    }
+  }
+  async readWeeklyRecap(file) {
+    const content = await this.app.vault.read(file);
+    const frontmatter = normalizeWeeklyFrontmatter(this.extractFrontmatter(content));
+    const body = content.replace(FRONTMATTER_REGEX, "").replace(/^\s+|\s+$/g, "");
+    return { frontmatter, body };
+  }
+  async saveWeeklyRecap(file, frontmatter, body) {
+    const content = `${this.serializeFrontmatter(frontmatter)}
+${body.replace(/^\s+/, "")}`;
+    await this.app.vault.modify(file, content.replace(/\s+$/, "") + "\n");
+  }
+  weeklyRecapPath(year, week) {
+    return `${JOURNAL_WEEKLY_FOLDER}/${year}-W${String(week).padStart(2, "0")}.md`;
+  }
   async listTrackers() {
     const files = this.app.vault.getFiles().filter((file) => file.path.startsWith(`${TRACKER_FOLDER}/`) && file.extension === "md");
     const trackers = await Promise.all(files.map(async (file) => this.readTracker(file)));
@@ -4309,8 +5592,8 @@ var JournalingStorage = class {
     const fileName = sanitizeFileName(name);
     const path = `${TRACKER_FOLDER}/${fileName}.md`;
     const existing = this.app.vault.getAbstractFileByPath(path);
-    const dates = existing instanceof import_obsidian5.TFile ? (await this.readTracker(existing)).dates : [];
-    const file = existing instanceof import_obsidian5.TFile ? existing : await this.createTrackerFile(path, name, color, dates);
+    const dates = existing instanceof import_obsidian6.TFile ? (await this.readTracker(existing)).dates : [];
+    const file = existing instanceof import_obsidian6.TFile ? existing : await this.createTrackerFile(path, name, color, dates);
     const frontmatter = { Date: dates, color };
     await this.writeTrackerFile(file, name, frontmatter, dates);
     return { file, name, frontmatter, dates, color };
@@ -4324,7 +5607,7 @@ var JournalingStorage = class {
   }
   async ensureDailyFile(dateKey) {
     const existing = this.app.vault.getAbstractFileByPath(`${JOURNAL_DAILY_FOLDER}/${dateKey}.md`);
-    if (existing instanceof import_obsidian5.TFile) {
+    if (existing instanceof import_obsidian6.TFile) {
       return existing;
     }
     await this.ensureFolderExists(JOURNAL_DAILY_FOLDER);
@@ -4332,7 +5615,7 @@ var JournalingStorage = class {
       return await this.app.vault.create(`${JOURNAL_DAILY_FOLDER}/${dateKey}.md`, this.buildDailyContent(defaultDailyFrontmatter(dateKey), ""));
     } catch (e) {
       const createdByOtherCall = this.app.vault.getAbstractFileByPath(`${JOURNAL_DAILY_FOLDER}/${dateKey}.md`);
-      if (createdByOtherCall instanceof import_obsidian5.TFile) {
+      if (createdByOtherCall instanceof import_obsidian6.TFile) {
         return createdByOtherCall;
       }
       throw new Error(`Failed to create daily journal file for ${dateKey}`);
@@ -4363,7 +5646,7 @@ var JournalingStorage = class {
       return await this.app.vault.create(path, content);
     } catch (e) {
       const createdByOtherCall = this.app.vault.getAbstractFileByPath(path);
-      if (createdByOtherCall instanceof import_obsidian5.TFile) {
+      if (createdByOtherCall instanceof import_obsidian6.TFile) {
         return createdByOtherCall;
       }
       throw new Error(`Failed to create tracker note at ${path}`);
@@ -4394,7 +5677,7 @@ ${content}`;
     if (!match) {
       return {};
     }
-    const parsed = (0, import_obsidian5.parseYaml)(match[0].replace(/^---\n|\n---\n?$/g, ""));
+    const parsed = (0, import_obsidian6.parseYaml)(match[0].replace(/^---\n|\n---\n?$/g, ""));
     return parsed != null ? parsed : {};
   }
   extractEntryBody(content) {
@@ -4403,7 +5686,7 @@ ${content}`;
   }
   serializeFrontmatter(frontmatter) {
     return `---
-${(0, import_obsidian5.stringifyYaml)(frontmatter).replace(/\s+$/, "")}
+${(0, import_obsidian6.stringifyYaml)(frontmatter).replace(/\s+$/, "")}
 ---`;
   }
   normalizeDailyFrontmatter(raw, fallbackDate) {
@@ -4420,7 +5703,6 @@ ${(0, import_obsidian5.stringifyYaml)(frontmatter).replace(/\s+$/, "")}
       spentEnergy: numberOr2(raw.spentEnergy, 0),
       completedTasks: snapshotArray(raw.completedTasks),
       uncompletedTasks: snapshotArray(raw.uncompletedTasks),
-      processed: booleanOr(raw.processed, false),
       todaysNote: stringOr(raw.todaysNote, ""),
       emotions: stringArrayOr(raw.emotions)
     };
@@ -4463,9 +5745,147 @@ function defaultDailyFrontmatter(dateKey) {
     spentEnergy: 0,
     completedTasks: [],
     uncompletedTasks: [],
-    processed: false,
     todaysNote: "",
     emotions: []
+  };
+}
+function defaultWeeklyFrontmatter(year, week) {
+  return {
+    week,
+    year,
+    generatedAt: "",
+    processedDateRange: { start: "", end: "" },
+    journalLinks: [],
+    supportNotes: [],
+    supportNoteReasons: {},
+    missingSupportSymptoms: [],
+    criticalDays: {},
+    supportHints: [],
+    seeds: [],
+    averages: {
+      mood: 0,
+      sleep: 0,
+      regulation: 0,
+      stress: 0,
+      anxiety: 0,
+      exhaustion: 0,
+      sensoryLoad: 0,
+      socialLoad: 0
+    },
+    emotionCounts: {
+      pleasant: {},
+      unpleasant: {},
+      pleasantTotal: 0,
+      unpleasantTotal: 0
+    },
+    trackerCounts: {},
+    taskAdjustments: {
+      maxEnergy: { from: 100, to: 100 },
+      forcedBreakThreshold: { from: 70, to: 70 },
+      forcedBreakLength: { from: 20, to: 20 }
+    }
+  };
+}
+function normalizeWeeklyFrontmatter(raw) {
+  const year = numberOr2(raw.year, (/* @__PURE__ */ new Date()).getFullYear());
+  const week = numberOr2(raw.week, 1);
+  const defaults = defaultWeeklyFrontmatter(year, week);
+  const averagesRaw = raw.averages && typeof raw.averages === "object" ? raw.averages : {};
+  const emotionRaw = raw.emotionCounts && typeof raw.emotionCounts === "object" ? raw.emotionCounts : {};
+  const taskRaw = raw.taskAdjustments && typeof raw.taskAdjustments === "object" ? raw.taskAdjustments : {};
+  const processedRangeRaw = raw.processedDateRange && typeof raw.processedDateRange === "object" ? raw.processedDateRange : {};
+  const journalLinks = stringArrayOr(raw.journalLinks);
+  const derivedRange = deriveProcessedDateRangeFromLinks(journalLinks);
+  return {
+    week,
+    year,
+    generatedAt: stringOr(raw.generatedAt, ""),
+    processedDateRange: {
+      start: stringOr(processedRangeRaw.start, derivedRange.start),
+      end: stringOr(processedRangeRaw.end, derivedRange.end)
+    },
+    journalLinks,
+    supportNotes: stringArrayOr(raw.supportNotes),
+    supportNoteReasons: normalizeStringMap(raw.supportNoteReasons),
+    missingSupportSymptoms: stringArrayOr(raw.missingSupportSymptoms),
+    criticalDays: normalizeStringArrayMap(raw.criticalDays),
+    supportHints: stringArrayOr(raw.supportHints),
+    seeds: stringArrayOr(raw.seeds),
+    averages: {
+      mood: numberOr2(averagesRaw.mood, defaults.averages.mood),
+      sleep: numberOr2(averagesRaw.sleep, defaults.averages.sleep),
+      regulation: numberOr2(averagesRaw.regulation, defaults.averages.regulation),
+      stress: numberOr2(averagesRaw.stress, defaults.averages.stress),
+      anxiety: numberOr2(averagesRaw.anxiety, defaults.averages.anxiety),
+      exhaustion: numberOr2(averagesRaw.exhaustion, defaults.averages.exhaustion),
+      sensoryLoad: numberOr2(averagesRaw.sensoryLoad, defaults.averages.sensoryLoad),
+      socialLoad: numberOr2(averagesRaw.socialLoad, defaults.averages.socialLoad)
+    },
+    emotionCounts: {
+      pleasant: normalizeCountMap(emotionRaw.pleasant),
+      unpleasant: normalizeCountMap(emotionRaw.unpleasant),
+      pleasantTotal: numberOr2(emotionRaw.pleasantTotal, defaults.emotionCounts.pleasantTotal),
+      unpleasantTotal: numberOr2(emotionRaw.unpleasantTotal, defaults.emotionCounts.unpleasantTotal)
+    },
+    trackerCounts: normalizeCountMap(raw.trackerCounts),
+    taskAdjustments: {
+      maxEnergy: normalizeDelta(taskRaw.maxEnergy, defaults.taskAdjustments.maxEnergy),
+      forcedBreakThreshold: normalizeDelta(taskRaw.forcedBreakThreshold, defaults.taskAdjustments.forcedBreakThreshold),
+      forcedBreakLength: normalizeDelta(taskRaw.forcedBreakLength, defaults.taskAdjustments.forcedBreakLength)
+    }
+  };
+}
+function deriveProcessedDateRangeFromLinks(journalLinks) {
+  const dateKeys = journalLinks.map((link) => {
+    var _a;
+    const match = link.match(/\[\[(\d{4}-\d{2}-\d{2})\]\]/);
+    return (_a = match == null ? void 0 : match[1]) != null ? _a : "";
+  }).filter((value) => value.length > 0).sort();
+  if (dateKeys.length === 0) {
+    return { start: "", end: "" };
+  }
+  return { start: dateKeys[0], end: dateKeys[dateKeys.length - 1] };
+}
+function normalizeCountMap(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return {};
+  }
+  const map = {};
+  for (const [key, raw] of Object.entries(value)) {
+    map[key] = numberOr2(raw, 0);
+  }
+  return map;
+}
+function normalizeStringMap(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return {};
+  }
+  const map = {};
+  for (const [key, raw] of Object.entries(value)) {
+    if (typeof raw === "string") {
+      map[key] = raw;
+    }
+  }
+  return map;
+}
+function normalizeStringArrayMap(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return {};
+  }
+  const map = {};
+  for (const [key, raw] of Object.entries(value)) {
+    map[key] = stringArrayOr(raw);
+  }
+  return map;
+}
+function normalizeDelta(value, fallback) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return fallback;
+  }
+  const record = value;
+  return {
+    from: numberOr2(record.from, fallback.from),
+    to: numberOr2(record.to, fallback.to)
   };
 }
 function sanitizeFileName(name) {
@@ -4474,9 +5894,6 @@ function sanitizeFileName(name) {
 }
 function stringOr(value, fallback) {
   return typeof value === "string" ? value : fallback;
-}
-function booleanOr(value, fallback) {
-  return typeof value === "boolean" ? value : fallback;
 }
 function numberOr2(value, fallback) {
   return typeof value === "number" && Number.isFinite(value) ? value : fallback;
@@ -4508,7 +5925,7 @@ function snapshotArray(value) {
 }
 
 // src/myNotesStorage.ts
-var import_obsidian6 = require("obsidian");
+var import_obsidian7 = require("obsidian");
 function stripLink(value) {
   if (typeof value !== "string") {
     return "";
@@ -4524,7 +5941,7 @@ var MyNotesStorage = class {
   }
   async ensureCategoriesFile() {
     const existing = this.app.vault.getAbstractFileByPath(MY_NOTES_CATEGORIES_FILE_PATH);
-    if (existing instanceof import_obsidian6.TFile) {
+    if (existing instanceof import_obsidian7.TFile) {
       return existing;
     }
     await this.ensureFolderExists(MY_NOTES_MAINTENANCE_FOLDER);
@@ -4532,7 +5949,7 @@ var MyNotesStorage = class {
       return await this.app.vault.create(MY_NOTES_CATEGORIES_FILE_PATH, "---\ncategories: {}\n---\n# Categories\n");
     } catch (e) {
       const createdByOtherCall = this.app.vault.getAbstractFileByPath(MY_NOTES_CATEGORIES_FILE_PATH);
-      if (createdByOtherCall instanceof import_obsidian6.TFile) {
+      if (createdByOtherCall instanceof import_obsidian7.TFile) {
         return createdByOtherCall;
       }
       throw new Error(`Failed to create categories file at ${MY_NOTES_CATEGORIES_FILE_PATH}`);
@@ -4584,7 +6001,7 @@ var MyNotesStorage = class {
     if (!trimmed) {
       return false;
     }
-    return this.app.vault.getAbstractFileByPath(`${NOTES_FOLDER}/${trimmed}.md`) instanceof import_obsidian6.TFile;
+    return this.app.vault.getAbstractFileByPath(`${NOTES_FOLDER}/${trimmed}.md`) instanceof import_obsidian7.TFile;
   }
   async createNote(name) {
     const trimmed = this.sanitizeNoteName(name);
@@ -4593,7 +6010,7 @@ var MyNotesStorage = class {
     }
     const path = `${NOTES_FOLDER}/${trimmed}.md`;
     const existing = this.app.vault.getAbstractFileByPath(path);
-    if (existing instanceof import_obsidian6.TFile) {
+    if (existing instanceof import_obsidian7.TFile) {
       return existing;
     }
     await this.ensureFolderExists(NOTES_FOLDER);
@@ -4709,7 +6126,7 @@ var MyNotesStorage = class {
 };
 
 // src/noteHeader.ts
-var import_obsidian7 = require("obsidian");
+var import_obsidian8 = require("obsidian");
 var NoteHeaderManager = class {
   constructor(app, myNotesStorage, openHomeView, openMyNotesView) {
     this.app = app;
@@ -4720,7 +6137,7 @@ var NoteHeaderManager = class {
   sync() {
     for (const leaf of this.app.workspace.getLeavesOfType("markdown")) {
       const view = leaf.view;
-      if (!(view instanceof import_obsidian7.MarkdownView)) {
+      if (!(view instanceof import_obsidian8.MarkdownView)) {
         continue;
       }
       const content = view.containerEl.querySelector(".view-content");
@@ -4755,7 +6172,7 @@ var NoteHeaderManager = class {
     });
     const myNotesButton = navColumn.createEl("button", { cls: "ng-journal-nav-button" });
     const myNotesBackIcon = myNotesButton.createSpan();
-    (0, import_obsidian7.setIcon)(myNotesBackIcon, "arrow-left");
+    (0, import_obsidian8.setIcon)(myNotesBackIcon, "arrow-left");
     myNotesButton.createSpan({ text: "MyNotes" });
     myNotesButton.addEventListener("click", async () => {
       await this.openMyNotesView(true, leaf);
@@ -4770,11 +6187,11 @@ var NoteHeaderManager = class {
     addButton.setAttribute("title", "Add Category");
     const supportButton = categoriesActions.createEl("button", { cls: "ng-note-header-support-toggle" });
     supportButton.setAttribute("aria-label", "Toggle Support Note");
-    (0, import_obsidian7.setIcon)(supportButton, "shield-plus");
+    (0, import_obsidian8.setIcon)(supportButton, "shield-plus");
     const favouriteButton = categoriesActions.createEl("button", { cls: "ng-note-header-fav" });
     favouriteButton.setAttribute("aria-label", "Favourite");
     favouriteButton.setAttribute("title", "Favourite");
-    (0, import_obsidian7.setIcon)(favouriteButton, "heart");
+    (0, import_obsidian8.setIcon)(favouriteButton, "heart");
     favouriteButton.toggleClass("is-favourite", this.myNotesStorage.isFavourite(file));
     favouriteButton.addEventListener("click", async () => {
       const nowFavourite = await this.myNotesStorage.toggleFavourite(file);
@@ -4906,14 +6323,14 @@ var NoteHeaderManager = class {
 };
 
 // src/storage.ts
-var import_obsidian8 = require("obsidian");
+var import_obsidian9 = require("obsidian");
 var TaskManagerStorage = class {
   constructor(app) {
     this.app = app;
   }
   async ensureTaskManagerFile() {
     const existing = this.app.vault.getAbstractFileByPath(TASK_MANAGER_FILE_PATH);
-    if (existing instanceof import_obsidian8.TFile) {
+    if (existing instanceof import_obsidian9.TFile) {
       return existing;
     }
     const folderPath = TASK_MANAGER_FILE_PATH.split("/").slice(0, -1).join("/");
@@ -4927,7 +6344,7 @@ var TaskManagerStorage = class {
       return await this.app.vault.create(TASK_MANAGER_FILE_PATH, fileContent);
     } catch (e) {
       const createdByOtherCall = this.app.vault.getAbstractFileByPath(TASK_MANAGER_FILE_PATH);
-      if (createdByOtherCall instanceof import_obsidian8.TFile) {
+      if (createdByOtherCall instanceof import_obsidian9.TFile) {
         return createdByOtherCall;
       }
       throw new Error(`Failed to create task manager file at ${TASK_MANAGER_FILE_PATH}`);
@@ -4985,18 +6402,469 @@ ${content}`;
     if (!match) {
       return {};
     }
-    return (_a = (0, import_obsidian8.parseYaml)(match[1])) != null ? _a : {};
+    return (_a = (0, import_obsidian9.parseYaml)(match[1])) != null ? _a : {};
   }
   serializeFrontmatter(state) {
-    const yaml = (0, import_obsidian8.stringifyYaml)(state).replace(/\s+$/, "");
+    const yaml = (0, import_obsidian9.stringifyYaml)(state).replace(/\s+$/, "");
     return `---
 ${yaml}
 ---`;
   }
 };
 
+// src/weeklyRecapManager.ts
+var import_obsidian10 = require("obsidian");
+var POSITIVE_EMOTIONS = /* @__PURE__ */ new Set([
+  "Happy",
+  "Relaxed",
+  "Excited",
+  "Grateful",
+  "Proud",
+  "Settled",
+  "Inspired",
+  "Serene",
+  "Confident",
+  "Hopeful",
+  "Relieved",
+  "Curious"
+]);
+var NEGATIVE_EMOTIONS = /* @__PURE__ */ new Set([
+  "Frustrated",
+  "Anxious",
+  "Overwhelmed",
+  "Sad",
+  "Angry",
+  "Lonely",
+  "Irritated",
+  "Restless",
+  "Drained",
+  "Numb",
+  "Discouraged",
+  "Tense"
+]);
+var SUPPORT_HINTS = {
+  Mood: [
+    "A tiny joyful ritual today can stabilize tomorrow.",
+    "Pick one gentle thing that usually softens your day.",
+    "Low mood is data, not failure. Keep your steps small.",
+    "Try one predictable comfort activity before bedtime.",
+    "Name one thing that felt even slightly okay today."
+  ],
+  Sleep: [
+    "Protect one fixed wind-down anchor tonight.",
+    "Dim light earlier than usual to cue your system.",
+    "A shorter evening task list can protect sleep quality.",
+    "Use a simple pre-sleep sequence to reduce friction.",
+    "Your body trusts rhythm; keep bedtime timing gentle but steady."
+  ],
+  Regulation: [
+    "One pause before reacting can change the whole hour.",
+    "Try grounding through touch, temperature, or pressure.",
+    "Reduce one input source when your system feels loud.",
+    "Regulation grows through repetition, not perfection.",
+    "Build in a two-minute reset between demanding tasks."
+  ],
+  Stress: [
+    "Short breaks now prevent long crashes later.",
+    "Choose one non-essential task to postpone this week.",
+    "Lowering pace is still progress.",
+    "Your nervous system benefits from predictable pauses.",
+    "Try three slower breaths before switching tasks."
+  ],
+  Anxiety: [
+    "Contain uncertainty by choosing one next concrete action.",
+    "Name what is known right now before forecasting.",
+    "Use brief body cues: unclench jaw, drop shoulders, exhale.",
+    "Anxiety peaks pass faster when you reduce input noise.",
+    "Anchor attention to one sensory detail in the room."
+  ],
+  Exhaustion: [
+    "Protect recovery time before adding new commitments.",
+    "A slower day can be productive for your long-term baseline.",
+    "Energy is a resource to steward, not a test to pass.",
+    "Prioritize the one task with highest real value.",
+    "Tiny rest windows count, especially when repeated."
+  ],
+  "Sensory Load": [
+    "Reduce one sensory trigger where possible this week.",
+    "Use transitions: from high-input to low-input spaces gradually.",
+    "Noise, light, and social density all tax the same battery.",
+    "Schedule low-stimulation moments before your hardest blocks.",
+    "Your comfort tools are strategy, not weakness."
+  ],
+  "Social Load": [
+    "Plan one low-demand social option to balance heavier ones.",
+    "A short social recovery window can prevent overload.",
+    "Set one clear boundary before high-contact days.",
+    "Quality over quantity is valid for social energy.",
+    "Choose contexts where you can leave early if needed."
+  ]
+};
+var SYMPTOMS = [
+  { label: "Mood", key: "mood", highIsBad: false },
+  { label: "Sleep", key: "sleep", highIsBad: false },
+  { label: "Regulation", key: "regulation", highIsBad: false },
+  { label: "Stress", key: "stress", highIsBad: true },
+  { label: "Anxiety", key: "anxiety", highIsBad: true },
+  { label: "Exhaustion", key: "exhaustion", highIsBad: true },
+  { label: "Sensory Load", key: "sensoryLoad", highIsBad: true },
+  { label: "Social Load", key: "socialLoad", highIsBad: true }
+];
+var WeeklyRecapManager = class {
+  constructor(app, journalingStorage, taskStorage, myNotesStorage) {
+    this.app = app;
+    this.journalingStorage = journalingStorage;
+    this.taskStorage = taskStorage;
+    this.myNotesStorage = myNotesStorage;
+  }
+  async ensureWeeklyRecapData(year, week) {
+    const file = await this.journalingStorage.ensureWeeklyRecapFile(year, week);
+    const existing = await this.journalingStorage.readWeeklyRecap(file);
+    if (existing.body.trim().length > 0) {
+      return { file, frontmatter: existing.frontmatter, body: existing.body, generatedNow: false };
+    }
+    const generated = await this.generateWeeklyRecap(file);
+    if (!generated) {
+      const latest2 = await this.journalingStorage.readWeeklyRecap(file);
+      return { file, frontmatter: latest2.frontmatter, body: latest2.body, generatedNow: false };
+    }
+    const latest = await this.journalingStorage.readWeeklyRecap(file);
+    return { file, frontmatter: latest.frontmatter, body: latest.body, generatedNow: true };
+  }
+  async generateWeeklyRecap(file) {
+    var _a, _b, _c, _d, _e;
+    const parsed = parseWeekFile(file.basename);
+    if (!parsed) {
+      new import_obsidian10.Notice("Invalid weekly recap name.");
+      return false;
+    }
+    const range = isoWeekRange(parsed.year, parsed.week);
+    const allEntries = await this.journalingStorage.listDailyEntries();
+    const entries = allEntries.filter((entry) => entry.frontmatter.date >= range.start && entry.frontmatter.date <= range.end);
+    if (entries.length < 4) {
+      new import_obsidian10.Notice("This week needs at least 4 entries.");
+      return false;
+    }
+    const averages = {
+      mood: average(entries.map((entry) => entry.frontmatter.mood)),
+      sleep: average(entries.map((entry) => entry.frontmatter.sleep)),
+      regulation: average(entries.map((entry) => entry.frontmatter.regulation)),
+      stress: average(entries.map((entry) => entry.frontmatter.stress)),
+      anxiety: average(entries.map((entry) => entry.frontmatter.anxiety)),
+      exhaustion: average(entries.map((entry) => entry.frontmatter.exhaustion)),
+      sensoryLoad: average(entries.map((entry) => entry.frontmatter.sensoryLoad)),
+      socialLoad: average(entries.map((entry) => entry.frontmatter.socialLoad))
+    };
+    const emotionCounts = countEmotions(entries);
+    const trackers = await this.journalingStorage.listTrackers();
+    const trackerCounts = {};
+    for (const tracker of trackers) {
+      trackerCounts[tracker.name] = tracker.dates.filter((date) => date >= range.start && date <= range.end).length;
+    }
+    const taskState = await this.taskStorage.loadTaskManagerState();
+    const beforeThreshold = taskState.forcedBreakThreshold;
+    const beforeBreakLength = taskState.forcedBreakLength;
+    const beforeMaxEnergy = taskState.maxEnergy;
+    const stressFactor = tierFactor(averages.stress);
+    let nextThreshold = beforeThreshold;
+    if (stressFactor.mode === "high") {
+      nextThreshold = beforeThreshold / stressFactor.factor;
+    } else if (stressFactor.mode === "low") {
+      nextThreshold = beforeThreshold * stressFactor.factor;
+    }
+    nextThreshold = clamp(nextThreshold, 30, 100);
+    const exhaustionFactor = tierFactor(averages.exhaustion);
+    let nextBreakLength = beforeBreakLength;
+    if (exhaustionFactor.mode === "high") {
+      nextBreakLength = beforeBreakLength * exhaustionFactor.factor;
+    } else if (exhaustionFactor.mode === "low") {
+      nextBreakLength = beforeBreakLength / exhaustionFactor.factor;
+    }
+    nextBreakLength = clamp(nextBreakLength, 15, 60);
+    const completedEnergies = entries.reduce((acc, entry) => {
+      const energies = entry.frontmatter.completedTasks.map((task) => task.energy);
+      return acc.concat(energies);
+    }, []);
+    const weeklyAverageCompletedEnergy = average(completedEnergies.map((value) => value));
+    const baseTaskEnergy = (_a = taskState.baseTaskEnergy) != null ? _a : 120;
+    const nextMaxEnergy = clamp((baseTaskEnergy * 2 + weeklyAverageCompletedEnergy) / 3, 50, 200);
+    taskState.forcedBreakThreshold = round2(nextThreshold);
+    taskState.forcedBreakLength = round2(nextBreakLength);
+    taskState.maxEnergy = round2(nextMaxEnergy);
+    taskState.baseTaskEnergy = baseTaskEnergy;
+    taskState.lastWeeklyRecap = `${parsed.year}-W${String(parsed.week).padStart(2, "0")}`;
+    await this.taskStorage.saveTaskManagerState(taskState);
+    const noteSupportSignals = buildSupportSignals(entries, averages, true);
+    const hintSupportSignals = buildSupportSignals(entries, averages, false);
+    const supportSelection = this.pickSupportNotes(noteSupportSignals);
+    const supportHints = pickSupportHints(hintSupportSignals.map((signal) => signal.label));
+    const supportNoteReasons = {};
+    for (const note of supportSelection.notes) {
+      supportNoteReasons[note.name] = note.symptom;
+    }
+    const criticalDays = {};
+    for (const signal of noteSupportSignals) {
+      if (signal.affectedDays.length > 0) {
+        criticalDays[signal.label] = signal.affectedDays;
+      }
+    }
+    const frontmatter = {
+      week: parsed.week,
+      year: parsed.year,
+      generatedAt: (/* @__PURE__ */ new Date()).toISOString(),
+      processedDateRange: {
+        start: (_c = (_b = entries[0]) == null ? void 0 : _b.frontmatter.date) != null ? _c : "",
+        end: (_e = (_d = entries[entries.length - 1]) == null ? void 0 : _d.frontmatter.date) != null ? _e : ""
+      },
+      journalLinks: entries.map((entry) => `[[${entry.file.basename}]]`),
+      supportNotes: supportSelection.notes.map((note) => note.name),
+      supportNoteReasons,
+      missingSupportSymptoms: supportSelection.missing,
+      criticalDays,
+      supportHints,
+      seeds: [],
+      averages: {
+        mood: round2(averages.mood),
+        sleep: round2(averages.sleep),
+        regulation: round2(averages.regulation),
+        stress: round2(averages.stress),
+        anxiety: round2(averages.anxiety),
+        exhaustion: round2(averages.exhaustion),
+        sensoryLoad: round2(averages.sensoryLoad),
+        socialLoad: round2(averages.socialLoad)
+      },
+      emotionCounts,
+      trackerCounts,
+      taskAdjustments: {
+        maxEnergy: { from: round2(beforeMaxEnergy), to: round2(nextMaxEnergy) },
+        forcedBreakThreshold: { from: round2(beforeThreshold), to: round2(nextThreshold) },
+        forcedBreakLength: { from: round2(beforeBreakLength), to: round2(nextBreakLength) }
+      }
+    };
+    const body = buildWeeklyMarkdown({
+      range,
+      entries,
+      averages,
+      emotionCounts,
+      trackerCounts,
+      supportSelection,
+      supportHints,
+      taskAdjustments: frontmatter.taskAdjustments,
+      noteSignals: noteSupportSignals
+    });
+    await this.journalingStorage.saveWeeklyRecap(file, frontmatter, body);
+    return true;
+  }
+  pickSupportNotes(signals) {
+    const sorted = [...signals].sort((a, b) => b.severity - a.severity || Math.random() - 0.5);
+    const selected = [];
+    const used = /* @__PURE__ */ new Set();
+    const missing = [];
+    for (const signal of sorted) {
+      if (selected.length >= 4) {
+        break;
+      }
+      const candidates = shuffle2(this.myNotesStorage.notesWithSupport(signal.label));
+      const pick = candidates.find((candidate) => !used.has(candidate.path));
+      if (!pick) {
+        missing.push(signal.label);
+        continue;
+      }
+      used.add(pick.path);
+      selected.push({ name: pick.basename, symptom: signal.label });
+    }
+    return { notes: selected, missing: unique(missing) };
+  }
+};
+function parseWeekFile(baseName) {
+  const match = baseName.match(/^(\d{4})-W(\d{2})$/);
+  if (!match) {
+    return null;
+  }
+  return { year: Number(match[1]), week: Number(match[2]) };
+}
+function isoWeekRange(year, week) {
+  const jan4 = new Date(Date.UTC(year, 0, 4));
+  const jan4Day = jan4.getUTCDay() || 7;
+  const monday = new Date(jan4);
+  monday.setUTCDate(jan4.getUTCDate() - jan4Day + 1 + (week - 1) * 7);
+  const sunday = new Date(monday);
+  sunday.setUTCDate(monday.getUTCDate() + 6);
+  return { start: dateKeyUTC(monday), end: dateKeyUTC(sunday) };
+}
+function dateKeyUTC(date) {
+  const y = date.getUTCFullYear();
+  const m = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const d = String(date.getUTCDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+function average(values) {
+  const filtered = values.filter((value) => typeof value === "number" && Number.isFinite(value));
+  if (filtered.length === 0) {
+    return 0;
+  }
+  const total = filtered.reduce((sum, value) => sum + value, 0);
+  return total / filtered.length;
+}
+function countEmotions(entries) {
+  var _a, _b;
+  const pleasant = {};
+  const unpleasant = {};
+  for (const entry of entries) {
+    for (const emotion of entry.frontmatter.emotions) {
+      if (POSITIVE_EMOTIONS.has(emotion)) {
+        pleasant[emotion] = ((_a = pleasant[emotion]) != null ? _a : 0) + 1;
+      } else if (NEGATIVE_EMOTIONS.has(emotion)) {
+        unpleasant[emotion] = ((_b = unpleasant[emotion]) != null ? _b : 0) + 1;
+      }
+    }
+  }
+  return {
+    pleasant,
+    unpleasant,
+    pleasantTotal: Object.values(pleasant).reduce((sum, value) => sum + value, 0),
+    unpleasantTotal: Object.values(unpleasant).reduce((sum, value) => sum + value, 0)
+  };
+}
+function tierFactor(value) {
+  if (value >= 90) return { mode: "high", factor: 1.7 };
+  if (value >= 80) return { mode: "high", factor: 1.5 };
+  if (value >= 70) return { mode: "high", factor: 1.3 };
+  if (value >= 60) return { mode: "high", factor: 1.1 };
+  if (value <= 10) return { mode: "low", factor: 1.5 };
+  if (value <= 20) return { mode: "low", factor: 1.3 };
+  if (value <= 30) return { mode: "low", factor: 1.1 };
+  return { mode: "none", factor: 1 };
+}
+function buildSupportSignals(entries, averages, forNotes) {
+  const list = [];
+  for (const symptom of SYMPTOMS) {
+    const avg = averages[symptom.key];
+    const values = entries.map((entry) => ({ date: entry.frontmatter.date, value: entry.frontmatter[symptom.key] })).filter((row) => typeof row.value === "number");
+    const avgThreshold = symptom.highIsBad ? forNotes ? 70 : 60 : forNotes ? 35 : 50;
+    const dailyThreshold = symptom.highIsBad ? forNotes ? 85 : 80 : forNotes ? 20 : 30;
+    const avgTriggered = symptom.highIsBad ? avg > avgThreshold : avg < avgThreshold;
+    const affectedDaily = values.filter((row) => symptom.highIsBad ? row.value > dailyThreshold : row.value < dailyThreshold).map((row) => row.date);
+    if (!avgTriggered && affectedDaily.length === 0) {
+      continue;
+    }
+    const avgSeverity = symptom.highIsBad ? Math.max(0, avg - avgThreshold) : Math.max(0, avgThreshold - avg);
+    const dailySeverity = values.reduce((acc, row) => {
+      const delta = symptom.highIsBad ? row.value - dailyThreshold : dailyThreshold - row.value;
+      return Math.max(acc, Math.max(0, delta));
+    }, 0);
+    list.push({
+      label: symptom.label,
+      severity: avgSeverity + dailySeverity,
+      affectedDays: affectedDaily
+    });
+  }
+  return list;
+}
+function pickSupportHints(symptoms) {
+  var _a;
+  const hints = [];
+  for (const symptom of unique(symptoms)) {
+    const pool = (_a = SUPPORT_HINTS[symptom]) != null ? _a : [];
+    if (pool.length === 0) {
+      continue;
+    }
+    const picked = pool[Math.floor(Math.random() * pool.length)];
+    hints.push(picked);
+  }
+  return hints;
+}
+function buildWeeklyMarkdown(args) {
+  const strongestTracker = Object.entries(args.trackerCounts).sort((a, b) => b[1] - a[1])[0];
+  const symptomRows = SYMPTOMS.map((symptom) => {
+    const value = round2(args.averages[symptom.key]);
+    return `- ${symptom.label}: ${value}`;
+  }).join("\n");
+  const pleasantRows = Object.entries(args.emotionCounts.pleasant).sort((a, b) => b[1] - a[1]).map(([emotion, count]) => `- ${emotion}: ${count}`).join("\n") || "- none";
+  const unpleasantRows = Object.entries(args.emotionCounts.unpleasant).sort((a, b) => b[1] - a[1]).map(([emotion, count]) => `- ${emotion}: ${count}`).join("\n") || "- none";
+  const trackerRows = Object.entries(args.trackerCounts).sort((a, b) => b[1] - a[1]).map(([name, count]) => `- ${name}: ${count}`).join("\n") || "- none";
+  const supportRows = args.supportSelection.notes.map((note) => `- ${note.name} (triggered by ${note.symptom})`).join("\n") || "- none";
+  const missingRows = args.supportSelection.missing.map((symptom) => `- ${symptom}: consider working on a supportive note for this.`).join("\n") || "- none";
+  const criticalRows = args.noteSignals.filter((signal) => signal.affectedDays.length > 0).map((signal) => `- ${signal.label}: ${signal.affectedDays.join(", ")}`).join("\n") || "- none";
+  const hintRows = args.supportHints.map((hint) => `- ${hint}`).join("\n") || "- none";
+  const taskFeedback = [
+    describeDelta("Weekly energy capacity", args.taskAdjustments.maxEnergy.from, args.taskAdjustments.maxEnergy.to),
+    describeDelta("Break frequency threshold", args.taskAdjustments.forcedBreakThreshold.from, args.taskAdjustments.forcedBreakThreshold.to),
+    describeDelta("Break length", args.taskAdjustments.forcedBreakLength.from, args.taskAdjustments.forcedBreakLength.to)
+  ].join("\n");
+  const winner = strongestTracker && strongestTracker[1] > 0 ? `Weekly winner: ${strongestTracker[0]} (${strongestTracker[1]})` : "Weekly winner: none";
+  return [
+    "# Weekly Recap",
+    "",
+    `Week Range: ${args.range.start} to ${args.range.end}`,
+    `Entries Used: ${args.entries.length}`,
+    "",
+    "## Symptom Recap",
+    symptomRows,
+    "",
+    "## Emotions",
+    `- Positive total: ${args.emotionCounts.pleasantTotal}`,
+    `- Negative total: ${args.emotionCounts.unpleasantTotal}`,
+    "",
+    "### Pleasant emotions",
+    pleasantRows,
+    "",
+    "### Unpleasant emotions",
+    unpleasantRows,
+    "",
+    "## Tracker",
+    winner,
+    trackerRows,
+    "",
+    "## Support System",
+    "### Suggested support notes",
+    supportRows,
+    "",
+    "### Missing support coverage",
+    missingRows,
+    "",
+    "### Critical days",
+    criticalRows,
+    "",
+    "### Support hints",
+    hintRows,
+    "",
+    "## Task Manager Feedback",
+    taskFeedback,
+    "",
+    "## Seeding",
+    "Seeds are added through the weekly overlay input."
+  ].join("\n");
+}
+function describeDelta(label, from, to) {
+  if (Math.abs(from - to) < 0.01) {
+    return `- ${label}: unchanged`;
+  }
+  if (to > from) {
+    return `- ${label}: increased (${round2(from)} -> ${round2(to)})`;
+  }
+  return `- ${label}: decreased (${round2(from)} -> ${round2(to)})`;
+}
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value));
+}
+function round2(value) {
+  return Math.round(value * 100) / 100;
+}
+function shuffle2(items) {
+  const copy = [...items];
+  for (let i = copy.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
+function unique(items) {
+  return [...new Set(items)];
+}
+
 // src/plugin.ts
-var NeuralGardenPlugin = class extends import_obsidian9.Plugin {
+var NeuralGardenPlugin = class extends import_obsidian11.Plugin {
   constructor() {
     super(...arguments);
     this.openHomeView = async (makeActive, targetLeaf) => {
@@ -5005,6 +6873,15 @@ var NeuralGardenPlugin = class extends import_obsidian9.Plugin {
       if (makeActive) {
         this.app.workspace.revealLeaf(leaf);
       }
+    };
+    this.openWeeklyRecap = async (year, week, targetLeaf) => {
+      const leaf = targetLeaf != null ? targetLeaf : this.app.workspace.getLeaf(true);
+      await leaf.setViewState({ type: VIEW_TYPE_NEURAL_GARDEN_WEEKLY_RECAP, active: true });
+      const view = leaf.view;
+      if (view instanceof NeuralGardenWeeklyRecapView) {
+        await view.openForWeek(year, week);
+      }
+      this.app.workspace.revealLeaf(leaf);
     };
     this.openMyNotesView = async (makeActive, targetLeaf) => {
       const leaf = targetLeaf != null ? targetLeaf : this.app.workspace.getLeaf(true);
@@ -5025,11 +6902,17 @@ var NeuralGardenPlugin = class extends import_obsidian9.Plugin {
       this.openHomeView,
       this.openMyNotesView
     );
+    this.weeklyRecapManager = new WeeklyRecapManager(
+      this.app,
+      this.journalingStorage,
+      this.storage,
+      this.myNotesStorage
+    );
     await this.storage.ensureNotesFolder();
     await this.journalingStorage.ensureJournalFolders();
     this.registerView(
       VIEW_TYPE_NEURAL_GARDEN_HOME,
-      (leaf) => new NeuralGardenHomeView(leaf, this.storage, this.openJournalingView, this.openMyNotesView)
+      (leaf) => new NeuralGardenHomeView(leaf, this.storage, this.journalingStorage, this.openJournalingView, this.openMyNotesView)
     );
     this.registerView(
       VIEW_TYPE_NEURAL_GARDEN_MY_NOTES,
@@ -5037,11 +6920,15 @@ var NeuralGardenPlugin = class extends import_obsidian9.Plugin {
     );
     this.registerView(
       VIEW_TYPE_NEURAL_GARDEN_JOURNALING,
-      (leaf) => new NeuralGardenJournalingView(leaf, this.storage, this.journalingStorage, this.openHomeView, this.openJournalEntryView)
+      (leaf) => new NeuralGardenJournalingView(leaf, this.storage, this.journalingStorage, this.openHomeView, this.openJournalEntryView, this.openWeeklyRecap)
     );
     this.registerView(
       VIEW_TYPE_NEURAL_GARDEN_JOURNAL_ENTRY,
       (leaf) => new NeuralGardenJournalEntryView(leaf, this.storage, this.journalingStorage, this.openHomeView, this.openJournalingView)
+    );
+    this.registerView(
+      VIEW_TYPE_NEURAL_GARDEN_WEEKLY_RECAP,
+      (leaf) => new NeuralGardenWeeklyRecapView(leaf, this.journalingStorage, this.weeklyRecapManager, this.openHomeView, this.openJournalingView)
     );
     this.addCommand({
       id: "open-neural-garden-home",
@@ -5100,6 +6987,7 @@ var NeuralGardenPlugin = class extends import_obsidian9.Plugin {
     this.app.workspace.detachLeavesOfType(VIEW_TYPE_NEURAL_GARDEN_JOURNALING);
     this.app.workspace.detachLeavesOfType(VIEW_TYPE_NEURAL_GARDEN_JOURNAL_ENTRY);
     this.app.workspace.detachLeavesOfType(VIEW_TYPE_NEURAL_GARDEN_MY_NOTES);
+    this.app.workspace.detachLeavesOfType(VIEW_TYPE_NEURAL_GARDEN_WEEKLY_RECAP);
   }
   hidePropertiesInDocument() {
     var _a, _b;

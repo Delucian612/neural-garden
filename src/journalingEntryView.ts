@@ -17,14 +17,14 @@ type MetricKey =
   | "socialLoad";
 
 const METRICS: Array<{ key: MetricKey; label: string; explanation: string }> = [
-  { key: "mood", label: "Mood", explanation: "How have you been feeling today?" },
-  { key: "sleep", label: "Sleep", explanation: "How rested did you feel after tonight's sleep?" },
-  { key: "regulation", label: "Regulation", explanation: "How well were you able to regulate yourself today?" },
-  { key: "stress", label: "Stress", explanation: "How stressed were you today?" },
-  { key: "anxiety", label: "Anxiety", explanation: "Have you been anxious today? How intense was it?" },
-  { key: "exhaustion", label: "Exhaustion", explanation: "How exhausted did you feel today?" },
+  { key: "mood", label: "Mood", explanation: "How have you been feeling?" },
+  { key: "sleep", label: "Sleep", explanation: "How rested did you feel after sleeping?" },
+  { key: "regulation", label: "Regulation", explanation: "How well were you able to regulate yourself?" },
+  { key: "stress", label: "Stress", explanation: "How stressed were you?" },
+  { key: "anxiety", label: "Anxiety", explanation: "Have you been anxious? How intense was it?" },
+  { key: "exhaustion", label: "Exhaustion", explanation: "How exhausted did you feel?" },
   { key: "sensoryLoad", label: "Sensory Load", explanation: "Have you had any sensory issues? How intense were they?" },
-  { key: "socialLoad", label: "Social Load", explanation: "How demanding were social interactions today?" },
+  { key: "socialLoad", label: "Social Load", explanation: "How demanding were social interactions?" },
 ];
 
 const PLEASANT_EMOTIONS = [
@@ -133,7 +133,6 @@ export class NeuralGardenJournalEntryView extends ItemView {
       spentEnergy: taskState.spentEnergy,
       completedTasks: completedSnapshots,
       uncompletedTasks: uncompletedSnapshots,
-      processed: false,
       todaysNote: "",
       emotions: [],
     };
@@ -613,54 +612,56 @@ function getMetricFeedback(metric: MetricKey, value: number): string {
     if (value >= 80) return "I've been doing great.";
     if (value >= 51) return "I've been doing fine.";
     if (value >= 36) return "I've been alright.";
-    return "I've been having a hard time today.";
+    return "I've been having a hard time.";
   }
   if (metric === "sleep") {
-    if (value >= 70) return "My sleep was great, I feel well rested.";
-    if (value >= 51) return "My sleep was good, I feel rested.";
-    if (value >= 36) return "My sleep was alright.";
+    if (value >= 80) return "My sleep was great, I feel well rested.";
+    if (value >= 61) return "My sleep was good, I feel rested.";
+    if (value >= 41) return "My sleep was alright.";
+    if (value >= 21) return "I didn't really sleep well.";
     return "I've had a terrible night.";
   }
   if (metric === "regulation") {
-    if (value >= 70) return "Regulation felt strong and steady today.";
-    if (value >= 51) return "I was mostly able to regulate myself today.";
+    if (value >= 70) return "Regulation felt strong and steady.";
+    if (value >= 51) return "I was mostly able to regulate myself.";
     if (value >= 36) return "Regulation was mixed, with some difficult moments.";
-    return "I felt overwhelmed and dysregulated today.";
+    return "I felt overwhelmed and dysregulated.";
   }
   if (metric === "stress") {
-    if (value >= 75) return "I've been constantly stressed today.";
-    if (value >= 65) return "I was really stressed today.";
-    if (value >= 41) return "Stress was present today, but I was able to manage it.";
-    return "Stress has been fairly low today.";
+    if (value >= 80) return "I've been constantly stressed.";
+    if (value >= 60) return "I was really stressed.";
+    if (value >= 41) return "Stress was present, but I was able to manage it.";
+    return "Stress has been fairly low.";
   }
   if (metric === "anxiety") {
-    if (value >= 75) return "I've been constantly and severely anxious today.";
-    if (value >= 55) return "I was really anxious today.";
+    if (value >= 80) return "I've been constantly and severely anxious.";
+    if (value >= 60) return "I was really anxious.";
     if (value >= 41) return "I've experienced anxiety here and there.";
     return "I had low or no anxiety.";
   }
   if (metric === "exhaustion") {
-    if (value >= 70) return "I've felt extremely exhausted all day.";
-    if (value >= 46) return "I felt heavily exhausted today.";
+    if (value >= 80) return "I've felt extremely exhausted.";
+    if (value >= 60) return "I felt heavily exhausted.";
     if (value >= 31) return "I was noticeably tired, but still functioning.";
-    return "My energy felt steady today.";
+    return "My energy felt steady.";
   }
   if (metric === "sensoryLoad") {
-    if (value >= 70) return "I was in sensory overload today.";
-    if (value >= 46) return "I've had demanding sensory issues today.";
+    if (value >= 80) return "I was in sensory overload.";
+    if (value >= 60) return "I've had demanding sensory issues.";
     if (value >= 31) return "I've had fair sensory issues.";
     return "I've had no or low sensory issues.";
   }
   if (metric === "socialLoad") {
-    if (value >= 70) return "Social interactions were highly demanding, wearing me out.";
-    if (value >= 46) return "Social interactions were exhausting.";
-    if (value >= 31) return "Social interactions were tiring today.";
+    if (value >= 80) return "Social interactions were highly demanding, wearing me out.";
+    if (value >= 65) return "Social interactions were exhausting.";
+    if (value >= 51) return "Social interactions were tiring.";
+    if (value >= 30) return "Social interactions were alright.";
     return "Social interactions felt good, easy, and natural.";
   }
-  if (value >= 70) return "Regulation felt strong and steady today.";
-  if (value >= 51) return "I was mostly able to regulate myself today.";
+  if (value >= 70) return "Regulation felt strong and steady.";
+  if (value >= 51) return "I was mostly able to regulate myself.";
   if (value >= 36) return "Regulation was mixed, with some difficult moments.";
-  return "I felt overwhelmed and dysregulated today.";
+  return "I felt overwhelmed and dysregulated.";
 }
 
 function getEmotionToneClass(emotion: string): string {

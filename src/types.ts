@@ -35,6 +35,8 @@ export type TaskManagerState = {
   forcedBreakLength: number;
   forcedBreakTime: number;
   forcedBreakEnd?: number;
+  baseTaskEnergy?: number;
+  lastWeeklyRecap?: string;
 };
 
 export type JournalTaskSnapshot = {
@@ -56,7 +58,6 @@ export type JournalEntryFrontmatter = {
   spentEnergy: number;
   completedTasks: JournalTaskSnapshot[];
   uncompletedTasks: JournalTaskSnapshot[];
-  processed: boolean;
   todaysNote: string;
   emotions: string[];
 };
@@ -78,4 +79,46 @@ export type JournalTrackerRecord = {
   frontmatter: JournalTrackerFrontmatter;
   dates: string[];
   color: string;
+};
+
+export type WeeklyAverages = {
+  mood: number;
+  sleep: number;
+  regulation: number;
+  stress: number;
+  anxiety: number;
+  exhaustion: number;
+  sensoryLoad: number;
+  socialLoad: number;
+};
+
+export type WeeklyEmotionCounts = {
+  pleasant: Record<string, number>;
+  unpleasant: Record<string, number>;
+  pleasantTotal: number;
+  unpleasantTotal: number;
+};
+
+export type WeeklyTaskAdjustments = {
+  maxEnergy: { from: number; to: number };
+  forcedBreakThreshold: { from: number; to: number };
+  forcedBreakLength: { from: number; to: number };
+};
+
+export type WeeklyRecapFrontmatter = {
+  week: number;
+  year: number;
+  generatedAt: string;
+  processedDateRange: { start: string; end: string };
+  journalLinks: string[];
+  supportNotes: string[];
+  supportNoteReasons: Record<string, string>;
+  missingSupportSymptoms: string[];
+  criticalDays: Record<string, string[]>;
+  supportHints: string[];
+  seeds: string[];
+  averages: WeeklyAverages;
+  emotionCounts: WeeklyEmotionCounts;
+  trackerCounts: Record<string, number>;
+  taskAdjustments: WeeklyTaskAdjustments;
 };

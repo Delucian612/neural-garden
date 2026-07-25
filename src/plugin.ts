@@ -3,15 +3,18 @@ import { NeuralGardenHomeView } from "./homeView";
 import { NeuralGardenJournalEntryView } from "./journalingEntryView";
 import { NeuralGardenJournalingView } from "./journalingView";
 import { NeuralGardenMyNotesView } from "./myNotesView";
+import { NeuralGardenWeeklyRecapView } from "./weeklyRecapView";
 import { JournalingStorage } from "./journalingStorage";
 import { MyNotesStorage } from "./myNotesStorage";
 import { NoteHeaderManager } from "./noteHeader";
 import { TaskManagerStorage } from "./storage";
+import { WeeklyRecapManager } from "./weeklyRecapManager";
 import {
   VIEW_TYPE_NEURAL_GARDEN_HOME,
   VIEW_TYPE_NEURAL_GARDEN_JOURNALING,
   VIEW_TYPE_NEURAL_GARDEN_JOURNAL_ENTRY,
   VIEW_TYPE_NEURAL_GARDEN_MY_NOTES,
+  VIEW_TYPE_NEURAL_GARDEN_WEEKLY_RECAP,
 } from "./constants";
 
 export default class NeuralGardenPlugin extends Plugin {
@@ -19,6 +22,7 @@ export default class NeuralGardenPlugin extends Plugin {
   private journalingStorage!: JournalingStorage;
   private myNotesStorage!: MyNotesStorage;
   private noteHeaderManager!: NoteHeaderManager;
+  private weeklyRecapManager!: WeeklyRecapManager;
 
   async onload() {
     this.storage = new TaskManagerStorage(this.app);
@@ -31,20 +35,29 @@ export default class NeuralGardenPlugin extends Plugin {
       this.openHomeView,
       this.openMyNotesView,
     );
+    this.weeklyRecapManager = new WeeklyRecapManager(
+      this.app,
+      this.journalingStorage,
+      this.storage,
+      this.myNotesStorage,
+    );
     await this.storage.ensureNotesFolder();
     await this.journalingStorage.ensureJournalFolders();
 
     this.registerView(VIEW_TYPE_NEURAL_GARDEN_HOME, (leaf) =>
-      new NeuralGardenHomeView(leaf, this.storage, this.openJournalingView, this.openMyNotesView),
+      new NeuralGardenHomeView(leaf, this.storage, this.journalingStorage, this.openJournalingView, this.openMyNotesView),
     );
     this.registerView(VIEW_TYPE_NEURAL_GARDEN_MY_NOTES, (leaf) =>
       new NeuralGardenMyNotesView(leaf, this.myNotesStorage, this.openHomeView),
     );
     this.registerView(VIEW_TYPE_NEURAL_GARDEN_JOURNALING, (leaf) =>
-      new NeuralGardenJournalingView(leaf, this.storage, this.journalingStorage, this.openHomeView, this.openJournalEntryView),
+      new NeuralGardenJournalingView(leaf, this.storage, this.journalingStorage, this.openHomeView, this.openJournalEntryView, this.openWeeklyRecap),
     );
     this.registerView(VIEW_TYPE_NEURAL_GARDEN_JOURNAL_ENTRY, (leaf) =>
       new NeuralGardenJournalEntryView(leaf, this.storage, this.journalingStorage, this.openHomeView, this.openJournalingView),
+    );
+    this.registerView(VIEW_TYPE_NEURAL_GARDEN_WEEKLY_RECAP, (leaf) =>
+      new NeuralGardenWeeklyRecapView(leaf, this.journalingStorage, this.weeklyRecapManager, this.openHomeView, this.openJournalingView),
     );
 
     this.addCommand({
@@ -111,6 +124,7 @@ export default class NeuralGardenPlugin extends Plugin {
     this.app.workspace.detachLeavesOfType(VIEW_TYPE_NEURAL_GARDEN_JOURNALING);
     this.app.workspace.detachLeavesOfType(VIEW_TYPE_NEURAL_GARDEN_JOURNAL_ENTRY);
     this.app.workspace.detachLeavesOfType(VIEW_TYPE_NEURAL_GARDEN_MY_NOTES);
+    this.app.workspace.detachLeavesOfType(VIEW_TYPE_NEURAL_GARDEN_WEEKLY_RECAP);
   }
 
   private hidePropertiesInDocument(): void {
@@ -142,6 +156,16 @@ export default class NeuralGardenPlugin extends Plugin {
     if (makeActive) {
       this.app.workspace.revealLeaf(leaf);
     }
+  }
+
+  private openWeeklyRecap = async (year: number, week: number, targetLeaf?: WorkspaceLeaf): Promise<void> => {
+    const leaf = targetLeaf ?? this.app.workspace.getLeaf(true);
+    await leaf.setViewState({ type: VIEW_TYPE_NEURAL_GARDEN_WEEKLY_RECAP, active: true });
+    const view = leaf.view;
+    if (view instanceof NeuralGardenWeeklyRecapView) {
+      await view.openForWeek(year, week);
+    }
+    this.app.workspace.revealLeaf(leaf);
   }
 
   private openMyNotesView = async (makeActive: boolean, targetLeaf?: WorkspaceLeaf): Promise<void> => {

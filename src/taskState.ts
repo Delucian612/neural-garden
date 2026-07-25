@@ -39,6 +39,8 @@ export function normalizeState(raw: Partial<TaskManagerState>): TaskManagerState
     forcedBreakLength: numberOr(raw.forcedBreakLength, DEFAULT_STATE.forcedBreakLength),
     forcedBreakTime: numberOr(raw.forcedBreakTime, DEFAULT_STATE.forcedBreakTime),
     forcedBreakEnd: numberOrUndefined(raw.forcedBreakEnd),
+    baseTaskEnergy: numberOr(raw.baseTaskEnergy, DEFAULT_STATE.baseTaskEnergy ?? 120),
+    lastWeeklyRecap: stringOrUndefined(raw.lastWeeklyRecap),
   };
 
   recalculateTotals(state);
@@ -117,4 +119,8 @@ function boolOr(value: unknown, fallback: boolean): boolean {
 
 function numberOrUndefined(value: unknown): number | undefined {
   return typeof value === "number" && Number.isFinite(value) ? value : undefined;
+}
+
+function stringOrUndefined(value: unknown): string | undefined {
+  return typeof value === "string" && value.trim().length > 0 ? value : undefined;
 }
