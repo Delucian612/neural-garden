@@ -6,7 +6,7 @@
 
 ## Installation
 
-Neural Garden is not yet available on the official Obsidian Community Plugin store. Until then, it can be installed manually.
+Currently Neural Garden is not yet available on the official Obsidian Community Plugin store. Until then, it can be installed manually. 
 
 ### Requirements
 
