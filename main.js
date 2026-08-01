@@ -1168,6 +1168,13 @@ function injectNeuralGardenStyles() {
       white-space: pre-wrap;
       overflow-wrap: anywhere;
     }
+    .ng-journal-body-preview {
+      display: -webkit-box;
+      overflow: hidden;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 10;
+      line-clamp: 10;
+    }
     .ng-journal-modebar {
       display: flex;
       gap: 8px;
@@ -1466,21 +1473,142 @@ function injectNeuralGardenStyles() {
       margin-top: 18px;
     }
     .ng-journal-emotions h4,
-    .ng-journal-tasks > h4,
+    .ng-journal-tasks-header h4,
     .ng-journal-task-group h5 {
       text-align: center;
       color: var(--text-normal);
     }
     .ng-journal-emotions h4,
-    .ng-journal-tasks > h4 {
+    .ng-journal-tasks-header h4 {
       font-size: 1.2rem;
       margin: 0;
     }
     .ng-journal-entry-page .ng-journal-emotions h4 {
       font-size: 1.56rem;
     }
-    .ng-journal-entry-page .ng-journal-tasks > h4 {
+    .ng-journal-entry-page .ng-journal-tasks-header h4 {
       font-size: 1.56rem;
+    }
+    .ng-journal-tasks-header {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 32px;
+    }
+    .ng-journal-task-edit-button {
+      position: absolute;
+      right: 0;
+      display: grid;
+      width: 28px;
+      height: 28px;
+      padding: 0;
+      border: 0 !important;
+      background: transparent !important;
+      box-shadow: none !important;
+      color: var(--text-muted);
+      place-items: center;
+    }
+    .ng-journal-task-edit-button:hover {
+      color: var(--text-normal);
+      background: transparent !important;
+      box-shadow: none !important;
+    }
+    .ng-journal-task-edit-button svg {
+      width: 15px;
+      height: 15px;
+    }
+    .ng-journal-task-editor {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 8px;
+      align-items: center;
+      padding: 7px 0;
+      border: 0;
+      background: transparent;
+    }
+    .ng-journal-task-editor > .ng-task-input,
+    .ng-journal-good-thing-input {
+      padding: 5px 7px;
+      border: 1px solid var(--background-modifier-border);
+      border-radius: 8px;
+      background: transparent !important;
+      box-shadow: none !important;
+      font-size: 0.82rem;
+    }
+    .ng-journal-task-editor > .ng-task-input {
+      width: min(100%, 234px);
+    }
+    .ng-journal-task-editor > .ng-task-input:focus,
+    .ng-journal-task-editor > .ng-task-input:focus-visible,
+    .ng-journal-good-thing-input:focus,
+    .ng-journal-good-thing-input:focus-visible {
+      border-color: color-mix(in srgb, var(--background-modifier-border) 65%, var(--text-normal) 35%) !important;
+      background: transparent !important;
+      box-shadow: none !important;
+      outline: none;
+    }
+    .ng-journal-task-efforts {
+      display: inline-flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 4px;
+    }
+    .ng-journal-task-effort {
+      padding: 3px 7px;
+      border: 1px solid color-mix(in srgb, var(--ng-task-effort-color) 45%, var(--background-modifier-border));
+      border-radius: 999px;
+      background: transparent;
+      box-shadow: none;
+      color: color-mix(in srgb, var(--ng-task-effort-color) 72%, var(--text-normal));
+      font-size: 0.68rem;
+    }
+    .ng-journal-task-effort:hover {
+      border-color: var(--ng-task-effort-color);
+      background: color-mix(in srgb, var(--ng-task-effort-color) 10%, transparent);
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--ng-task-effort-color) 24%, transparent);
+      color: var(--ng-task-effort-color);
+    }
+    .ng-journal-task-delete {
+      display: grid;
+      width: 24px;
+      height: 24px;
+      padding: 0;
+      border: 0 !important;
+      background: transparent !important;
+      box-shadow: none !important;
+      color: var(--text-error) !important;
+      place-items: center;
+    }
+    .ng-journal-task-delete:hover {
+      background: transparent !important;
+      box-shadow: none !important;
+      color: var(--text-error) !important;
+    }
+    .ng-journal-task-delete svg {
+      width: 13px;
+      height: 13px;
+    }
+    .ng-journal-good-thing {
+      display: grid;
+      justify-items: center;
+      gap: 7px;
+      margin-top: 18px;
+    }
+    .ng-journal-good-thing h4 {
+      margin: 0;
+      text-align: center;
+      color: var(--text-normal);
+      font-size: 1.56rem;
+    }
+    .ng-journal-good-thing-input {
+      width: min(49%, 294px);
+      text-align: center;
+    }
+    .ng-journal-good-thing-value {
+      text-align: center;
+      color: var(--text-muted);
     }
     .ng-journal-entry-page .ng-journal-task-group h5 {
       font-size: 1.2rem;
@@ -1877,7 +2005,16 @@ function injectNeuralGardenStyles() {
       display: flex;
       align-items: center;
       justify-content: flex-start;
-      gap: 10px;
+      gap: 4px;
+    }
+    .ng-journal-task-list {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px 22px;
+    }
+    .ng-journal-task-list .ng-journal-task-row {
+      flex: 0 1 auto;
     }
     .ng-journal-task-name {
       flex: 0 1 auto;
@@ -1903,9 +2040,6 @@ function injectNeuralGardenStyles() {
     .ng-journal-entry-card .ng-journal-task-badge {
       filter: saturate(70%);
     }
-    .ng-journal-task-badge {
-      margin-left: 2px;
-    }
     .ng-journal-entry-card .ng-journal-task-row {
       justify-content: center;
     }
@@ -1915,11 +2049,16 @@ function injectNeuralGardenStyles() {
     }
     .ng-journal-body-markdown {
       margin-top: 18px;
-      border: 1px solid rgba(236, 154, 99, 0.28);
-      border-bottom-color: rgba(236, 154, 99, 0.28);
+      border: 1px solid color-mix(in srgb, var(--interactive-accent) 44%, var(--background-modifier-border));
       border-radius: 14px;
       background: color-mix(in srgb, var(--background-primary) 10%, transparent);
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--interactive-accent) 16%, transparent), 0 0 16px color-mix(in srgb, var(--interactive-accent) 20%, transparent);
       padding: 14px 14px 18px;
+      transition: border-color 160ms ease, box-shadow 160ms ease;
+    }
+    .ng-journal-body-markdown:focus-within {
+      border-color: color-mix(in srgb, var(--interactive-accent) 68%, var(--background-modifier-border));
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--interactive-accent) 31%, transparent), 0 0 29px color-mix(in srgb, var(--interactive-accent) 36%, transparent);
     }
     .ng-journal-body-markdown h4 {
       text-align: center;
@@ -1958,6 +2097,179 @@ function injectNeuralGardenStyles() {
       outline: none;
       box-shadow: none;
     }
+    .ng-journal-entry-sticky-header {
+      position: relative;
+      z-index: 8;
+      background: transparent;
+    }
+    .ng-journal-entry-page.is-compact .ng-journal-entry-sticky-header {
+      padding-bottom: 6px;
+      border-bottom: 1px solid color-mix(in srgb, var(--background-modifier-border) 72%, transparent);
+      box-shadow: none;
+    }
+    .ng-journal-entry-page.is-compact .ng-journal-title-wrap {
+      display: none;
+    }
+    .ng-journal-full-check-in {
+      max-height: var(--ng-journal-full-height, 5000px);
+      overflow: hidden;
+      opacity: 1;
+      transform: translateY(0);
+      transition: max-height 620ms ease, opacity 360ms ease;
+    }
+    .ng-journal-entry-page.is-collapsing .ng-journal-full-check-in {
+      opacity: 0;
+      pointer-events: none;
+    }
+    .ng-journal-entry-page.is-compact .ng-journal-full-check-in {
+      max-height: 0;
+      overflow: hidden;
+      opacity: 0;
+      pointer-events: none;
+    }
+    .ng-journal-compact-summary {
+      position: relative;
+      max-height: 0;
+      overflow: hidden;
+      opacity: 0;
+      transition: max-height 620ms ease, opacity 620ms ease;
+    }
+    .ng-journal-entry-page.is-compact .ng-journal-compact-summary {
+      max-height: var(--ng-journal-compact-height, 420px);
+      opacity: 1;
+    }
+    .ng-journal-compact-heading {
+      position: relative;
+      display: block;
+      margin-bottom: 5px;
+      color: var(--text-muted);
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-align: center;
+      text-transform: uppercase;
+    }
+    .ng-journal-compact-expand {
+      position: static;
+      flex: 0 0 auto;
+      align-self: center;
+      margin-left: auto;
+      padding: 3px 8px;
+      border-color: color-mix(in srgb, #ec9a63 24%, var(--background-modifier-border));
+      color: color-mix(in srgb, var(--text-normal) 88%, var(--text-muted));
+      font-size: 0.68rem;
+      text-transform: none;
+    }
+    .ng-journal-compact-expand:hover {
+      border-color: color-mix(in srgb, #ec9a63 36%, var(--background-modifier-border));
+      box-shadow: 0 0 0 1px color-mix(in srgb, #ec9a63 12%, transparent);
+    }
+    .ng-journal-compact-metrics {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 4px 8px;
+    }
+    .ng-journal-compact-task-list {
+      display: flex;
+      flex: 1 1 0;
+      flex-wrap: wrap;
+      align-items: stretch;
+      gap: 0;
+      min-width: 0;
+    }
+    .ng-journal-compact-task {
+      position: relative;
+      display: grid;
+      justify-items: center;
+      gap: 2px;
+      min-width: 68px;
+      padding: 1px 5px;
+    }
+    .ng-journal-compact-task + .ng-journal-compact-task::before {
+      position: absolute;
+      top: 15%;
+      bottom: 15%;
+      left: 0;
+      width: 1px;
+      background: color-mix(in srgb, var(--background-modifier-border) 55%, transparent);
+      content: "";
+    }
+    .ng-journal-compact-task-name {
+      color: var(--text-normal);
+      text-align: center;
+    }
+    .ng-journal-compact-task-badge {
+      padding: 1px 5px;
+      border: 1px solid color-mix(in srgb, var(--ng-compact-task-color) 54%, transparent);
+      border-radius: 999px;
+      color: var(--ng-compact-task-color);
+      font-size: 0.58rem;
+      line-height: 1.15;
+      text-align: center;
+    }
+    .ng-journal-compact-tasks-label {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      line-height: 1.15;
+    }
+    .ng-journal-compact-metric {
+      display: grid;
+      grid-template-columns: auto minmax(18px, 1fr);
+      align-items: center;
+      gap: 4px;
+      color: var(--text-muted);
+      font-size: 0.62rem;
+    }
+    .ng-journal-compact-track {
+      height: 4px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: var(--background-modifier-border);
+    }
+    .ng-journal-compact-fill {
+      display: block;
+      height: 100%;
+      border-radius: inherit;
+    }
+    .ng-journal-compact-details {
+      display: grid;
+      gap: 2px;
+      margin-top: 5px;
+    }
+    .ng-journal-compact-detail-row {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 5px;
+      min-width: 0;
+      font-size: 0.62rem;
+    }
+    .ng-journal-compact-detail-label {
+      flex: 0 0 58px;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+    .ng-journal-compact-chip {
+      padding: 1px 5px;
+      border: 1px solid transparent;
+      border-radius: 999px;
+      color: var(--text-normal);
+    }
+    .ng-journal-compact-chip.pleasant {
+      border-color: color-mix(in srgb, #39e05a 58%, transparent);
+      color: #39e05a;
+    }
+    .ng-journal-compact-chip.unpleasant {
+      border-color: color-mix(in srgb, #ff6565 58%, transparent);
+      color: #ff6565;
+    }
+    .ng-journal-compact-chip.is-tracker {
+      border-color: color-mix(in srgb, var(--ng-compact-chip-color) 58%, transparent);
+      color: var(--ng-compact-chip-color);
+    }
+    .ng-journal-compact-empty {
+      color: var(--text-faint);
+    }
     @media (max-width: 900px) {
       .ng-journal-layout {
         grid-template-columns: 1fr;
@@ -1968,6 +2280,9 @@ function injectNeuralGardenStyles() {
       }
       .ng-journal-tracker-title {
         font-size: 0.82rem;
+      }
+      .ng-journal-task-editor .ng-task-input {
+        width: min(100%, 234px);
       }
       .ng-journal-tracker-dot {
         width: 16px;
@@ -2059,6 +2374,145 @@ function injectNeuralGardenStyles() {
     .ng-mylearning-heading-row .ng-mynotes-heading {
       margin: 0;
       text-align: center;
+    }
+    .ng-mylearning-daily-calendar {
+      position: relative;
+      border-top: 1px solid color-mix(in srgb, var(--background-modifier-border) 72%, transparent);
+      border-bottom: 1px solid color-mix(in srgb, var(--background-modifier-border) 72%, transparent);
+      padding: 4px 27px;
+      overflow: hidden;
+    }
+    .ng-mylearning-daily-viewport {
+      overflow-x: auto;
+      scrollbar-width: none;
+      cursor: grab;
+      touch-action: pan-x;
+      user-select: none;
+    }
+    .ng-mylearning-daily-viewport::-webkit-scrollbar {
+      display: none;
+    }
+    .ng-mylearning-daily-viewport.is-dragging {
+      cursor: grabbing;
+    }
+    .ng-mylearning-daily-row {
+      display: flex;
+      justify-content: flex-start;
+      align-items: center;
+      gap: 3px;
+      width: max-content;
+      min-width: 100%;
+    }
+    .ng-mylearning-daily-arrow {
+      position: absolute;
+      top: 50%;
+      z-index: 3;
+      display: grid;
+      width: 18px;
+      min-width: 18px;
+      height: 30px;
+      padding: 0;
+      border: 0;
+      background: var(--background-primary);
+      box-shadow: none;
+      color: var(--text-muted);
+      place-items: center;
+      transform: translateY(-50%);
+    }
+    .ng-mylearning-daily-arrow.is-left {
+      left: 0;
+    }
+    .ng-mylearning-daily-arrow.is-right {
+      right: 0;
+    }
+    .ng-mylearning-daily-arrow:disabled {
+      opacity: 0.18;
+      cursor: default;
+    }
+    .ng-mylearning-daily-arrow svg {
+      width: 13px;
+      height: 13px;
+    }
+    .ng-mylearning-daily-day {
+      position: relative;
+      display: flex;
+      flex: 0 0 34px;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      min-width: 34px;
+      height: 35px;
+      padding: 3px 3px 6px;
+      border: 1px solid rgba(236, 154, 99, 0.3);
+      border-radius: 5px;
+      background: transparent;
+      box-shadow: none;
+      color: var(--text-muted);
+      cursor: default;
+    }
+    .ng-mylearning-daily-day.has-note,
+    .ng-mylearning-daily-day.is-today {
+      cursor: pointer;
+    }
+    .ng-mylearning-daily-day:hover {
+      border-color: #ffd2b0;
+      box-shadow: 0 0 0 1px rgba(236, 154, 99, 0.16);
+    }
+    .ng-mylearning-daily-day.is-today {
+      border-color: #0e8f9f;
+      box-shadow: 0 0 0 1px rgba(14, 143, 159, 0.16);
+      color: var(--text-normal);
+      font-weight: 700;
+    }
+    .ng-mylearning-daily-weekday {
+      font-size: 0.48rem;
+      line-height: 1;
+      text-transform: uppercase;
+    }
+    .ng-mylearning-daily-number-wrap {
+      position: relative;
+      display: grid;
+      width: 17px;
+      height: 17px;
+      place-items: center;
+    }
+    .ng-mylearning-daily-number {
+      font-size: 0.77rem;
+      font-weight: 600;
+      line-height: 1;
+    }
+    .ng-mylearning-daily-day.is-processed .ng-mylearning-daily-number {
+      opacity: 0.24;
+    }
+    .ng-mylearning-daily-check {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      color: #45c978;
+    }
+    .ng-mylearning-daily-check svg {
+      width: 17px;
+      height: 17px;
+      stroke-width: 3;
+    }
+    .ng-mylearning-daily-marker {
+      position: absolute;
+      right: 3px;
+      bottom: 3px;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #ec9a63 !important;
+      box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.14), 0 0 5px rgba(236, 154, 99, 0.34);
+    }
+    .ng-mylearning-daily-done {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-normal);
+      cursor: pointer;
     }
     .ng-mylearning-label {
       margin: 0;
@@ -4224,6 +4678,31 @@ function hslToRgb(h, s, l) {
 
 // src/journalingEntryView.ts
 var import_obsidian2 = require("obsidian");
+
+// src/overlay.ts
+function openOverlay(title, dismissible = true) {
+  const overlay = document.body.createDiv({ cls: "ng-overlay" });
+  const card = overlay.createDiv({ cls: "ng-overlay-card" });
+  card.createEl("h3", { text: title, cls: "ng-overlay-title" });
+  const close = () => {
+    overlay.remove();
+    document.removeEventListener("keydown", onKeyDown);
+  };
+  const onKeyDown = (event) => {
+    if (dismissible && event.key === "Escape") {
+      close();
+    }
+  };
+  overlay.addEventListener("click", (event) => {
+    if (dismissible && event.target === overlay) {
+      close();
+    }
+  });
+  document.addEventListener("keydown", onKeyDown);
+  return { card, close };
+}
+
+// src/journalingEntryView.ts
 var METRICS = [
   { key: "mood", label: "Mood", explanation: "How have you been feeling?" },
   { key: "sleep", label: "Sleep", explanation: "How rested did you feel after sleeping?" },
@@ -4273,8 +4752,10 @@ var NeuralGardenJournalEntryView = class extends import_obsidian2.ItemView {
     this.entry = null;
     this.editable = false;
     this.trackers = [];
-    this.liveTaskSnapshots = null;
     this.saveChain = Promise.resolve();
+    this.compactStats = false;
+    this.taskEditMode = false;
+    this.collapseTimer = null;
   }
   getViewType() {
     return VIEW_TYPE_NEURAL_GARDEN_JOURNAL_ENTRY;
@@ -4291,24 +4772,83 @@ var NeuralGardenJournalEntryView = class extends import_obsidian2.ItemView {
   }
   async onClose() {
     this.entry = null;
-    this.liveTaskSnapshots = null;
     this.saveChain = Promise.resolve();
+    this.compactStats = false;
+    this.taskEditMode = false;
+    if (this.collapseTimer !== null) {
+      window.clearTimeout(this.collapseTimer);
+      this.collapseTimer = null;
+    }
   }
   async openForDate(dateKey, editable) {
-    var _a;
     this.editable = editable && isEditableJournalDate(dateKey);
-    this.entry = (_a = await this.journalingStorage.readDailyEntryByDate(dateKey)) != null ? _a : await this.createDraftEntry(dateKey);
-    this.trackers = await this.journalingStorage.listTrackers();
-    if (this.editable) {
-      const taskState = await this.taskStorage.loadTaskManagerState();
-      this.liveTaskSnapshots = {
-        completed: taskState.tasks.filter((task) => task.completed).map(snapshotTask),
-        uncompleted: taskState.tasks.filter((task) => !task.completed).map(snapshotTask)
-      };
-    } else {
-      this.liveTaskSnapshots = null;
+    const existing = await this.journalingStorage.readDailyEntryByDate(dateKey);
+    if (!existing) {
+      this.entry = null;
+      this.renderEmpty();
+      this.openCreationConfirmation(dateKey);
+      return;
     }
+    await this.showEntry(existing);
+  }
+  async showEntry(entry) {
+    this.entry = entry;
+    this.trackers = await this.journalingStorage.listTrackers();
+    this.compactStats = !this.editable && this.entry.body.trim().length > 0;
+    this.taskEditMode = false;
     this.render();
+  }
+  setCompactStats(compact) {
+    const page = this.contentEl.querySelector(".ng-journal-entry-page");
+    if (!(page instanceof HTMLElement)) {
+      return;
+    }
+    if (compact && (this.compactStats || page.hasClass("is-collapsing"))) {
+      return;
+    }
+    if (this.collapseTimer !== null) {
+      window.clearTimeout(this.collapseTimer);
+      this.collapseTimer = null;
+    }
+    if (!compact) {
+      this.compactStats = false;
+      page.removeClass("is-collapsing", "is-compact");
+      return;
+    }
+    page.addClass("is-collapsing");
+    this.collapseTimer = window.setTimeout(() => {
+      this.collapseTimer = null;
+      this.compactStats = true;
+      page.removeClass("is-collapsing");
+      page.addClass("is-compact");
+    }, 360);
+  }
+  openCreationConfirmation(dateKey) {
+    const { card, close } = openOverlay("Are your tasks up to date?", false);
+    card.createDiv({
+      cls: "ng-overlay-text",
+      text: "Continuing will capture the current task list in this journal entry."
+    });
+    const actions = card.createDiv({ cls: "ng-overlay-actions" });
+    const cancelButton = actions.createEl("button", { text: "Cancel" });
+    const continueButton = actions.createEl("button", { text: "Continue", cls: "ng-overlay-confirm" });
+    cancelButton.addEventListener("click", async () => {
+      close();
+      await this.openJournalingView(true, this.leaf);
+    });
+    continueButton.addEventListener("click", async () => {
+      continueButton.disabled = true;
+      cancelButton.disabled = true;
+      try {
+        const entry = await this.createDraftEntry(dateKey);
+        close();
+        await this.showEntry(entry);
+      } catch (e) {
+        continueButton.disabled = false;
+        cancelButton.disabled = false;
+        new import_obsidian2.Notice("Could not create the journal entry.");
+      }
+    });
   }
   async createDraftEntry(dateKey) {
     const taskState = await this.taskStorage.loadTaskManagerState();
@@ -4327,7 +4867,7 @@ var NeuralGardenJournalEntryView = class extends import_obsidian2.ItemView {
       spentEnergy: taskState.spentEnergy,
       completedTasks: completedSnapshots,
       uncompletedTasks: uncompletedSnapshots,
-      todaysNote: "",
+      goodThing: "",
       emotions: []
     };
     const created = await this.journalingStorage.createDailyEntry(entry, "");
@@ -4379,7 +4919,9 @@ var NeuralGardenJournalEntryView = class extends import_obsidian2.ItemView {
     contentEl.empty();
     contentEl.addClass("neural-garden-root");
     const wrapper = contentEl.createDiv({ cls: "ng-journal-entry-page" });
-    const topBar = wrapper.createDiv({ cls: "ng-journal-topbar" });
+    wrapper.toggleClass("is-compact", this.compactStats);
+    const stickyHeader = wrapper.createDiv({ cls: "ng-journal-entry-sticky-header" });
+    const topBar = stickyHeader.createDiv({ cls: "ng-journal-topbar" });
     const leftNav = topBar.createDiv({ cls: "ng-journal-topbar-left" });
     leftNav.appendChild(this.makeNavButton("<- Journaling", async () => this.openJournalingView(true, this.leaf)));
     const rightNav = topBar.createDiv({ cls: "ng-journal-topbar-right" });
@@ -4387,11 +4929,118 @@ var NeuralGardenJournalEntryView = class extends import_obsidian2.ItemView {
     const titleWrap = topBar.createDiv({ cls: "ng-journal-title-wrap" });
     titleWrap.createEl("h2", { text: `Journal Entry - ${formatReadableDate(this.entry.frontmatter.date)}` });
     titleWrap.createEl("h3", { text: "Daily Check In" });
-    this.renderMetrics(wrapper);
-    this.renderEmotions(wrapper);
-    this.renderTrackerSection(wrapper);
-    this.renderTasks(wrapper);
+    this.renderCompactSummary(stickyHeader);
+    const fullCheckIn = wrapper.createDiv({ cls: "ng-journal-full-check-in" });
+    this.renderMetrics(fullCheckIn);
+    this.renderEmotions(fullCheckIn);
+    this.renderTrackerSection(fullCheckIn);
+    this.renderGoodThing(fullCheckIn);
+    this.renderTasks(fullCheckIn);
     this.renderEntryBody(wrapper);
+    this.syncCollapseHeights(wrapper);
+  }
+  syncCollapseHeights(page) {
+    const fullCheckIn = page.querySelector(".ng-journal-full-check-in");
+    const compactSummary = page.querySelector(".ng-journal-compact-summary");
+    if (fullCheckIn instanceof HTMLElement) {
+      page.style.setProperty("--ng-journal-full-height", `${fullCheckIn.scrollHeight}px`);
+    }
+    if (compactSummary instanceof HTMLElement) {
+      page.style.setProperty("--ng-journal-compact-height", `${compactSummary.scrollHeight}px`);
+    }
+  }
+  renderCompactSummary(parent) {
+    var _a;
+    if (!this.entry) {
+      return;
+    }
+    const summary = parent.createDiv({ cls: "ng-journal-compact-summary" });
+    const heading = summary.createDiv({ cls: "ng-journal-compact-heading" });
+    heading.createSpan({ text: "Daily Check In" });
+    const metrics = summary.createDiv({ cls: "ng-journal-compact-metrics" });
+    for (const metric of METRICS) {
+      const value = (_a = this.entry.frontmatter[metric.key]) != null ? _a : 0;
+      const item = metrics.createDiv({ cls: "ng-journal-compact-metric" });
+      item.createSpan({ text: metric.label });
+      const track = item.createSpan({ cls: "ng-journal-compact-track" });
+      const fill = track.createSpan({ cls: "ng-journal-compact-fill" });
+      fill.style.width = `${value}%`;
+      fill.style.backgroundColor = metricColor(metric.key, value);
+    }
+    const details = summary.createDiv({ cls: "ng-journal-compact-details" });
+    const addDetailRow = (label, values) => {
+      const row = details.createDiv({ cls: "ng-journal-compact-detail-row" });
+      row.createSpan({ cls: "ng-journal-compact-detail-label", text: label });
+      if (values.length === 0) {
+        row.createSpan({ cls: "ng-journal-compact-empty", text: "None" });
+        return;
+      }
+      for (const value of values) {
+        const chip = row.createSpan({ cls: "ng-journal-compact-chip", text: value.text });
+        if (value.tone) {
+          chip.addClass(value.tone);
+        }
+        if (value.color) {
+          chip.style.setProperty("--ng-compact-chip-color", value.color);
+          chip.addClass("is-tracker");
+        }
+      }
+    };
+    addDetailRow("Emotions", this.entry.frontmatter.emotions.map((emotion) => ({
+      text: emotion,
+      tone: getEmotionToneClass(emotion)
+    })));
+    addDetailRow(
+      "Trackers",
+      this.trackers.filter((tracker) => tracker.dates.includes(this.entry.frontmatter.date)).map((tracker) => ({ text: tracker.name, color: tracker.color }))
+    );
+    addDetailRow("One Good Thing", this.entry.frontmatter.goodThing ? [{ text: this.entry.frontmatter.goodThing }] : []);
+    const tasksRow = details.createDiv({ cls: "ng-journal-compact-detail-row ng-journal-compact-tasks-row" });
+    const tasksLabel = tasksRow.createSpan({ cls: "ng-journal-compact-detail-label ng-journal-compact-tasks-label" });
+    tasksLabel.createSpan({ text: "Tasks" });
+    tasksLabel.createSpan({ text: "completed" });
+    const tasks = tasksRow.createDiv({ cls: "ng-journal-compact-task-list" });
+    if (this.entry.frontmatter.completedTasks.length === 0) {
+      tasks.createSpan({ cls: "ng-journal-compact-empty", text: "None" });
+    }
+    for (const task of this.entry.frontmatter.completedTasks) {
+      const taskItem = tasks.createDiv({ cls: "ng-journal-compact-task" });
+      taskItem.createSpan({ cls: "ng-journal-compact-task-name", text: task.taskName });
+      const badge = taskItem.createSpan({ cls: "ng-journal-compact-task-badge", text: effortLabel(task.effort) });
+      badge.style.setProperty("--ng-compact-task-color", effortColor(task.effort));
+    }
+    const expandButton = tasksRow.createEl("button", {
+      text: "Expand",
+      cls: "ng-journal-nav-button ng-journal-compact-expand"
+    });
+    expandButton.addEventListener("click", () => this.setCompactStats(false));
+  }
+  renderGoodThing(parent) {
+    if (!this.entry) {
+      return;
+    }
+    const block = parent.createDiv({ cls: "ng-journal-good-thing" });
+    block.createEl("h4", { text: "One Good Thing About Today" });
+    if (!this.editable) {
+      block.createDiv({
+        cls: this.entry.frontmatter.goodThing ? "ng-journal-good-thing-value" : "ng-empty",
+        text: this.entry.frontmatter.goodThing || "No reflection was recorded."
+      });
+      return;
+    }
+    const input = block.createEl("input", {
+      type: "text",
+      cls: "ng-task-input ng-journal-good-thing-input",
+      placeholder: "Name one good thing from today"
+    });
+    input.value = this.entry.frontmatter.goodThing;
+    input.addEventListener("input", () => {
+      if (!this.entry) {
+        return;
+      }
+      this.entry.frontmatter.goodThing = input.value;
+      void this.persist();
+    });
   }
   renderTrackerSection(parent) {
     if (!this.entry) {
@@ -4563,58 +5212,88 @@ var NeuralGardenJournalEntryView = class extends import_obsidian2.ItemView {
       }
     }
   }
-  renderNote(parent) {
-    if (!this.entry) {
-      return;
-    }
-    const block = parent.createDiv({ cls: "ng-journal-note-section" });
-    block.createEl("h4", { text: "A Few Words About Today" });
-    const counter = block.createDiv({ cls: "ng-journal-character-count" });
-    const textarea = block.createEl("textarea", { cls: "ng-journal-note-input" });
-    textarea.maxLength = 150;
-    textarea.value = this.entry.frontmatter.todaysNote;
-    textarea.readOnly = !this.editable;
-    textarea.placeholder = "Describe your day in a few words";
-    counter.textContent = `${textarea.value.length}/150`;
-    if (this.editable) {
-      textarea.addEventListener("input", () => {
-        if (!this.entry) return;
-        this.entry.frontmatter.todaysNote = textarea.value.slice(0, 150);
-        counter.textContent = `${this.entry.frontmatter.todaysNote.length}/150`;
-        void this.persist();
-      });
-    }
-  }
   renderTasks(parent) {
     if (!this.entry) {
       return;
     }
-    const liveCompleted = this.editable && this.liveTaskSnapshots ? this.liveTaskSnapshots.completed : [];
-    const liveUncompleted = this.editable && this.liveTaskSnapshots ? this.liveTaskSnapshots.uncompleted : [];
-    const hasLiveTasks = liveCompleted.length > 0 || liveUncompleted.length > 0;
-    const completedTasks = hasLiveTasks ? liveCompleted : this.entry.frontmatter.completedTasks;
-    const uncompletedTasks = hasLiveTasks ? liveUncompleted : this.entry.frontmatter.uncompletedTasks;
+    const completedTasks = this.entry.frontmatter.completedTasks;
+    const uncompletedTasks = this.entry.frontmatter.uncompletedTasks;
     const block = parent.createDiv({ cls: "ng-journal-tasks" });
-    block.createEl("h4", { text: "Tasks" });
+    const header = block.createDiv({ cls: "ng-journal-tasks-header" });
+    header.createEl("h4", { text: "Tasks" });
+    if (this.editable) {
+      const editButton = header.createEl("button", { cls: "ng-journal-task-edit-button" });
+      editButton.setAttribute("aria-label", this.taskEditMode ? "Finish editing tasks" : "Edit tasks");
+      editButton.setAttribute("title", this.taskEditMode ? "Finish editing tasks" : "Edit tasks");
+      (0, import_obsidian2.setIcon)(editButton, this.taskEditMode ? "check" : "pencil");
+      editButton.addEventListener("click", () => {
+        this.taskEditMode = !this.taskEditMode;
+        this.render();
+      });
+    }
+    if (this.taskEditMode) {
+      this.renderTaskEditor(block);
+    }
     if (completedTasks.length > 0) {
-      this.renderTaskGroup(block, "Completed Tasks", completedTasks);
+      this.renderTaskGroup(block, "Completed Tasks", completedTasks, "completedTasks");
     }
     if (uncompletedTasks.length > 0) {
-      this.renderTaskGroup(block, "Uncompleted Tasks", uncompletedTasks);
+      this.renderTaskGroup(block, "Uncompleted Tasks", uncompletedTasks, "uncompletedTasks");
     }
     if (completedTasks.length === 0 && uncompletedTasks.length === 0) {
       block.createDiv({ cls: "ng-empty", text: "No tasks captured." });
     }
   }
-  renderTaskGroup(parent, title, tasks) {
+  renderTaskEditor(parent) {
+    const form = parent.createDiv({ cls: "ng-journal-task-editor" });
+    const nameInput = form.createEl("input", { type: "text", placeholder: "Task name", cls: "ng-task-input" });
+    const efforts = form.createDiv({ cls: "ng-journal-task-efforts" });
+    const addTask = async (effort) => {
+      if (!this.entry) {
+        return;
+      }
+      const taskName = nameInput.value.trim();
+      if (!taskName) {
+        nameInput.focus();
+        return;
+      }
+      this.entry.frontmatter.completedTasks = [
+        ...this.entry.frontmatter.completedTasks,
+        { taskName, effort: effort.key, energy: effort.energy }
+      ];
+      await this.persist();
+      this.render();
+    };
+    for (const effort of EFFORTS) {
+      const button = efforts.createEl("button", { text: effort.label, cls: "ng-journal-task-effort" });
+      button.style.setProperty("--ng-task-effort-color", effort.color);
+      button.setAttribute("aria-label", `Add completed task as ${effort.label}`);
+      button.addEventListener("click", () => void addTask(effort));
+    }
+  }
+  renderTaskGroup(parent, title, tasks, listKey) {
     const group = parent.createDiv({ cls: "ng-journal-task-group" });
     group.createEl("h5", { text: title });
+    const list = group.createDiv({ cls: "ng-journal-task-list" });
     for (const task of tasks) {
-      const row = group.createDiv({ cls: "ng-journal-task-row" });
+      const row = list.createDiv({ cls: "ng-journal-task-row" });
       row.createDiv({ cls: "ng-journal-task-name", text: task.taskName });
       const badge = row.createSpan({ cls: "ng-journal-task-badge", text: effortLabel(task.effort) });
       badge.style.borderColor = effortColor(task.effort);
       badge.style.color = effortColor(task.effort);
+      if (this.taskEditMode) {
+        const deleteButton = row.createEl("button", { cls: "ng-journal-task-delete" });
+        deleteButton.setAttribute("aria-label", `Delete ${task.taskName}`);
+        (0, import_obsidian2.setIcon)(deleteButton, "x");
+        deleteButton.addEventListener("click", async () => {
+          if (!this.entry) {
+            return;
+          }
+          this.entry.frontmatter[listKey] = this.entry.frontmatter[listKey].filter((_, index) => tasks[index] !== task);
+          await this.persist();
+          this.render();
+        });
+      }
     }
   }
   renderEntryBody(parent) {
@@ -4629,10 +5308,23 @@ var NeuralGardenJournalEntryView = class extends import_obsidian2.ItemView {
     body.contentEditable = String(this.editable);
     body.spellcheck = true;
     body.addEventListener("input", () => {
+      var _a;
       if (!this.entry || !this.editable) {
         return;
       }
       this.entry.body = body.innerText.replace(/\r\n/g, "\n");
+      if (this.entry.body.length > 0) {
+        const stickyHeader = this.contentEl.querySelector(".ng-journal-entry-sticky-header");
+        (_a = stickyHeader == null ? void 0 : stickyHeader.querySelector(".ng-journal-compact-summary")) == null ? void 0 : _a.remove();
+        if (stickyHeader instanceof HTMLElement) {
+          this.renderCompactSummary(stickyHeader);
+        }
+        const page = this.contentEl.querySelector(".ng-journal-entry-page");
+        if (page instanceof HTMLElement) {
+          this.syncCollapseHeights(page);
+        }
+        this.setCompactStats(true);
+      }
     });
     body.addEventListener("blur", () => {
       if (!this.entry || !this.editable) {
@@ -5197,7 +5889,8 @@ var NeuralGardenJournalingView = class extends import_obsidian3.ItemView {
       return;
     }
     const tasks = container.createDiv({ cls: "ng-journal-tasks" });
-    tasks.createEl("h4", { text: "Tasks" });
+    const header = tasks.createDiv({ cls: "ng-journal-tasks-header" });
+    header.createEl("h4", { text: "Tasks" });
     this.renderTaskSnapshotGroup(tasks, "Completed Tasks", frontmatter.completedTasks);
     this.renderTaskSnapshotGroup(tasks, "Uncompleted Tasks", frontmatter.uncompletedTasks);
   }
@@ -5207,8 +5900,9 @@ var NeuralGardenJournalingView = class extends import_obsidian3.ItemView {
     }
     const group = container.createDiv({ cls: "ng-journal-task-group" });
     group.createEl("h5", { text: title });
+    const list = group.createDiv({ cls: "ng-journal-task-list" });
     for (const task of tasks) {
-      const row = group.createDiv({ cls: "ng-journal-task-row" });
+      const row = list.createDiv({ cls: "ng-journal-task-row" });
       row.createDiv({ cls: "ng-journal-task-name", text: task.taskName });
       const badge = row.createSpan({ cls: "ng-journal-task-badge", text: effortLabel(task.effort) });
       badge.style.borderColor = effortColor(task.effort);
@@ -5228,7 +5922,7 @@ var NeuralGardenJournalingView = class extends import_obsidian3.ItemView {
   renderBody(container, body) {
     const section = container.createDiv({ cls: "ng-journal-body" });
     section.createEl("h4", { text: "Entry" });
-    section.createDiv({ cls: "ng-journal-body-copy", text: body.length > 0 ? body : "No entry text yet." });
+    section.createDiv({ cls: "ng-journal-body-copy ng-journal-body-preview", text: body.length > 0 ? body : "No entry text yet." });
   }
   renderTrackers(container) {
     const section = container.createDiv({ cls: "ng-journal-trackers" });
@@ -5612,32 +6306,17 @@ function getNameValidationError(value) {
   return match ? `"${match[0]}" isn't allowed in names. Try "-" or "_" instead.` : null;
 }
 
-// src/overlay.ts
-function openOverlay(title) {
-  const overlay = document.body.createDiv({ cls: "ng-overlay" });
-  const card = overlay.createDiv({ cls: "ng-overlay-card" });
-  card.createEl("h3", { text: title, cls: "ng-overlay-title" });
-  const close = () => {
-    overlay.remove();
-    document.removeEventListener("keydown", onKeyDown);
-  };
-  const onKeyDown = (event) => {
-    if (event.key === "Escape") {
-      close();
-    }
-  };
-  overlay.addEventListener("click", (event) => {
-    if (event.target === overlay) {
-      close();
-    }
-  });
-  document.addEventListener("keydown", onKeyDown);
-  return { card, close };
-}
-
 // src/myLearningView.ts
 var OPEN_RIGHT_ICON_CANDIDATES = ["separator-vertical", "panel-right-open", "split-square-vertical"];
 var EDIT_ICON_CANDIDATES = ["pencil", "pencil-line", "edit-3"];
+var DAILY_NOTE_DATE_PATTERN = /^Daily Note (\d{4}-\d{2}-\d{2})$/;
+var DAILY_CALENDAR_DAYS = 30;
+function formatLocalDate(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
 function setOpenToRightIcon(el) {
   for (const iconName of OPEN_RIGHT_ICON_CANDIDATES) {
     (0, import_obsidian4.setIcon)(el, iconName);
@@ -5669,6 +6348,7 @@ var NeuralGardenMyLearningView = class extends import_obsidian4.ItemView {
     this.uncategorizedExpanded = false;
     this.searchQuery = "";
     this.searchDebounceTimer = null;
+    this.dailyProgressOverrides = /* @__PURE__ */ new Map();
     this.selectedCategory = (_a = initialSelection == null ? void 0 : initialSelection.category) != null ? _a : null;
     this.selectedTopic = (_b = initialSelection == null ? void 0 : initialSelection.topic) != null ? _b : null;
   }
@@ -5717,10 +6397,164 @@ var NeuralGardenMyLearningView = class extends import_obsidian4.ItemView {
     const headingRow = wrapper.createDiv({ cls: "ng-mylearning-heading-row" });
     headingRow.createEl("h2", { text: "MyLearning", cls: "ng-mynotes-heading" });
     await this.renderSearchSection(wrapper);
+    this.renderDailyNotesCalendar(wrapper);
     await this.renderCategoriesSection(wrapper);
     await this.renderTopicsSection(wrapper);
     await this.renderNotesGrid(wrapper);
     this.renderUncategorizedSection(wrapper);
+  }
+  renderDailyNotesCalendar(parent) {
+    const section = parent.createDiv({ cls: "ng-mylearning-daily-calendar" });
+    const leftArrow = section.createEl("button", { cls: "ng-mylearning-daily-arrow is-left" });
+    leftArrow.setAttribute("aria-label", "Scroll to earlier days");
+    (0, import_obsidian4.setIcon)(leftArrow, "chevron-left");
+    const viewport = section.createDiv({ cls: "ng-mylearning-daily-viewport" });
+    const row = viewport.createDiv({ cls: "ng-mylearning-daily-row" });
+    const rightArrow = section.createEl("button", { cls: "ng-mylearning-daily-arrow is-right" });
+    rightArrow.setAttribute("aria-label", "Scroll to later days");
+    (0, import_obsidian4.setIcon)(rightArrow, "chevron-right");
+    const notesByDate = /* @__PURE__ */ new Map();
+    for (const file of this.learningStorage.listNotes()) {
+      const match = file.basename.match(DAILY_NOTE_DATE_PATTERN);
+      if (match == null ? void 0 : match[1]) {
+        notesByDate.set(match[1], file);
+      }
+    }
+    const today = /* @__PURE__ */ new Date();
+    today.setHours(12, 0, 0, 0);
+    const todayKey2 = formatLocalDate(today);
+    for (let offset = DAILY_CALENDAR_DAYS - 1; offset >= 0; offset -= 1) {
+      const date = new Date(today);
+      date.setDate(today.getDate() - offset);
+      const dateKey = formatLocalDate(date);
+      const file = notesByDate.get(dateKey);
+      const processed = !!file && this.getDisplayedComprehension(file) >= 90;
+      const day = row.createEl("button", { cls: "ng-mylearning-daily-day" });
+      day.toggleClass("is-today", dateKey === todayKey2);
+      day.toggleClass("has-note", !!file);
+      day.toggleClass("is-processed", processed);
+      day.setAttribute("aria-label", file ? `${file.basename}, ${processed ? "done" : "in progress"}` : `${dateKey}, no daily note`);
+      day.createSpan({
+        cls: "ng-mylearning-daily-weekday",
+        text: date.toLocaleDateString(void 0, { weekday: "short" })
+      });
+      const numberWrap = day.createSpan({ cls: "ng-mylearning-daily-number-wrap" });
+      numberWrap.createSpan({ cls: "ng-mylearning-daily-number", text: String(date.getDate()) });
+      if (processed) {
+        const check = numberWrap.createSpan({ cls: "ng-mylearning-daily-check" });
+        (0, import_obsidian4.setIcon)(check, "check");
+      } else if (file) {
+        day.createSpan({ cls: "ng-mylearning-daily-marker" });
+      }
+      day.addEventListener("click", () => {
+        if (file) {
+          this.openDailyNoteActions(file);
+        } else if (dateKey === todayKey2) {
+          void this.createTodayDailyNote(dateKey);
+        }
+      });
+    }
+    const updateArrows = () => {
+      const maxScroll = Math.max(0, viewport.scrollWidth - viewport.clientWidth);
+      leftArrow.disabled = viewport.scrollLeft <= 1;
+      rightArrow.disabled = viewport.scrollLeft >= maxScroll - 1;
+    };
+    const scrollCalendar = (direction) => {
+      viewport.scrollBy({ left: direction * viewport.clientWidth * 0.75, behavior: "smooth" });
+    };
+    leftArrow.addEventListener("click", () => scrollCalendar(-1));
+    rightArrow.addEventListener("click", () => scrollCalendar(1));
+    viewport.addEventListener("scroll", updateArrows);
+    window.requestAnimationFrame(() => {
+      viewport.scrollLeft = viewport.scrollWidth;
+      updateArrows();
+    });
+    let startX = 0;
+    let startScrollLeft = 0;
+    let dragging = false;
+    let pointerCaptured = false;
+    let suppressClick = false;
+    viewport.addEventListener("pointerdown", (event) => {
+      startX = event.clientX;
+      startScrollLeft = viewport.scrollLeft;
+      dragging = true;
+      pointerCaptured = false;
+      suppressClick = false;
+    });
+    viewport.addEventListener("pointermove", (event) => {
+      if (!dragging) {
+        return;
+      }
+      const distance = event.clientX - startX;
+      if (Math.abs(distance) > 4) {
+        suppressClick = true;
+        viewport.addClass("is-dragging");
+        if (!pointerCaptured) {
+          viewport.setPointerCapture(event.pointerId);
+          pointerCaptured = true;
+        }
+      }
+      viewport.scrollLeft = startScrollLeft - distance;
+    });
+    const stopDragging = (event) => {
+      dragging = false;
+      viewport.removeClass("is-dragging");
+      if (pointerCaptured && viewport.hasPointerCapture(event.pointerId)) {
+        viewport.releasePointerCapture(event.pointerId);
+      }
+      window.setTimeout(() => {
+        suppressClick = false;
+      }, 0);
+    };
+    viewport.addEventListener("pointerup", stopDragging);
+    viewport.addEventListener("pointercancel", stopDragging);
+    viewport.addEventListener("click", (event) => {
+      if (suppressClick) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    }, true);
+  }
+  async createTodayDailyNote(dateKey) {
+    const file = await this.learningStorage.createDailyNote(dateKey);
+    if (!file) {
+      new import_obsidian4.Notice("Could not create today's daily note.");
+      return;
+    }
+    await this.leaf.openFile(file);
+  }
+  getDisplayedComprehension(file) {
+    const cached = this.learningStorage.getEntryComprehension(file);
+    const override = this.dailyProgressOverrides.get(file.path);
+    if (override === void 0) {
+      return cached;
+    }
+    if (cached === override) {
+      this.dailyProgressOverrides.delete(file.path);
+      return cached;
+    }
+    return override;
+  }
+  openDailyNoteActions(file) {
+    const { card, close } = openOverlay(file.basename);
+    card.createDiv({ cls: "ng-overlay-text", text: "Open this daily note or mark it as processed." });
+    const doneLabel = card.createEl("label", { cls: "ng-mylearning-daily-done" });
+    const doneCheckbox = doneLabel.createEl("input", { type: "checkbox" });
+    doneCheckbox.checked = this.getDisplayedComprehension(file) >= 90;
+    doneLabel.createSpan({ text: "Finished" });
+    doneCheckbox.addEventListener("change", async () => {
+      const nextProgress = doneCheckbox.checked ? 100 : 0;
+      this.dailyProgressOverrides.set(file.path, nextProgress);
+      await this.learningStorage.setComprehension(file, nextProgress);
+      close();
+      await this.render();
+    });
+    const actions = card.createDiv({ cls: "ng-overlay-actions" });
+    const openButton = actions.createEl("button", { text: "Open note", cls: "ng-overlay-confirm" });
+    openButton.addEventListener("click", async () => {
+      close();
+      await this.leaf.openFile(file);
+    });
   }
   async renderSearchSection(parent) {
     const section = parent.createDiv({ cls: "ng-search ng-mylearning-search" });
@@ -5928,7 +6762,7 @@ var NeuralGardenMyLearningView = class extends import_obsidian4.ItemView {
   renderNoteRow(container, file, activeTopic) {
     var _a;
     const row = container.createDiv({ cls: "ng-mynotes-note-row" });
-    const comprehension = this.learningStorage.getEntryComprehension(file);
+    const comprehension = this.getDisplayedComprehension(file);
     row.toggleClass("is-low-comprehension", comprehension < 20);
     const indicator = row.createDiv({ cls: "ng-mynotes-note-indicator" });
     const topic = this.resolveIndicatorTopic(file, activeTopic);
@@ -5982,8 +6816,8 @@ var NeuralGardenMyLearningView = class extends import_obsidian4.ItemView {
   }
   renderProgressSummary(container, files) {
     const total = files.length;
-    const learned = files.filter((file) => this.learningStorage.getEntryComprehension(file) > 60).length;
-    const average2 = total === 0 ? 0 : Math.round(files.reduce((sum, file) => sum + this.learningStorage.getEntryComprehension(file), 0) / total);
+    const learned = files.filter((file) => this.getDisplayedComprehension(file) > 60).length;
+    const average2 = total === 0 ? 0 : Math.round(files.reduce((sum, file) => sum + this.getDisplayedComprehension(file), 0) / total);
     const ratio = total === 0 ? 0 : learned / total * 100;
     const summary = container.createSpan({ cls: "ng-mylearning-progress-summary" });
     summary.createSpan({
@@ -6386,6 +7220,8 @@ var NeuralGardenMyLearningView = class extends import_obsidian4.ItemView {
 var import_obsidian5 = require("obsidian");
 var LEGACY_NOTES_CATEGORIES_FOLDER = "Notes/Categories";
 var LEGACY_HELP_TOPIC = "help";
+var DAILY_NOTES_CATEGORY = "Daily Notes";
+var DAILY_NOTES_TOPIC = "Daily";
 function isValidHexColor(value) {
   return typeof value === "string" && /^#[0-9a-fA-F]{6}$/.test(value.trim());
 }
@@ -6799,6 +7635,24 @@ var MyLearningStorage = class {
         }
       });
     }
+    return file;
+  }
+  async createDailyNote(dateKey) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) {
+      return null;
+    }
+    const name = `Daily Note ${dateKey}`;
+    const existing = this.app.vault.getAbstractFileByPath(`${LEARNING_FOLDER}/${name}.md`);
+    if (existing instanceof import_obsidian5.TFile) {
+      return existing;
+    }
+    await this.addCategory(DAILY_NOTES_CATEGORY);
+    await this.addTopic(DAILY_NOTES_CATEGORY, DAILY_NOTES_TOPIC);
+    const file = await this.createNote(name, DAILY_NOTES_CATEGORY, [DAILY_NOTES_TOPIC]);
+    if (!file) {
+      return null;
+    }
+    await this.setComprehension(file, 0);
     return file;
   }
   async createCanvas(name, category, topic) {
@@ -8590,7 +9444,7 @@ ${(0, import_obsidian8.stringifyYaml)(frontmatter).replace(/\s+$/, "")}
       spentEnergy: numberOr2(raw.spentEnergy, 0),
       completedTasks: snapshotArray(raw.completedTasks),
       uncompletedTasks: snapshotArray(raw.uncompletedTasks),
-      todaysNote: stringOr(raw.todaysNote, ""),
+      goodThing: stringOr(raw.goodThing, ""),
       emotions: stringArrayOr(raw.emotions)
     };
   }
@@ -8632,7 +9486,7 @@ function defaultDailyFrontmatter(dateKey) {
     spentEnergy: 0,
     completedTasks: [],
     uncompletedTasks: [],
-    todaysNote: "",
+    goodThing: "",
     emotions: []
   };
 }

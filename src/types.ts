@@ -58,7 +58,7 @@ export type JournalEntryFrontmatter = {
   spentEnergy: number;
   completedTasks: JournalTaskSnapshot[];
   uncompletedTasks: JournalTaskSnapshot[];
-  todaysNote: string;
+  goodThing: string;
   emotions: string[];
 };
 

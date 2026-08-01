@@ -6,6 +6,15 @@ import { openOverlay } from "./overlay";
 
 const OPEN_RIGHT_ICON_CANDIDATES = ["separator-vertical", "panel-right-open", "split-square-vertical"];
 const EDIT_ICON_CANDIDATES = ["pencil", "pencil-line", "edit-3"];
+const DAILY_NOTE_DATE_PATTERN = /^Daily Note (\d{4}-\d{2}-\d{2})$/;
+const DAILY_CALENDAR_DAYS = 30;
+
+function formatLocalDate(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
 
 function setOpenToRightIcon(el: HTMLElement): void {
   for (const iconName of OPEN_RIGHT_ICON_CANDIDATES) {
@@ -34,6 +43,7 @@ export class NeuralGardenMyLearningView extends ItemView {
   private uncategorizedExpanded = false;
   private searchQuery = "";
   private searchDebounceTimer: number | null = null;
+  private dailyProgressOverrides = new Map<string, number>();
 
   constructor(
     leaf: WorkspaceLeaf,
@@ -103,10 +113,177 @@ export class NeuralGardenMyLearningView extends ItemView {
     headingRow.createEl("h2", { text: "MyLearning", cls: "ng-mynotes-heading" });
 
     await this.renderSearchSection(wrapper);
+    this.renderDailyNotesCalendar(wrapper);
     await this.renderCategoriesSection(wrapper);
     await this.renderTopicsSection(wrapper);
     await this.renderNotesGrid(wrapper);
     this.renderUncategorizedSection(wrapper);
+  }
+
+  private renderDailyNotesCalendar(parent: HTMLElement): void {
+    const section = parent.createDiv({ cls: "ng-mylearning-daily-calendar" });
+    const leftArrow = section.createEl("button", { cls: "ng-mylearning-daily-arrow is-left" });
+    leftArrow.setAttribute("aria-label", "Scroll to earlier days");
+    setIcon(leftArrow, "chevron-left");
+    const viewport = section.createDiv({ cls: "ng-mylearning-daily-viewport" });
+    const row = viewport.createDiv({ cls: "ng-mylearning-daily-row" });
+    const rightArrow = section.createEl("button", { cls: "ng-mylearning-daily-arrow is-right" });
+    rightArrow.setAttribute("aria-label", "Scroll to later days");
+    setIcon(rightArrow, "chevron-right");
+    const notesByDate = new Map<string, TFile>();
+
+    for (const file of this.learningStorage.listNotes()) {
+      const match = file.basename.match(DAILY_NOTE_DATE_PATTERN);
+      if (match?.[1]) {
+        notesByDate.set(match[1], file);
+      }
+    }
+
+    const today = new Date();
+    today.setHours(12, 0, 0, 0);
+    const todayKey = formatLocalDate(today);
+    for (let offset = DAILY_CALENDAR_DAYS - 1; offset >= 0; offset -= 1) {
+      const date = new Date(today);
+      date.setDate(today.getDate() - offset);
+      const dateKey = formatLocalDate(date);
+      const file = notesByDate.get(dateKey);
+      const processed = !!file && this.getDisplayedComprehension(file) >= 90;
+      const day = row.createEl("button", { cls: "ng-mylearning-daily-day" });
+      day.toggleClass("is-today", dateKey === todayKey);
+      day.toggleClass("has-note", !!file);
+      day.toggleClass("is-processed", processed);
+      day.setAttribute("aria-label", file
+        ? `${file.basename}, ${processed ? "done" : "in progress"}`
+        : `${dateKey}, no daily note`);
+      day.createSpan({
+        cls: "ng-mylearning-daily-weekday",
+        text: date.toLocaleDateString(undefined, { weekday: "short" }),
+      });
+      const numberWrap = day.createSpan({ cls: "ng-mylearning-daily-number-wrap" });
+      numberWrap.createSpan({ cls: "ng-mylearning-daily-number", text: String(date.getDate()) });
+      if (processed) {
+        const check = numberWrap.createSpan({ cls: "ng-mylearning-daily-check" });
+        setIcon(check, "check");
+      } else if (file) {
+        day.createSpan({ cls: "ng-mylearning-daily-marker" });
+      }
+
+      day.addEventListener("click", () => {
+        if (file) {
+          this.openDailyNoteActions(file);
+        } else if (dateKey === todayKey) {
+          void this.createTodayDailyNote(dateKey);
+        }
+      });
+    }
+
+    const updateArrows = () => {
+      const maxScroll = Math.max(0, viewport.scrollWidth - viewport.clientWidth);
+      leftArrow.disabled = viewport.scrollLeft <= 1;
+      rightArrow.disabled = viewport.scrollLeft >= maxScroll - 1;
+    };
+    const scrollCalendar = (direction: -1 | 1) => {
+      viewport.scrollBy({ left: direction * viewport.clientWidth * 0.75, behavior: "smooth" });
+    };
+    leftArrow.addEventListener("click", () => scrollCalendar(-1));
+    rightArrow.addEventListener("click", () => scrollCalendar(1));
+    viewport.addEventListener("scroll", updateArrows);
+    window.requestAnimationFrame(() => {
+      viewport.scrollLeft = viewport.scrollWidth;
+      updateArrows();
+    });
+
+    let startX = 0;
+    let startScrollLeft = 0;
+    let dragging = false;
+    let pointerCaptured = false;
+    let suppressClick = false;
+    viewport.addEventListener("pointerdown", (event) => {
+      startX = event.clientX;
+      startScrollLeft = viewport.scrollLeft;
+      dragging = true;
+      pointerCaptured = false;
+      suppressClick = false;
+    });
+    viewport.addEventListener("pointermove", (event) => {
+      if (!dragging) {
+        return;
+      }
+      const distance = event.clientX - startX;
+      if (Math.abs(distance) > 4) {
+        suppressClick = true;
+        viewport.addClass("is-dragging");
+        if (!pointerCaptured) {
+          viewport.setPointerCapture(event.pointerId);
+          pointerCaptured = true;
+        }
+      }
+      viewport.scrollLeft = startScrollLeft - distance;
+    });
+    const stopDragging = (event: PointerEvent) => {
+      dragging = false;
+      viewport.removeClass("is-dragging");
+      if (pointerCaptured && viewport.hasPointerCapture(event.pointerId)) {
+        viewport.releasePointerCapture(event.pointerId);
+      }
+      window.setTimeout(() => {
+        suppressClick = false;
+      }, 0);
+    };
+    viewport.addEventListener("pointerup", stopDragging);
+    viewport.addEventListener("pointercancel", stopDragging);
+    viewport.addEventListener("click", (event) => {
+      if (suppressClick) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    }, true);
+  }
+
+  private async createTodayDailyNote(dateKey: string): Promise<void> {
+    const file = await this.learningStorage.createDailyNote(dateKey);
+    if (!file) {
+      new Notice("Could not create today's daily note.");
+      return;
+    }
+    await this.leaf.openFile(file);
+  }
+
+  private getDisplayedComprehension(file: TFile): number {
+    const cached = this.learningStorage.getEntryComprehension(file);
+    const override = this.dailyProgressOverrides.get(file.path);
+    if (override === undefined) {
+      return cached;
+    }
+    if (cached === override) {
+      this.dailyProgressOverrides.delete(file.path);
+      return cached;
+    }
+    return override;
+  }
+
+  private openDailyNoteActions(file: TFile): void {
+    const { card, close } = openOverlay(file.basename);
+    card.createDiv({ cls: "ng-overlay-text", text: "Open this daily note or mark it as processed." });
+
+    const doneLabel = card.createEl("label", { cls: "ng-mylearning-daily-done" });
+    const doneCheckbox = doneLabel.createEl("input", { type: "checkbox" });
+    doneCheckbox.checked = this.getDisplayedComprehension(file) >= 90;
+    doneLabel.createSpan({ text: "Finished" });
+    doneCheckbox.addEventListener("change", async () => {
+      const nextProgress = doneCheckbox.checked ? 100 : 0;
+      this.dailyProgressOverrides.set(file.path, nextProgress);
+      await this.learningStorage.setComprehension(file, nextProgress);
+      close();
+      await this.render();
+    });
+
+    const actions = card.createDiv({ cls: "ng-overlay-actions" });
+    const openButton = actions.createEl("button", { text: "Open note", cls: "ng-overlay-confirm" });
+    openButton.addEventListener("click", async () => {
+      close();
+      await this.leaf.openFile(file);
+    });
   }
 
   private async renderSearchSection(parent: HTMLElement): Promise<void> {
@@ -346,7 +523,7 @@ export class NeuralGardenMyLearningView extends ItemView {
   private renderNoteRow(container: HTMLElement, file: TFile, activeTopic: string | null): void {
     const row = container.createDiv({ cls: "ng-mynotes-note-row" });
 
-    const comprehension = this.learningStorage.getEntryComprehension(file);
+    const comprehension = this.getDisplayedComprehension(file);
     row.toggleClass("is-low-comprehension", comprehension < 20);
     const indicator = row.createDiv({ cls: "ng-mynotes-note-indicator" });
     const topic = this.resolveIndicatorTopic(file, activeTopic);
@@ -407,10 +584,10 @@ export class NeuralGardenMyLearningView extends ItemView {
 
   private renderProgressSummary(container: HTMLElement, files: TFile[]): void {
     const total = files.length;
-    const learned = files.filter((file) => this.learningStorage.getEntryComprehension(file) > 60).length;
+    const learned = files.filter((file) => this.getDisplayedComprehension(file) > 60).length;
     const average = total === 0
       ? 0
-      : Math.round(files.reduce((sum, file) => sum + this.learningStorage.getEntryComprehension(file), 0) / total);
+      : Math.round(files.reduce((sum, file) => sum + this.getDisplayedComprehension(file), 0) / total);
     const ratio = total === 0 ? 0 : (learned / total) * 100;
     const summary = container.createSpan({ cls: "ng-mylearning-progress-summary" });
     summary.createSpan({

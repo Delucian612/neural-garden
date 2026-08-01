@@ -502,7 +502,8 @@ export class NeuralGardenJournalingView extends ItemView {
     }
 
     const tasks = container.createDiv({ cls: "ng-journal-tasks" });
-    tasks.createEl("h4", { text: "Tasks" });
+    const header = tasks.createDiv({ cls: "ng-journal-tasks-header" });
+    header.createEl("h4", { text: "Tasks" });
     this.renderTaskSnapshotGroup(tasks, "Completed Tasks", frontmatter.completedTasks);
     this.renderTaskSnapshotGroup(tasks, "Uncompleted Tasks", frontmatter.uncompletedTasks);
   }
@@ -514,8 +515,9 @@ export class NeuralGardenJournalingView extends ItemView {
 
     const group = container.createDiv({ cls: "ng-journal-task-group" });
     group.createEl("h5", { text: title });
+    const list = group.createDiv({ cls: "ng-journal-task-list" });
     for (const task of tasks) {
-      const row = group.createDiv({ cls: "ng-journal-task-row" });
+      const row = list.createDiv({ cls: "ng-journal-task-row" });
       row.createDiv({ cls: "ng-journal-task-name", text: task.taskName });
       const badge = row.createSpan({ cls: "ng-journal-task-badge", text: effortLabel(task.effort as EffortKey) });
       badge.style.borderColor = effortColor(task.effort as EffortKey);
@@ -537,7 +539,7 @@ export class NeuralGardenJournalingView extends ItemView {
   private renderBody(container: HTMLElement, body: string): void {
     const section = container.createDiv({ cls: "ng-journal-body" });
     section.createEl("h4", { text: "Entry" });
-    section.createDiv({ cls: "ng-journal-body-copy", text: body.length > 0 ? body : "No entry text yet." });
+    section.createDiv({ cls: "ng-journal-body-copy ng-journal-body-preview", text: body.length > 0 ? body : "No entry text yet." });
   }
 
   private renderTrackers(container: HTMLElement): void {

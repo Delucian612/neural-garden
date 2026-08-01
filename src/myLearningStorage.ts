@@ -8,6 +8,8 @@ import {
 
 const LEGACY_NOTES_CATEGORIES_FOLDER = "Notes/Categories";
 const LEGACY_HELP_TOPIC = "help";
+const DAILY_NOTES_CATEGORY = "Daily Notes";
+const DAILY_NOTES_TOPIC = "Daily";
 
 export type MyLearningCategoryMap = Record<string, string[]>;
 export type MyLearningTopicColorMap = Record<string, Record<string, string>>;
@@ -494,6 +496,28 @@ export class MyLearningStorage {
       });
     }
 
+    return file;
+  }
+
+  async createDailyNote(dateKey: string): Promise<TFile | null> {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) {
+      return null;
+    }
+
+    const name = `Daily Note ${dateKey}`;
+    const existing = this.app.vault.getAbstractFileByPath(`${LEARNING_FOLDER}/${name}.md`);
+    if (existing instanceof TFile) {
+      return existing;
+    }
+
+    await this.addCategory(DAILY_NOTES_CATEGORY);
+    await this.addTopic(DAILY_NOTES_CATEGORY, DAILY_NOTES_TOPIC);
+    const file = await this.createNote(name, DAILY_NOTES_CATEGORY, [DAILY_NOTES_TOPIC]);
+    if (!file) {
+      return null;
+    }
+
+    await this.setComprehension(file, 0);
     return file;
   }
 

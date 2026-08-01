@@ -1,6 +1,7 @@
-import { ItemView, Notice, WorkspaceLeaf } from "obsidian";
-import { VIEW_TYPE_NEURAL_GARDEN_JOURNAL_ENTRY } from "./constants";
+import { ItemView, Notice, WorkspaceLeaf, setIcon } from "obsidian";
+import { EFFORTS, VIEW_TYPE_NEURAL_GARDEN_JOURNAL_ENTRY } from "./constants";
 import { JournalingStorage } from "./journalingStorage";
+import { openOverlay } from "./overlay";
 import { injectNeuralGardenStyles } from "./styles";
 import { TaskManagerStorage } from "./storage";
 import { effortColor, effortLabel } from "./taskState";
@@ -61,11 +62,10 @@ export class NeuralGardenJournalEntryView extends ItemView {
   private entry: JournalEntryRecord | null = null;
   private editable = false;
   private trackers: JournalTrackerRecord[] = [];
-  private liveTaskSnapshots: {
-    completed: Array<{ taskName: string; effort: EffortKey; energy: number }>;
-    uncompleted: Array<{ taskName: string; effort: EffortKey; energy: number }>;
-  } | null = null;
   private saveChain: Promise<void> = Promise.resolve();
+  private compactStats = false;
+  private taskEditMode = false;
+  private collapseTimer: number | null = null;
 
   constructor(
     leaf: WorkspaceLeaf,
@@ -96,24 +96,88 @@ export class NeuralGardenJournalEntryView extends ItemView {
 
   async onClose(): Promise<void> {
     this.entry = null;
-    this.liveTaskSnapshots = null;
     this.saveChain = Promise.resolve();
+    this.compactStats = false;
+    this.taskEditMode = false;
+    if (this.collapseTimer !== null) {
+      window.clearTimeout(this.collapseTimer);
+      this.collapseTimer = null;
+    }
   }
 
   async openForDate(dateKey: string, editable: boolean): Promise<void> {
     this.editable = editable && isEditableJournalDate(dateKey);
-    this.entry = (await this.journalingStorage.readDailyEntryByDate(dateKey)) ?? (await this.createDraftEntry(dateKey));
-    this.trackers = await this.journalingStorage.listTrackers();
-    if (this.editable) {
-      const taskState = await this.taskStorage.loadTaskManagerState();
-      this.liveTaskSnapshots = {
-        completed: taskState.tasks.filter((task) => task.completed).map(snapshotTask),
-        uncompleted: taskState.tasks.filter((task) => !task.completed).map(snapshotTask),
-      };
-    } else {
-      this.liveTaskSnapshots = null;
+    const existing = await this.journalingStorage.readDailyEntryByDate(dateKey);
+    if (!existing) {
+      this.entry = null;
+      this.renderEmpty();
+      this.openCreationConfirmation(dateKey);
+      return;
     }
+    await this.showEntry(existing);
+  }
+
+  private async showEntry(entry: JournalEntryRecord): Promise<void> {
+    this.entry = entry;
+    this.trackers = await this.journalingStorage.listTrackers();
+    this.compactStats = !this.editable && this.entry.body.trim().length > 0;
+    this.taskEditMode = false;
     this.render();
+  }
+
+  private setCompactStats(compact: boolean): void {
+    const page = this.contentEl.querySelector(".ng-journal-entry-page");
+    if (!(page instanceof HTMLElement)) {
+      return;
+    }
+    if (compact && (this.compactStats || page.hasClass("is-collapsing"))) {
+      return;
+    }
+    if (this.collapseTimer !== null) {
+      window.clearTimeout(this.collapseTimer);
+      this.collapseTimer = null;
+    }
+    if (!compact) {
+      this.compactStats = false;
+      page.removeClass("is-collapsing", "is-compact");
+      return;
+    }
+    page.addClass("is-collapsing");
+    this.collapseTimer = window.setTimeout(() => {
+      this.collapseTimer = null;
+      this.compactStats = true;
+      page.removeClass("is-collapsing");
+      page.addClass("is-compact");
+    }, 360);
+  }
+
+  private openCreationConfirmation(dateKey: string): void {
+    const { card, close } = openOverlay("Are your tasks up to date?", false);
+    card.createDiv({
+      cls: "ng-overlay-text",
+      text: "Continuing will capture the current task list in this journal entry.",
+    });
+    const actions = card.createDiv({ cls: "ng-overlay-actions" });
+    const cancelButton = actions.createEl("button", { text: "Cancel" });
+    const continueButton = actions.createEl("button", { text: "Continue", cls: "ng-overlay-confirm" });
+
+    cancelButton.addEventListener("click", async () => {
+      close();
+      await this.openJournalingView(true, this.leaf);
+    });
+    continueButton.addEventListener("click", async () => {
+      continueButton.disabled = true;
+      cancelButton.disabled = true;
+      try {
+        const entry = await this.createDraftEntry(dateKey);
+        close();
+        await this.showEntry(entry);
+      } catch {
+        continueButton.disabled = false;
+        cancelButton.disabled = false;
+        new Notice("Could not create the journal entry.");
+      }
+    });
   }
 
   private async createDraftEntry(dateKey: string): Promise<JournalEntryRecord> {
@@ -133,7 +197,7 @@ export class NeuralGardenJournalEntryView extends ItemView {
       spentEnergy: taskState.spentEnergy,
       completedTasks: completedSnapshots,
       uncompletedTasks: uncompletedSnapshots,
-      todaysNote: "",
+      goodThing: "",
       emotions: [],
     };
 
@@ -201,7 +265,9 @@ export class NeuralGardenJournalEntryView extends ItemView {
     contentEl.addClass("neural-garden-root");
 
     const wrapper = contentEl.createDiv({ cls: "ng-journal-entry-page" });
-    const topBar = wrapper.createDiv({ cls: "ng-journal-topbar" });
+    wrapper.toggleClass("is-compact", this.compactStats);
+    const stickyHeader = wrapper.createDiv({ cls: "ng-journal-entry-sticky-header" });
+    const topBar = stickyHeader.createDiv({ cls: "ng-journal-topbar" });
     const leftNav = topBar.createDiv({ cls: "ng-journal-topbar-left" });
     leftNav.appendChild(this.makeNavButton("<- Journaling", async () => this.openJournalingView(true, this.leaf)));
     const rightNav = topBar.createDiv({ cls: "ng-journal-topbar-right" });
@@ -211,11 +277,131 @@ export class NeuralGardenJournalEntryView extends ItemView {
     titleWrap.createEl("h2", { text: `Journal Entry - ${formatReadableDate(this.entry.frontmatter.date)}` });
     titleWrap.createEl("h3", { text: "Daily Check In" });
 
-    this.renderMetrics(wrapper);
-    this.renderEmotions(wrapper);
-    this.renderTrackerSection(wrapper);
-    this.renderTasks(wrapper);
+    this.renderCompactSummary(stickyHeader);
+    const fullCheckIn = wrapper.createDiv({ cls: "ng-journal-full-check-in" });
+    this.renderMetrics(fullCheckIn);
+    this.renderEmotions(fullCheckIn);
+    this.renderTrackerSection(fullCheckIn);
+    this.renderGoodThing(fullCheckIn);
+    this.renderTasks(fullCheckIn);
     this.renderEntryBody(wrapper);
+    this.syncCollapseHeights(wrapper);
+  }
+
+  private syncCollapseHeights(page: HTMLElement): void {
+    const fullCheckIn = page.querySelector(".ng-journal-full-check-in");
+    const compactSummary = page.querySelector(".ng-journal-compact-summary");
+    if (fullCheckIn instanceof HTMLElement) {
+      page.style.setProperty("--ng-journal-full-height", `${fullCheckIn.scrollHeight}px`);
+    }
+    if (compactSummary instanceof HTMLElement) {
+      page.style.setProperty("--ng-journal-compact-height", `${compactSummary.scrollHeight}px`);
+    }
+  }
+
+  private renderCompactSummary(parent: HTMLElement): void {
+    if (!this.entry) {
+      return;
+    }
+
+    const summary = parent.createDiv({ cls: "ng-journal-compact-summary" });
+    const heading = summary.createDiv({ cls: "ng-journal-compact-heading" });
+    heading.createSpan({ text: "Daily Check In" });
+
+    const metrics = summary.createDiv({ cls: "ng-journal-compact-metrics" });
+    for (const metric of METRICS) {
+      const value = this.entry.frontmatter[metric.key] ?? 0;
+      const item = metrics.createDiv({ cls: "ng-journal-compact-metric" });
+      item.createSpan({ text: metric.label });
+      const track = item.createSpan({ cls: "ng-journal-compact-track" });
+      const fill = track.createSpan({ cls: "ng-journal-compact-fill" });
+      fill.style.width = `${value}%`;
+      fill.style.backgroundColor = metricColor(metric.key, value);
+    }
+
+    const details = summary.createDiv({ cls: "ng-journal-compact-details" });
+    const addDetailRow = (label: string, values: Array<{ text: string; color?: string; tone?: string }>) => {
+      const row = details.createDiv({ cls: "ng-journal-compact-detail-row" });
+      row.createSpan({ cls: "ng-journal-compact-detail-label", text: label });
+      if (values.length === 0) {
+        row.createSpan({ cls: "ng-journal-compact-empty", text: "None" });
+        return;
+      }
+      for (const value of values) {
+        const chip = row.createSpan({ cls: "ng-journal-compact-chip", text: value.text });
+        if (value.tone) {
+          chip.addClass(value.tone);
+        }
+        if (value.color) {
+          chip.style.setProperty("--ng-compact-chip-color", value.color);
+          chip.addClass("is-tracker");
+        }
+      }
+    };
+
+    addDetailRow("Emotions", this.entry.frontmatter.emotions.map((emotion) => ({
+      text: emotion,
+      tone: getEmotionToneClass(emotion),
+    })));
+    addDetailRow(
+      "Trackers",
+      this.trackers
+        .filter((tracker) => tracker.dates.includes(this.entry!.frontmatter.date))
+        .map((tracker) => ({ text: tracker.name, color: tracker.color })),
+    );
+    addDetailRow("One Good Thing", this.entry.frontmatter.goodThing
+      ? [{ text: this.entry.frontmatter.goodThing }]
+      : []);
+    const tasksRow = details.createDiv({ cls: "ng-journal-compact-detail-row ng-journal-compact-tasks-row" });
+    const tasksLabel = tasksRow.createSpan({ cls: "ng-journal-compact-detail-label ng-journal-compact-tasks-label" });
+    tasksLabel.createSpan({ text: "Tasks" });
+    tasksLabel.createSpan({ text: "completed" });
+    const tasks = tasksRow.createDiv({ cls: "ng-journal-compact-task-list" });
+    if (this.entry.frontmatter.completedTasks.length === 0) {
+      tasks.createSpan({ cls: "ng-journal-compact-empty", text: "None" });
+    }
+    for (const task of this.entry.frontmatter.completedTasks) {
+      const taskItem = tasks.createDiv({ cls: "ng-journal-compact-task" });
+      taskItem.createSpan({ cls: "ng-journal-compact-task-name", text: task.taskName });
+      const badge = taskItem.createSpan({ cls: "ng-journal-compact-task-badge", text: effortLabel(task.effort) });
+      badge.style.setProperty("--ng-compact-task-color", effortColor(task.effort));
+    }
+
+    const expandButton = tasksRow.createEl("button", {
+      text: "Expand",
+      cls: "ng-journal-nav-button ng-journal-compact-expand",
+    });
+    expandButton.addEventListener("click", () => this.setCompactStats(false));
+  }
+
+  private renderGoodThing(parent: HTMLElement): void {
+    if (!this.entry) {
+      return;
+    }
+
+    const block = parent.createDiv({ cls: "ng-journal-good-thing" });
+    block.createEl("h4", { text: "One Good Thing About Today" });
+    if (!this.editable) {
+      block.createDiv({
+        cls: this.entry.frontmatter.goodThing ? "ng-journal-good-thing-value" : "ng-empty",
+        text: this.entry.frontmatter.goodThing || "No reflection was recorded.",
+      });
+      return;
+    }
+
+    const input = block.createEl("input", {
+      type: "text",
+      cls: "ng-task-input ng-journal-good-thing-input",
+      placeholder: "Name one good thing from today",
+    });
+    input.value = this.entry.frontmatter.goodThing;
+    input.addEventListener("input", () => {
+      if (!this.entry) {
+        return;
+      }
+      this.entry.frontmatter.goodThing = input.value;
+      void this.persist();
+    });
   }
 
   private renderTrackerSection(parent: HTMLElement): void {
@@ -405,57 +591,68 @@ export class NeuralGardenJournalEntryView extends ItemView {
     }
   }
 
-  private renderNote(parent: HTMLElement): void {
-    if (!this.entry) {
-      return;
-    }
-
-    const block = parent.createDiv({ cls: "ng-journal-note-section" });
-    block.createEl("h4", { text: "A Few Words About Today" });
-    const counter = block.createDiv({ cls: "ng-journal-character-count" });
-    const textarea = block.createEl("textarea", { cls: "ng-journal-note-input" });
-    textarea.maxLength = 150;
-    textarea.value = this.entry.frontmatter.todaysNote;
-    textarea.readOnly = !this.editable;
-    textarea.placeholder = "Describe your day in a few words";
-    counter.textContent = `${textarea.value.length}/150`;
-    if (this.editable) {
-      textarea.addEventListener("input", () => {
-        if (!this.entry) return;
-        this.entry.frontmatter.todaysNote = textarea.value.slice(0, 150);
-        counter.textContent = `${this.entry.frontmatter.todaysNote.length}/150`;
-        void this.persist();
-      });
-    }
-  }
-
   private renderTasks(parent: HTMLElement): void {
     if (!this.entry) {
       return;
     }
 
-    const liveCompleted = this.editable && this.liveTaskSnapshots ? this.liveTaskSnapshots.completed : [];
-    const liveUncompleted = this.editable && this.liveTaskSnapshots ? this.liveTaskSnapshots.uncompleted : [];
-    const hasLiveTasks = liveCompleted.length > 0 || liveUncompleted.length > 0;
-
-    const completedTasks = hasLiveTasks
-      ? liveCompleted
-      : this.entry.frontmatter.completedTasks;
-    const uncompletedTasks = hasLiveTasks
-      ? liveUncompleted
-      : this.entry.frontmatter.uncompletedTasks;
+    const completedTasks = this.entry.frontmatter.completedTasks;
+    const uncompletedTasks = this.entry.frontmatter.uncompletedTasks;
 
     const block = parent.createDiv({ cls: "ng-journal-tasks" });
-    block.createEl("h4", { text: "Tasks" });
+    const header = block.createDiv({ cls: "ng-journal-tasks-header" });
+    header.createEl("h4", { text: "Tasks" });
+    if (this.editable) {
+      const editButton = header.createEl("button", { cls: "ng-journal-task-edit-button" });
+      editButton.setAttribute("aria-label", this.taskEditMode ? "Finish editing tasks" : "Edit tasks");
+      editButton.setAttribute("title", this.taskEditMode ? "Finish editing tasks" : "Edit tasks");
+      setIcon(editButton, this.taskEditMode ? "check" : "pencil");
+      editButton.addEventListener("click", () => {
+        this.taskEditMode = !this.taskEditMode;
+        this.render();
+      });
+    }
+
+    if (this.taskEditMode) {
+      this.renderTaskEditor(block);
+    }
 
     if (completedTasks.length > 0) {
-      this.renderTaskGroup(block, "Completed Tasks", completedTasks);
+      this.renderTaskGroup(block, "Completed Tasks", completedTasks, "completedTasks");
     }
     if (uncompletedTasks.length > 0) {
-      this.renderTaskGroup(block, "Uncompleted Tasks", uncompletedTasks);
+      this.renderTaskGroup(block, "Uncompleted Tasks", uncompletedTasks, "uncompletedTasks");
     }
     if (completedTasks.length === 0 && uncompletedTasks.length === 0) {
       block.createDiv({ cls: "ng-empty", text: "No tasks captured." });
+    }
+  }
+
+  private renderTaskEditor(parent: HTMLElement): void {
+    const form = parent.createDiv({ cls: "ng-journal-task-editor" });
+    const nameInput = form.createEl("input", { type: "text", placeholder: "Task name", cls: "ng-task-input" });
+    const efforts = form.createDiv({ cls: "ng-journal-task-efforts" });
+    const addTask = async (effort: (typeof EFFORTS)[number]) => {
+      if (!this.entry) {
+        return;
+      }
+      const taskName = nameInput.value.trim();
+      if (!taskName) {
+        nameInput.focus();
+        return;
+      }
+      this.entry.frontmatter.completedTasks = [
+        ...this.entry.frontmatter.completedTasks,
+        { taskName, effort: effort.key, energy: effort.energy },
+      ];
+      await this.persist();
+      this.render();
+    };
+    for (const effort of EFFORTS) {
+      const button = efforts.createEl("button", { text: effort.label, cls: "ng-journal-task-effort" });
+      button.style.setProperty("--ng-task-effort-color", effort.color);
+      button.setAttribute("aria-label", `Add completed task as ${effort.label}`);
+      button.addEventListener("click", () => void addTask(effort));
     }
   }
 
@@ -463,16 +660,31 @@ export class NeuralGardenJournalEntryView extends ItemView {
     parent: HTMLElement,
     title: string,
     tasks: Array<{ taskName: string; effort: EffortKey; energy: number }>,
+    listKey: "completedTasks" | "uncompletedTasks",
   ): void {
     const group = parent.createDiv({ cls: "ng-journal-task-group" });
     group.createEl("h5", { text: title });
+    const list = group.createDiv({ cls: "ng-journal-task-list" });
 
     for (const task of tasks) {
-      const row = group.createDiv({ cls: "ng-journal-task-row" });
+      const row = list.createDiv({ cls: "ng-journal-task-row" });
       row.createDiv({ cls: "ng-journal-task-name", text: task.taskName });
       const badge = row.createSpan({ cls: "ng-journal-task-badge", text: effortLabel(task.effort) });
       badge.style.borderColor = effortColor(task.effort);
       badge.style.color = effortColor(task.effort);
+      if (this.taskEditMode) {
+        const deleteButton = row.createEl("button", { cls: "ng-journal-task-delete" });
+        deleteButton.setAttribute("aria-label", `Delete ${task.taskName}`);
+        setIcon(deleteButton, "x");
+        deleteButton.addEventListener("click", async () => {
+          if (!this.entry) {
+            return;
+          }
+          this.entry.frontmatter[listKey] = this.entry.frontmatter[listKey].filter((_, index) => tasks[index] !== task);
+          await this.persist();
+          this.render();
+        });
+      }
     }
   }
 
@@ -492,6 +704,18 @@ export class NeuralGardenJournalEntryView extends ItemView {
         return;
       }
       this.entry.body = body.innerText.replace(/\r\n/g, "\n");
+      if (this.entry.body.length > 0) {
+        const stickyHeader = this.contentEl.querySelector(".ng-journal-entry-sticky-header");
+        stickyHeader?.querySelector(".ng-journal-compact-summary")?.remove();
+        if (stickyHeader instanceof HTMLElement) {
+          this.renderCompactSummary(stickyHeader);
+        }
+        const page = this.contentEl.querySelector(".ng-journal-entry-page");
+        if (page instanceof HTMLElement) {
+          this.syncCollapseHeights(page);
+        }
+        this.setCompactStats(true);
+      }
     });
     body.addEventListener("blur", () => {
       if (!this.entry || !this.editable) {

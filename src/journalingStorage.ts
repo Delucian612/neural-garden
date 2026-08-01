@@ -224,7 +224,7 @@ export class JournalingStorage {
       spentEnergy: numberOr(raw.spentEnergy, 0),
       completedTasks: snapshotArray(raw.completedTasks),
       uncompletedTasks: snapshotArray(raw.uncompletedTasks),
-      todaysNote: stringOr(raw.todaysNote, ""),
+      goodThing: stringOr(raw.goodThing, ""),
       emotions: stringArrayOr(raw.emotions),
     };
   }
@@ -271,7 +271,7 @@ function defaultDailyFrontmatter(dateKey: string): JournalEntryFrontmatter {
     spentEnergy: 0,
     completedTasks: [],
     uncompletedTasks: [],
-    todaysNote: "",
+    goodThing: "",
     emotions: [],
   };
 }

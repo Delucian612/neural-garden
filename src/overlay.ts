@@ -3,7 +3,7 @@ export interface OverlayHandle {
   close: () => void;
 }
 
-export function openOverlay(title: string): OverlayHandle {
+export function openOverlay(title: string, dismissible = true): OverlayHandle {
   const overlay = document.body.createDiv({ cls: "ng-overlay" });
   const card = overlay.createDiv({ cls: "ng-overlay-card" });
   card.createEl("h3", { text: title, cls: "ng-overlay-title" });
@@ -14,13 +14,13 @@ export function openOverlay(title: string): OverlayHandle {
   };
 
   const onKeyDown = (event: KeyboardEvent) => {
-    if (event.key === "Escape") {
+    if (dismissible && event.key === "Escape") {
       close();
     }
   };
 
   overlay.addEventListener("click", (event) => {
-    if (event.target === overlay) {
+    if (dismissible && event.target === overlay) {
       close();
     }
   });
