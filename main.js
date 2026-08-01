@@ -48,6 +48,7 @@ var MY_NOTES_CATEGORIES_FILE_PATH = "Maintenance/MyNotes/Categories.md";
 var MY_LEARNING_MAINTENANCE_FOLDER = "Maintenance/MyLearning";
 var MY_LEARNING_CONFIG_FILE_PATH = "Maintenance/MyLearning/MyLearning.md";
 var LEARNING_FOLDER = "Learning";
+var NOTES_CATEGORIES_FOLDER = "Learning/Categories";
 var WEEKLY_RECAP_MIN_ENTRIES = 4;
 var WEEKLY_RECAP_HOME_HINT_MIN_ENTRIES = 5;
 var SUPPORT_CATEGORIES = [
@@ -742,7 +743,21 @@ function injectNeuralGardenStyles() {
       border-color: #ec9a63;
     }
     .ng-mylearning-search {
-      margin: 0 0 2px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      margin: 0;
+    }
+    .ng-mylearning-search > .ng-task-input,
+    .ng-mylearning-search > .ng-search-results {
+      width: 60%;
+      box-sizing: border-box;
+    }
+    .ng-mylearning-search > .ng-search-results {
+      min-height: 0;
+      margin-top: 0;
+      gap: 0;
     }
     .ng-search-title {
       font-weight: 600;
@@ -2060,6 +2075,15 @@ function injectNeuralGardenStyles() {
       display: inline-flex;
       align-items: center;
       gap: 8px;
+      margin-left: 0;
+    }
+    .ng-mylearning-heading-group {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      min-width: 0;
+    }
+    .ng-mylearning-heading-add-note {
       margin-left: auto;
     }
     .ng-mylearning-header-actions .ng-note-header-add-category-icon {
@@ -2173,9 +2197,10 @@ function injectNeuralGardenStyles() {
       height: 20px !important;
     }
     .ng-mylearning .ng-mylearning-category-pill {
-      border-color: color-mix(in srgb, var(--ng-mylearning-category-color) 52%, var(--background-modifier-border));
+      border-color: color-mix(in srgb, var(--ng-mylearning-category-color) 40%, transparent);
       background: color-mix(in srgb, var(--ng-mylearning-category-color) 4%, transparent);
       box-shadow: 0 0 0 1px color-mix(in srgb, var(--ng-mylearning-category-color) 14%, transparent), 0 0 8px color-mix(in srgb, var(--ng-mylearning-category-color) 9%, transparent);
+      color: var(--text-normal);
     }
     .ng-mylearning .ng-mylearning-category-pill:not(.is-active):hover {
       border-color: color-mix(in srgb, var(--ng-mylearning-category-color) 78%, var(--background-modifier-border));
@@ -2186,21 +2211,127 @@ function injectNeuralGardenStyles() {
       background: color-mix(in srgb, var(--ng-mylearning-category-color) 8%, var(--background-primary));
       box-shadow: 0 0 0 2px color-mix(in srgb, var(--ng-mylearning-category-color) 30%, transparent), 0 0 12px color-mix(in srgb, var(--ng-mylearning-category-color) 20%, transparent);
     }
-    .ng-mylearning .ng-mylearning-category-pill.is-help,
-    .ng-mylearning .ng-mylearning-category-pill.is-help:not(.is-active) {
-      border-color: color-mix(in srgb, #ae2929 68%, var(--background-modifier-border));
-    }
-    .ng-mylearning .ng-mylearning-category-pill.is-help:hover {
-      border-color: #ae2929;
-      box-shadow: 0 0 0 1px color-mix(in srgb, #ae2929 22%, transparent), 0 0 10px color-mix(in srgb, #ae2929 14%, transparent);
-    }
-    .ng-mylearning .ng-mylearning-category-pill.is-help.is-active {
-      border-color: #ae2929;
-      box-shadow: 0 0 0 2px color-mix(in srgb, #ae2929 24%, transparent), 0 0 12px color-mix(in srgb, #ae2929 16%, transparent);
-    }
     .ng-mylearning .ng-mynotes-pill.is-edit-target {
       border-style: dashed;
       cursor: pointer;
+    }
+    .ng-mylearning-progress-summary {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      margin-left: 4px;
+    }
+    .ng-mylearning-progress-count {
+      font-size: 0.78em;
+      font-weight: 700;
+    }
+    .ng-mylearning-progress-count.is-green { color: #45c978; }
+    .ng-mylearning-progress-count.is-yellow { color: #e4bd4d; }
+    .ng-mylearning-progress-count.is-orange { color: #ec9a63; }
+    .ng-mylearning-average-track {
+      display: inline-block;
+      width: 38px;
+      height: 5px;
+      border-radius: 999px;
+      overflow: hidden;
+      background: var(--background-modifier-border);
+    }
+    .ng-mylearning-average-fill {
+      display: block;
+      height: 100%;
+      border-radius: inherit;
+      background: #00f0ff;
+    }
+    .ng-mylearning-entry-list {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .ng-mylearning-entry-list .ng-mynotes-note-row {
+      width: 100%;
+      padding: 2px 8px;
+      box-sizing: border-box;
+    }
+    .ng-mynotes-note-row.is-low-comprehension {
+      background: color-mix(in srgb, #fb2c36 7%, transparent);
+    }
+    .ng-mylearning-entry-progress {
+      width: 55px;
+      height: 6px;
+      flex: 0 0 55px;
+      overflow: hidden;
+      border-radius: 999px;
+    }
+    .ng-mylearning-entry-progress.is-green { background: color-mix(in srgb, #45c978 28%, transparent); }
+    .ng-mylearning-entry-progress.is-yellow { background: color-mix(in srgb, #e4bd4d 28%, transparent); }
+    .ng-mylearning-entry-progress.is-orange { background: color-mix(in srgb, #ec9a63 28%, transparent); }
+    .ng-mylearning-entry-progress-fill {
+      height: 100%;
+      border-radius: inherit;
+    }
+    .ng-mylearning-entry-progress-fill.is-green { background: #45c978; }
+    .ng-mylearning-entry-progress-fill.is-yellow { background: #e4bd4d; }
+    .ng-mylearning-entry-progress-fill.is-orange { background: #ec9a63; }
+    .ng-mylearning-entry-type {
+      color: var(--text-muted);
+      font-size: 0.78em;
+    }
+    .ng-mylearning-type-control {
+      display: inline-flex;
+      align-self: center;
+      padding: 2px;
+      border: 1px solid var(--background-modifier-border);
+      border-radius: 6px;
+    }
+    .ng-mylearning-type-control button {
+      border: none;
+      border-radius: 4px;
+      background: transparent;
+      box-shadow: none;
+    }
+    .ng-mylearning-type-control button.is-active {
+      background: var(--background-modifier-hover);
+      color: #ec9a63;
+    }
+    .ng-note-header-input-error {
+      width: 100%;
+      margin-top: 4px;
+    }
+    .ng-learning-canvas-controls {
+      position: absolute;
+      top: 44px;
+      left: 12px;
+      z-index: 30;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 5px 8px;
+      border: 1px solid var(--background-modifier-border);
+      border-radius: 6px;
+      background: var(--background-primary);
+      color: var(--text-normal);
+      box-shadow: var(--shadow-s);
+    }
+    .ng-learning-canvas-back {
+      border: 0;
+      padding: 3px 5px;
+      background: transparent;
+      color: inherit;
+      box-shadow: none;
+    }
+    .ng-learning-canvas-back:hover {
+      color: #ec9a63;
+    }
+    .ng-learning-canvas-progress {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--text-muted);
+      font-size: 0.78rem;
+    }
+    .ng-learning-canvas-progress .ng-learning-progress-track {
+      width: 134px;
+      height: 12px;
     }
     .ng-mylearning-grid {
       display: grid;
@@ -2378,7 +2509,16 @@ function injectNeuralGardenStyles() {
       gap: 8px;
     }
     .ng-learning-note-header {
-      gap: 10px;
+      gap: 0;
+    }
+    .ng-learning-note-header .ng-note-header-note-name {
+      opacity: 1;
+      transition: none;
+    }
+    .ng-note-header-collapsed-summary.ng-learning-collapsed-summary {
+      min-height: 0;
+      gap: 2px;
+      padding: 3px 0 3px;
     }
     .ng-learning-note-header-top {
       display: flex;
@@ -2402,6 +2542,53 @@ function injectNeuralGardenStyles() {
       color: var(--text-normal);
       cursor: pointer;
       font-weight: 550;
+    }
+    .ng-learning-collapsed-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+    .ng-learning-collapsed-row .ng-learning-collapsed-category {
+      flex: 0 0 auto;
+    }
+    .ng-learning-collapsed-row .ng-note-header-collapsed-categories {
+      flex: 1 1 auto;
+      width: auto;
+      min-width: 0;
+    }
+    .ng-learning-collapsed-row .ng-note-header-mini-pill {
+      border-color: var(--ng-mylearning-category-color);
+    }
+    .ng-learning-collapsed-row .ng-learning-progress-wrap-compact {
+      margin-left: auto;
+      width: min(180px, 30%);
+      flex: 0 1 180px;
+    }
+    .ng-learning-collapsed-row .ng-note-header-collapsed-controls {
+      position: static;
+      flex: 0 0 auto;
+      width: auto;
+      margin: 0;
+      padding: 0;
+    }
+    .ng-learning-collapsed-row .ng-note-header-to-top {
+      width: 36px;
+      min-width: 36px;
+      justify-content: center;
+    }
+    .ng-learning-collapsed-category {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text-normal);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .ng-learning-collapsed-category.is-placeholder {
+      color: var(--text-muted);
+      font-style: italic;
+      font-weight: 500;
     }
     .ng-learning-topic-heading.is-placeholder {
       color: var(--text-muted);
@@ -2436,60 +2623,21 @@ function injectNeuralGardenStyles() {
       align-items: center;
       gap: 6px;
     }
-    .ng-learning-help-toggle {
-      color: var(--text-muted);
-      border: none !important;
-      background: transparent !important;
-      box-shadow: none !important;
-    }
-    .ng-learning-note-header .ng-learning-help-toggle svg,
-    .ng-learning-note-header .ng-learning-help-toggle svg * {
-      fill: transparent !important;
-      stroke: currentColor !important;
-    }
-    .ng-learning-help-toggle:hover {
-      color: #ae2929;
-      background: transparent !important;
-      box-shadow: none !important;
-    }
-    .ng-learning-help-toggle.is-active {
-      color: #ae2929;
-      background: transparent !important;
-      box-shadow: none !important;
-    }
-    .ng-learning-help-toggle:hover svg,
-    .ng-learning-help-toggle:hover svg *,
-    .ng-learning-help-toggle.is-active svg,
-    .ng-learning-help-toggle.is-active svg * {
-      stroke: #ae2929 !important;
-      fill: #ae2929 !important;
-    }
-    .ng-learning-delete-button {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      border: none !important;
-      background: transparent !important;
-      box-shadow: none !important;
-      color: #FF6565;
-      cursor: pointer;
-      padding: 0;
-      line-height: 1;
-      font-size: 1.2rem;
-      font-weight: 700;
-    }
-    .ng-learning-delete-button:hover {
-      color: #fb2c36;
-      background: transparent !important;
-      box-shadow: none !important;
-    }
     .ng-learning-progress-wrap {
-      width: min(430px, 100%);
+      width: 50%;
       margin: 2px auto 0;
       display: flex;
       flex-direction: column;
       gap: 6px;
       align-items: center;
+    }
+    .ng-learning-progress-wrap-compact {
+      margin: 0;
+      align-items: stretch;
+    }
+    .ng-learning-progress-wrap-compact .ng-learning-progress-track {
+      height: 8px;
+      cursor: pointer;
     }
     .ng-learning-progress-heading {
       margin: 0;
@@ -2573,6 +2721,21 @@ function injectNeuralGardenStyles() {
       justify-content: space-between;
       align-items: center;
     }
+    .ng-mynotes-title-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+    .ng-mynotes-header-actions {
+      margin-left: 0;
+    }
+    .ng-mynotes-create-target {
+      margin-top: -4px;
+      font-size: 0.85em;
+      color: var(--text-muted);
+      font-style: italic;
+    }
     .ng-mynotes-section-title {
       margin: 0;
       font-size: 1.3em;
@@ -2642,6 +2805,10 @@ function injectNeuralGardenStyles() {
       border-color: #ec9a63;
       background: transparent;
       box-shadow: 0 0 0 2px rgba(236, 154, 99, 0.2);
+    }
+    .ng-mynotes-pill.is-edit-target {
+      border-style: dashed;
+      cursor: pointer;
     }
     .ng-mynotes-pill-favourite .ng-mynotes-button-icon svg {
       color: #ff6565;
@@ -2885,19 +3052,183 @@ function injectNeuralGardenStyles() {
     .ng-overlay-danger:hover {
       background: rgba(251, 44, 54, 0.15);
     }
+    .view-content.ng-mynotes-header-host {
+      display: flex !important;
+      flex-direction: column;
+      overflow: hidden !important;
+    }
+    .view-content.ng-mynotes-header-host > .markdown-source-view,
+    .view-content.ng-mynotes-header-host > .markdown-reading-view {
+      flex: 1 1 auto;
+      min-height: 0;
+      height: auto !important;
+      width: 100%;
+      position: relative !important;
+      inset: auto !important;
+      overflow: hidden;
+      box-sizing: border-box;
+    }
     .ng-note-header {
       max-width: 720px;
-      margin: 8px auto 4px;
+      width: 100%;
+      flex: 0 0 auto;
+      margin: 0 auto;
       padding: 0;
       border: none;
+      border-bottom: 1px solid var(--background-modifier-border);
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 0;
       background: transparent;
+      position: relative;
+      z-index: 18;
+    }
+    .ng-note-header-top {
+      position: relative;
+      z-index: 2;
+      background: transparent;
+      border-bottom: none;
+      padding: 6px 0;
+    }
+    .ng-note-header-top .ng-note-header-note-name {
+      position: absolute;
+      left: 50%;
+      max-width: min(48%, 360px);
+      opacity: 0;
+      transform: translateX(-50%);
+      pointer-events: none;
+      transition: opacity 203ms ease;
+    }
+    .ng-note-header.is-collapsed .ng-note-header-top .ng-note-header-note-name {
+      opacity: 1;
+      transition: opacity 254ms ease 203ms;
+    }
+    .ng-note-header .ng-journal-nav-button {
+      border: none !important;
+      background: none !important;
+      box-shadow: none !important;
+      padding: 0;
+      width: auto;
+    }
+    .ng-note-header .ng-journal-nav-button:hover {
+      border: none !important;
+      background: none !important;
+      box-shadow: none !important;
+    }
+    .ng-note-header-stage {
+      position: relative;
+      height: var(--ng-note-header-full-height, 1px);
+      overflow: hidden;
+      transition: height 355ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .ng-note-header-collapsed-summary {
+      display: flex;
+      position: absolute;
+      inset: 0 0 auto;
+      flex-direction: column;
+      gap: 4px;
+      min-height: 44px;
+      opacity: 0;
+      transform: translateY(-3px);
+      padding: 6px 42px 8px 0;
+      box-sizing: border-box;
+      border-bottom: none;
+      background: transparent;
+      pointer-events: none;
+      transition: opacity 203ms ease, transform 203ms ease;
+    }
+    .ng-note-header.is-collapsed .ng-note-header-collapsed-summary {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+      transition: opacity 254ms ease 203ms, transform 254ms ease 203ms;
+    }
+    .ng-note-header-collapsed-controls {
+      display: inline-flex;
+      position: absolute;
+      right: 0;
+      bottom: 4px;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 4px;
+    }
+    .ng-note-header-note-name {
+      margin: 0;
+      font-size: 1.365em;
+      color: var(--text-normal);
+      font-weight: 600;
+      line-height: 1.25;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .ng-note-header-collapsed-categories {
+      display: flex;
+      flex-wrap: wrap;
+      width: 100%;
+      gap: 6px;
+    }
+    .ng-note-header-mini-pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid color-mix(in srgb, #ec9a63 30%, transparent);
+      font-size: 0.82em;
+      color: var(--text-muted);
+      background: transparent;
+    }
+    .ng-note-header-mini-pill-support {
+      border-color: var(--ng-support-color);
+    }
+    .ng-note-header-collapsed-empty {
+      font-size: 0.82em;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+    .ng-note-header-full {
+      position: absolute;
+      inset: 0 0 auto;
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+      transition: opacity 254ms ease 203ms, transform 254ms ease 203ms;
+    }
+    .ng-note-header.is-collapsed .ng-note-header-stage {
+      height: var(--ng-note-header-compact-height, 1px);
+    }
+    .ng-note-header.is-collapsed .ng-note-header-full {
+      opacity: 0;
+      transform: translateY(-3px);
+      pointer-events: none;
+      transition: opacity 203ms ease, transform 203ms ease;
+    }
+    .ng-note-header-to-top {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      margin-left: 0;
+      padding: 0;
+      border: none !important;
+      background: none !important;
+      box-shadow: none !important;
+      color: color-mix(in srgb, #ec9a63 62%, white);
+      font-size: 28px;
+      font-weight: 700;
+      line-height: 1;
+      cursor: pointer;
+      opacity: 1;
+      pointer-events: auto;
+      transition: color 150ms ease, transform 150ms ease;
+    }
+    .ng-note-header-to-top:hover {
+      color: #ec9a63;
+      transform: translateY(-1px);
     }
     .ng-note-header-box {
       border: none;
-      border-bottom: 1px solid var(--background-modifier-border);
       border-radius: 0;
       padding: 4px 0 10px;
       display: flex;
@@ -2982,14 +3313,14 @@ function injectNeuralGardenStyles() {
       width: 18px;
       height: 18px;
     }
-    .ng-note-header-support-toggle:not(.ng-learning-help-toggle):hover {
+    .ng-note-header-support-toggle:hover {
       color: #00f0ff;
     }
-    .ng-note-header-support-toggle.is-active:not(.ng-learning-help-toggle) {
+    .ng-note-header-support-toggle.is-active {
       color: #00f0ff;
     }
-    .ng-note-header-support-toggle.is-active:not(.ng-learning-help-toggle) svg,
-    .ng-note-header-support-toggle.is-active:not(.ng-learning-help-toggle) svg * {
+    .ng-note-header-support-toggle.is-active svg,
+    .ng-note-header-support-toggle.is-active svg * {
       stroke: #00f0ff;
       fill: #00f0ff !important;
     }
@@ -3024,10 +3355,10 @@ function injectNeuralGardenStyles() {
       color: var(--text-muted);
     }
     .ng-learning-note-header .ng-note-header-category-pill {
-      border-color: color-mix(in srgb, var(--ng-mylearning-category-color) 52%, var(--background-modifier-border));
+      border-color: color-mix(in srgb, var(--ng-mylearning-category-color) 34%, var(--background-modifier-border));
       background: color-mix(in srgb, var(--ng-mylearning-category-color) 4%, transparent);
-      box-shadow: 0 0 0 1px color-mix(in srgb, var(--ng-mylearning-category-color) 13%, transparent), 0 0 8px color-mix(in srgb, var(--ng-mylearning-category-color) 8%, transparent);
-      color: var(--text-normal);
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--ng-mylearning-category-color) 8%, transparent);
+      color: color-mix(in srgb, var(--text-normal) 90%, var(--background-primary));
     }
     .ng-learning-note-header .ng-note-header-category-pill:not(.is-active):hover {
       border-color: color-mix(in srgb, var(--ng-mylearning-category-color) 76%, var(--background-modifier-border));
@@ -3036,10 +3367,31 @@ function injectNeuralGardenStyles() {
       border-color: var(--ng-mylearning-category-color);
       background: color-mix(in srgb, var(--ng-mylearning-category-color) 8%, var(--background-primary));
       box-shadow: 0 0 0 2px color-mix(in srgb, var(--ng-mylearning-category-color) 28%, transparent), 0 0 12px color-mix(in srgb, var(--ng-mylearning-category-color) 18%, transparent);
+      color: var(--text-normal);
     }
     .ng-learning-note-header .ng-mynotes-pill.is-edit-target {
       border-style: dashed;
       cursor: pointer;
+    }
+    .ng-mylearning .ng-mylearning-category-pill.ng-mynotes-pill:not(.is-active) {
+      border-color: color-mix(in srgb, var(--ng-mylearning-category-color) 40%, transparent);
+      color: var(--text-normal);
+    }
+    .ng-mylearning .ng-mylearning-category-pill.ng-mynotes-pill:not(.is-active):hover {
+      border-color: color-mix(in srgb, var(--ng-mylearning-category-color) 78%, var(--background-modifier-border));
+      color: var(--text-normal);
+    }
+    @media (max-width: 1024px), (hover: none) {
+      .ng-mynotes-categories .ng-mylearning-inline-edit {
+        width: 22px;
+        min-width: 22px;
+        height: 22px;
+        color: color-mix(in srgb, var(--text-normal) 84%, white);
+      }
+      .ng-mynotes-categories .ng-mylearning-inline-edit svg {
+        width: 14px;
+        height: 14px;
+      }
     }
   `;
   document.head.appendChild(style);
@@ -5253,6 +5605,13 @@ function getEmotionToneClass2(emotion) {
 // src/myLearningView.ts
 var import_obsidian4 = require("obsidian");
 
+// src/nameValidation.ts
+var RESTRICTED_NAME_PATTERN = /[\\/:*?"<>|#^[\]]/;
+function getNameValidationError(value) {
+  const match = value.match(RESTRICTED_NAME_PATTERN);
+  return match ? `"${match[0]}" isn't allowed in names. Try "-" or "_" instead.` : null;
+}
+
 // src/overlay.ts
 function openOverlay(title) {
   const overlay = document.body.createDiv({ cls: "ng-overlay" });
@@ -5298,17 +5657,20 @@ function setEditIcon(el) {
   el.setText("E");
 }
 var NeuralGardenMyLearningView = class extends import_obsidian4.ItemView {
-  constructor(leaf, learningStorage, openHomeView) {
+  constructor(leaf, learningStorage, openHomeView, initialSelection, onSelectionChange) {
+    var _a, _b;
     super(leaf);
     this.learningStorage = learningStorage;
     this.openHomeView = openHomeView;
-    this.selectedTopic = null;
+    this.onSelectionChange = onSelectionChange;
     this.selectedCategory = null;
+    this.selectedTopic = null;
     this.editMode = null;
     this.uncategorizedExpanded = false;
-    this.comprehensionExpanded = true;
     this.searchQuery = "";
     this.searchDebounceTimer = null;
+    this.selectedCategory = (_a = initialSelection == null ? void 0 : initialSelection.category) != null ? _a : null;
+    this.selectedTopic = (_b = initialSelection == null ? void 0 : initialSelection.topic) != null ? _b : null;
   }
   getViewType() {
     return VIEW_TYPE_NEURAL_GARDEN_MY_LEARNING;
@@ -5329,10 +5691,18 @@ var NeuralGardenMyLearningView = class extends import_obsidian4.ItemView {
       this.searchDebounceTimer = null;
     }
   }
-  async setSelectedTopic(topic) {
-    this.selectedTopic = topic;
-    this.selectedCategory = null;
+  async setSelection(category, topic) {
+    this.selectedCategory = category;
+    this.selectedTopic = topic != null ? topic : null;
+    this.notifySelectionChange();
     await this.render();
+  }
+  async refresh() {
+    await this.render();
+  }
+  notifySelectionChange() {
+    var _a;
+    (_a = this.onSelectionChange) == null ? void 0 : _a.call(this, this.selectedCategory, this.selectedTopic);
   }
   async render() {
     const { contentEl } = this;
@@ -5344,20 +5714,12 @@ var NeuralGardenMyLearningView = class extends import_obsidian4.ItemView {
     homeButton.addEventListener("click", async () => {
       await this.openHomeView(true, this.leaf);
     });
-    const addNoteButton = topBar.createEl("button", { cls: "ng-mynotes-new-button" });
-    const addNoteIcon = addNoteButton.createSpan({ cls: "ng-mynotes-button-icon" });
-    (0, import_obsidian4.setIcon)(addNoteIcon, "file-plus");
-    addNoteButton.createSpan({ text: "Add Note" });
-    addNoteButton.addEventListener("click", () => {
-      this.openNewNoteOverlay();
-    });
     const headingRow = wrapper.createDiv({ cls: "ng-mylearning-heading-row" });
     headingRow.createEl("h2", { text: "MyLearning", cls: "ng-mynotes-heading" });
     await this.renderSearchSection(wrapper);
-    await this.renderTopicsSection(wrapper);
     await this.renderCategoriesSection(wrapper);
+    await this.renderTopicsSection(wrapper);
     await this.renderNotesGrid(wrapper);
-    this.renderComprehensionSection(wrapper);
     this.renderUncategorizedSection(wrapper);
   }
   async renderSearchSection(parent) {
@@ -5387,15 +5749,15 @@ var NeuralGardenMyLearningView = class extends import_obsidian4.ItemView {
       return;
     }
     const q = query.toLowerCase();
-    const files = this.learningStorage.listNotes();
+    const files = this.learningStorage.listEntries();
     const matches = [];
     for (const file of files) {
       const basenameMatch = file.basename.toLowerCase().includes(q);
-      const topic = (_b = (_a = this.learningStorage.getNoteTopic(file)) == null ? void 0 : _a.toLowerCase()) != null ? _b : "";
-      const categories = this.learningStorage.getNoteCategories(file).map((entry) => entry.toLowerCase());
-      const metadataMatch = topic.includes(q) || categories.some((entry) => entry.includes(q));
+      const category = (_b = (_a = this.learningStorage.getEntryCategory(file)) == null ? void 0 : _a.toLowerCase()) != null ? _b : "";
+      const topics = this.learningStorage.getEntryTopics(file).map((entry) => entry.toLowerCase());
+      const metadataMatch = category.includes(q) || topics.some((entry) => entry.includes(q));
       let contentMatch = false;
-      if (!basenameMatch && !metadataMatch) {
+      if (file.extension === "md" && !basenameMatch && !metadataMatch) {
         const content = await this.app.vault.cachedRead(file);
         contentMatch = content.toLowerCase().includes(q);
       }
@@ -5408,18 +5770,76 @@ var NeuralGardenMyLearningView = class extends import_obsidian4.ItemView {
       return;
     }
     for (const file of matches.slice(0, 20)) {
-      this.renderNoteRow(container, file, this.selectedCategory);
+      this.renderNoteRow(container, file, this.selectedTopic);
     }
   }
-  async renderTopicsSection(parent) {
+  async renderCategoriesSection(parent) {
     const section = parent.createDiv({ cls: "ng-mylearning-topics" });
     const header = section.createDiv({ cls: "ng-mynotes-section-header" });
-    header.createEl("div", { text: "Topics", cls: "ng-mylearning-label" });
-    const actionsRow = header.createDiv({ cls: "ng-mylearning-header-actions" });
+    const titleGroup = header.createDiv({ cls: "ng-mylearning-heading-group" });
+    titleGroup.createEl("div", { text: "Categories", cls: "ng-mylearning-label" });
+    const actionsRow = titleGroup.createDiv({ cls: "ng-mylearning-header-actions" });
     const createButton = actionsRow.createEl("button", { cls: "ng-note-header-add-category-icon ng-mylearning-inline-plus" });
     createButton.setText("+");
     createButton.addEventListener("click", () => {
-      this.openCreateTopicOverlay();
+      this.openCreateCategoryOverlay();
+    });
+    const editButton = actionsRow.createEl("button", { cls: "ng-note-header-add-category-icon ng-mylearning-inline-edit" });
+    editButton.setAttribute("aria-label", "Edit Category");
+    editButton.setAttribute("title", "Edit Category");
+    setEditIcon(editButton);
+    editButton.toggleClass("is-active", this.editMode === "category");
+    editButton.addEventListener("click", () => {
+      this.editMode = this.editMode === "category" ? null : "category";
+      void this.render();
+    });
+    const addNoteButton = header.createEl("button", { cls: "ng-mynotes-new-button ng-mylearning-heading-add-note" });
+    const addNoteIcon = addNoteButton.createSpan({ cls: "ng-mynotes-button-icon" });
+    (0, import_obsidian4.setIcon)(addNoteIcon, "file-plus");
+    addNoteButton.createSpan({ text: "Add Note" });
+    addNoteButton.addEventListener("click", () => {
+      this.openNewNoteOverlay(this.selectedCategory, this.selectedTopic);
+    });
+    const row = section.createDiv({ cls: "ng-mynotes-pill-row" });
+    const categories = await this.learningStorage.listCategories();
+    for (const category of categories) {
+      const pill = row.createEl("button", { cls: "ng-mynotes-pill ng-mylearning-topic-pill" });
+      pill.createSpan({ text: category });
+      this.renderProgressSummary(pill, this.learningStorage.entriesInCategory(category));
+      pill.toggleClass("is-active", this.selectedCategory === category);
+      pill.toggleClass("is-edit-target", this.editMode === "category");
+      pill.addEventListener("click", () => {
+        if (this.editMode === "category") {
+          this.openCategoryEditActions(category);
+          return;
+        }
+        this.selectedCategory = this.selectedCategory === category ? null : category;
+        this.selectedTopic = null;
+        this.notifySelectionChange();
+        void this.render();
+      });
+    }
+    if (categories.length === 0) {
+      section.createDiv({ cls: "ng-empty", text: "No categories yet. Click the plus button to add one." });
+    }
+    section.createDiv({ cls: "ng-mylearning-divider" });
+  }
+  async renderTopicsSection(parent) {
+    if (!this.selectedCategory) {
+      return;
+    }
+    const section = parent.createDiv({ cls: "ng-mylearning-categories" });
+    const header = section.createDiv({ cls: "ng-mynotes-section-header" });
+    const titleGroup = header.createDiv({ cls: "ng-mylearning-heading-group" });
+    titleGroup.createEl("div", { text: "Topics", cls: "ng-mylearning-label" });
+    const actionsRow = titleGroup.createDiv({ cls: "ng-mylearning-header-actions" });
+    const createButton = actionsRow.createEl("button", { cls: "ng-note-header-add-category-icon ng-mylearning-inline-plus" });
+    createButton.setText("+");
+    createButton.addEventListener("click", () => {
+      if (!this.selectedCategory) {
+        return;
+      }
+      this.openCreateTopicOverlay(this.selectedCategory);
     });
     const editButton = actionsRow.createEl("button", { cls: "ng-note-header-add-category-icon ng-mylearning-inline-edit" });
     editButton.setAttribute("aria-label", "Edit Topic");
@@ -5431,162 +5851,46 @@ var NeuralGardenMyLearningView = class extends import_obsidian4.ItemView {
       void this.render();
     });
     const row = section.createDiv({ cls: "ng-mynotes-pill-row" });
-    const topics = await this.learningStorage.listTopics();
+    const topics = await this.learningStorage.listTopicsForCategory(this.selectedCategory);
     for (const topic of topics) {
-      const pill = row.createEl("button", { cls: "ng-mynotes-pill ng-mylearning-topic-pill" });
+      const pill = row.createEl("button", { cls: "ng-mynotes-pill ng-mylearning-category-pill" });
+      pill.style.setProperty("--ng-mylearning-category-color", this.learningStorage.getTopicColor(this.selectedCategory, topic));
       pill.createSpan({ text: topic });
+      this.renderProgressSummary(pill, this.learningStorage.entriesInCategoryTopic(this.selectedCategory, topic));
       pill.toggleClass("is-active", this.selectedTopic === topic);
       pill.toggleClass("is-edit-target", this.editMode === "topic");
       pill.addEventListener("click", () => {
         if (this.editMode === "topic") {
-          this.openTopicEditActions(topic);
-          return;
-        }
-        this.selectedTopic = this.selectedTopic === topic ? null : topic;
-        this.selectedCategory = null;
-        void this.render();
-      });
-    }
-    if (topics.length === 0) {
-      section.createDiv({ cls: "ng-empty", text: "No topics yet. Click on the plus button on the right to add one." });
-    }
-    section.createDiv({ cls: "ng-mylearning-divider" });
-  }
-  async renderCategoriesSection(parent) {
-    if (!this.selectedTopic) {
-      return;
-    }
-    const section = parent.createDiv({ cls: "ng-mylearning-categories" });
-    const header = section.createDiv({ cls: "ng-mynotes-section-header" });
-    header.createEl("div", { text: "Categories", cls: "ng-mylearning-label" });
-    const actionsRow = header.createDiv({ cls: "ng-mylearning-header-actions" });
-    const createButton = actionsRow.createEl("button", { cls: "ng-note-header-add-category-icon ng-mylearning-inline-plus" });
-    createButton.setText("+");
-    createButton.addEventListener("click", () => {
-      if (!this.selectedTopic) {
-        return;
-      }
-      this.openCreateCategoryOverlay(this.selectedTopic);
-    });
-    const editButton = actionsRow.createEl("button", { cls: "ng-note-header-add-category-icon ng-mylearning-inline-edit" });
-    editButton.setAttribute("aria-label", "Edit Category");
-    editButton.setAttribute("title", "Edit Category");
-    setEditIcon(editButton);
-    editButton.toggleClass("is-active", this.editMode === "category");
-    editButton.addEventListener("click", () => {
-      this.editMode = this.editMode === "category" ? null : "category";
-      void this.render();
-    });
-    const row = section.createDiv({ cls: "ng-mynotes-pill-row" });
-    const categories = await this.learningStorage.listCategoriesForTopic(this.selectedTopic);
-    for (const category of categories) {
-      const pill = row.createEl("button", { cls: "ng-mynotes-pill ng-mylearning-category-pill" });
-      pill.style.setProperty("--ng-mylearning-category-color", this.learningStorage.getCategoryColor(this.selectedTopic, category));
-      if (category === "help") {
-        pill.addClass("is-help");
-      }
-      pill.createSpan({ text: category });
-      pill.toggleClass("is-active", this.selectedCategory === category);
-      pill.toggleClass("is-edit-target", this.editMode === "category" && category !== "help");
-      pill.addEventListener("click", () => {
-        if (this.editMode === "category") {
-          if (category !== "help" && this.selectedTopic) {
-            this.openCategoryEditActions(this.selectedTopic, category);
+          if (this.selectedCategory) {
+            this.openTopicEditActions(this.selectedCategory, topic);
           }
           return;
         }
-        this.selectedCategory = this.selectedCategory === category ? null : category;
+        this.selectedTopic = this.selectedTopic === topic ? null : topic;
+        this.notifySelectionChange();
         void this.render();
       });
     }
     section.createDiv({ cls: "ng-mylearning-divider" });
   }
   async renderNotesGrid(parent) {
-    if (!this.selectedCategory) {
+    if (!this.selectedTopic) {
       return;
     }
     const section = parent.createDiv({ cls: "ng-mylearning-notes" });
-    const notesHeader = section.createDiv({ cls: "ng-mylearning-notes-header" });
-    const notesTitleWrap = notesHeader.createDiv({ cls: "ng-mylearning-notes-title-wrap" });
-    notesTitleWrap.createDiv({ cls: "ng-mylearning-notes-title", text: "Notes" });
-    if (this.selectedTopic && this.selectedCategory) {
-      const quickCreate = notesTitleWrap.createEl("button", {
-        cls: "ng-mylearning-quick-create",
-        attr: { type: "button", "aria-label": "Quick create note" }
-      });
-      const quickCreateIcon = quickCreate.createSpan({ cls: "ng-mynotes-button-icon" });
-      (0, import_obsidian4.setIcon)(quickCreateIcon, "file-plus");
-      const triggerQuickCreate = () => {
-        this.openNewNoteOverlay(this.selectedTopic, this.selectedCategory);
-      };
-      quickCreate.addEventListener("click", triggerQuickCreate);
-      quickCreate.addEventListener("keydown", (event) => {
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          triggerQuickCreate();
-        }
-      });
-    }
-    if (!this.selectedTopic) {
-      section.createDiv({ cls: "ng-empty", text: "Select a topic to view notes." });
+    section.createDiv({ cls: "ng-mylearning-notes-title", text: "Notes & Canvases" });
+    if (!this.selectedCategory) {
+      section.createDiv({ cls: "ng-empty", text: "Select a category to view notes." });
       return;
     }
-    const files = this.collectTopicNotes(this.selectedTopic, this.selectedCategory);
+    const files = this.collectCategoryNotes(this.selectedCategory, this.selectedTopic);
     if (files.length === 0) {
       section.createDiv({ cls: "ng-empty", text: "No notes found." });
       return;
     }
-    const grid = section.createDiv({ cls: "ng-mylearning-grid" });
-    grid.createDiv({ cls: "ng-mylearning-grid-divider" });
+    const grid = section.createDiv({ cls: "ng-mylearning-entry-list" });
     for (const file of files) {
-      this.renderNoteRow(grid, file, this.selectedCategory);
-    }
-  }
-  renderComprehensionSection(parent) {
-    if (!this.selectedTopic) {
-      return;
-    }
-    const section = parent.createDiv({ cls: "ng-mylearning-comprehension" });
-    const toggle = section.createEl("button", {
-      cls: "ng-mynotes-subheading ng-mynotes-subheading-toggle"
-    });
-    toggle.createSpan({
-      cls: "ng-mynotes-caret",
-      text: this.comprehensionExpanded ? "\u25BC" : "\u25B6"
-    });
-    toggle.createSpan({ cls: "ng-mynotes-subheading-label", text: "Comprehension Tracker" });
-    toggle.addEventListener("click", () => {
-      this.comprehensionExpanded = !this.comprehensionExpanded;
-      void this.render();
-    });
-    if (!this.comprehensionExpanded) {
-      return;
-    }
-    const rows = this.learningStorage.notesInTopic(this.selectedTopic).slice().sort((a, b) => this.learningStorage.getComprehension(a) - this.learningStorage.getComprehension(b)).slice(0, 10);
-    if (rows.length === 0) {
-      section.createDiv({ cls: "ng-empty", text: "No notes in this topic yet." });
-      return;
-    }
-    const list = section.createDiv({ cls: "ng-mylearning-comprehension-list" });
-    for (const file of rows) {
-      const row = list.createDiv({ cls: "ng-mylearning-comprehension-row ng-mylearning-comprehension-item" });
-      const textWrap = row.createDiv({ cls: "ng-mylearning-comprehension-text" });
-      const titleLine = textWrap.createDiv({ cls: "ng-mylearning-comprehension-title-line" });
-      titleLine.createDiv({ cls: "ng-mynotes-note-title", text: file.basename });
-      const categoryBadgeRow = titleLine.createDiv({ cls: "ng-mylearning-topic-badge-row" });
-      const categories = this.learningStorage.getNoteCategories(file);
-      for (const category of categories) {
-        const badge = categoryBadgeRow.createDiv({ cls: "ng-mylearning-topic-badge ng-mylearning-category-badge" });
-        const noteTopic = this.learningStorage.getNoteTopic(file);
-        badge.style.setProperty("--ng-mylearning-category-color", this.learningStorage.getCategoryColor(noteTopic != null ? noteTopic : "", category));
-        badge.setText(category);
-      }
-      const track = row.createDiv({ cls: "ng-mylearning-mini-progress" });
-      const fill = track.createDiv({ cls: "ng-mylearning-mini-progress-fill" });
-      fill.style.width = `${this.learningStorage.getComprehension(file)}%`;
-      row.addEventListener("click", async () => {
-        await this.leaf.openFile(file);
-      });
+      this.renderNoteRow(grid, file, this.selectedTopic);
     }
   }
   renderUncategorizedSection(parent) {
@@ -5606,7 +5910,7 @@ var NeuralGardenMyLearningView = class extends import_obsidian4.ItemView {
     if (!this.uncategorizedExpanded) {
       return;
     }
-    const uncategorized = this.learningStorage.listNotes().filter((file) => this.isUncategorized(file));
+    const uncategorized = this.learningStorage.listEntries().filter((file) => this.isUncategorized(file));
     if (uncategorized.length === 0) {
       section.createDiv({ cls: "ng-empty", text: "No uncategorized notes." });
       return;
@@ -5615,21 +5919,32 @@ var NeuralGardenMyLearningView = class extends import_obsidian4.ItemView {
       this.renderNoteRow(section, file, null);
     }
   }
-  collectTopicNotes(topic, category) {
-    if (!category) {
-      return this.learningStorage.notesInTopic(topic);
+  collectCategoryNotes(category, topic) {
+    if (!topic) {
+      return this.learningStorage.entriesInCategory(category);
     }
-    return this.learningStorage.notesInTopicCategory(topic, category);
+    return this.learningStorage.entriesInCategoryTopic(category, topic);
   }
-  renderNoteRow(container, file, activeCategory) {
+  renderNoteRow(container, file, activeTopic) {
     var _a;
     const row = container.createDiv({ cls: "ng-mynotes-note-row" });
+    const comprehension = this.learningStorage.getEntryComprehension(file);
+    row.toggleClass("is-low-comprehension", comprehension < 20);
     const indicator = row.createDiv({ cls: "ng-mynotes-note-indicator" });
-    const category = this.resolveIndicatorCategory(file, activeCategory);
-    const topic = (_a = this.learningStorage.getNoteTopic(file)) != null ? _a : "";
-    indicator.style.background = this.learningStorage.getCategoryColor(topic, category != null ? category : file.basename);
+    const topic = this.resolveIndicatorTopic(file, activeTopic);
+    const category = (_a = this.learningStorage.getEntryCategory(file)) != null ? _a : "";
+    indicator.style.background = this.learningStorage.getTopicColor(category, topic != null ? topic : file.basename);
     row.createDiv({ cls: "ng-mynotes-note-title", text: file.basename });
+    if (file.extension === "canvas") {
+      row.createSpan({ cls: "ng-mylearning-entry-type", text: "Canvas" });
+    }
     const actions = row.createDiv({ cls: "ng-mylearning-row-actions" });
+    const progressTone = comprehension > 70 ? "is-green" : comprehension > 50 ? "is-yellow" : "is-orange";
+    const progressTrack = actions.createDiv({ cls: `ng-mylearning-entry-progress ${progressTone}` });
+    const progressFill = progressTrack.createDiv({
+      cls: `ng-mylearning-entry-progress-fill ${progressTone}`
+    });
+    progressFill.style.width = `${comprehension}%`;
     const openRightButton = actions.createEl("button", { cls: "ng-mynotes-note-open-right" });
     openRightButton.setAttribute("aria-label", "Open to the right");
     setOpenToRightIcon(openRightButton);
@@ -5638,40 +5953,125 @@ var NeuralGardenMyLearningView = class extends import_obsidian4.ItemView {
       const rightLeaf = this.app.workspace.getLeaf("split", "vertical");
       await rightLeaf.openFile(file);
     });
+    const deleteButton = actions.createEl("button", { cls: "ng-mynotes-note-delete" });
+    deleteButton.setAttribute("aria-label", `Delete ${file.basename}`);
+    (0, import_obsidian4.setIcon)(deleteButton, "x");
+    deleteButton.addEventListener("click", (event) => {
+      event.stopPropagation();
+      this.openDeleteOverlay(file);
+    });
     row.addEventListener("click", async () => {
       await this.leaf.openFile(file);
     });
   }
-  resolveIndicatorCategory(file, activeCategory) {
+  resolveIndicatorTopic(file, activeTopic) {
     var _a;
-    if (activeCategory && activeCategory !== "help") {
-      return activeCategory;
+    if (activeTopic) {
+      return activeTopic;
     }
-    const categories = this.learningStorage.getNoteCategories(file);
-    if (categories.length > 0) {
-      return (_a = categories[0]) != null ? _a : null;
+    const topics = this.learningStorage.getEntryTopics(file);
+    if (topics.length > 0) {
+      return (_a = topics[0]) != null ? _a : null;
     }
-    return this.learningStorage.getNoteTopic(file);
+    return this.learningStorage.getEntryCategory(file);
   }
   isUncategorized(file) {
-    const topic = this.learningStorage.getNoteTopic(file);
-    const categories = this.learningStorage.getNoteCategories(file);
-    return !topic || categories.length === 0;
+    const category = this.learningStorage.getEntryCategory(file);
+    const topics = this.learningStorage.getEntryTopics(file);
+    return !category || topics.length === 0;
   }
-  openNewNoteOverlay(topic, category) {
+  renderProgressSummary(container, files) {
+    const total = files.length;
+    const learned = files.filter((file) => this.learningStorage.getEntryComprehension(file) > 60).length;
+    const average2 = total === 0 ? 0 : Math.round(files.reduce((sum, file) => sum + this.learningStorage.getEntryComprehension(file), 0) / total);
+    const ratio = total === 0 ? 0 : learned / total * 100;
+    const summary = container.createSpan({ cls: "ng-mylearning-progress-summary" });
+    summary.createSpan({
+      cls: `ng-mylearning-progress-count ${ratio > 70 ? "is-green" : ratio > 50 ? "is-yellow" : "is-orange"}`,
+      text: `${learned}|${total}`
+    });
+    const track = summary.createSpan({ cls: "ng-mylearning-average-track" });
+    const fill = track.createSpan({ cls: "ng-mylearning-average-fill" });
+    fill.style.width = `${average2}%`;
+  }
+  openNewNoteOverlay(category, topic) {
     const { card, close } = openOverlay("Create A Note");
     card.createDiv({ cls: "ng-overlay-subtitle", text: "Write down a name" });
-    if (topic || category) {
+    if (category || topic) {
       const parts = [];
-      if (topic) {
-        parts.push(`Topic: ${topic}`);
-      }
       if (category) {
         parts.push(`Category: ${category}`);
+      }
+      if (topic) {
+        parts.push(`Topic: ${topic}`);
       }
       card.createDiv({ cls: "ng-overlay-text", text: parts.join(" | ") });
     }
     const input = card.createEl("input", { type: "text", placeholder: "Note name..." });
+    input.addClass("ng-task-input");
+    const typeControl = card.createDiv({ cls: "ng-mylearning-type-control" });
+    const markdownButton = typeControl.createEl("button", { text: "Markdown", cls: "is-active" });
+    const canvasButton = typeControl.createEl("button", { text: "Canvas" });
+    let fileType = "markdown";
+    const setFileType = (next) => {
+      fileType = next;
+      markdownButton.toggleClass("is-active", next === "markdown");
+      canvasButton.toggleClass("is-active", next === "canvas");
+    };
+    markdownButton.addEventListener("click", () => setFileType("markdown"));
+    canvasButton.addEventListener("click", () => setFileType("canvas"));
+    const errorEl = card.createDiv({ cls: "ng-overlay-error" });
+    errorEl.hide();
+    const actions = card.createDiv({ cls: "ng-overlay-actions" });
+    const createButton = actions.createEl("button", { text: "Create", cls: "ng-overlay-confirm" });
+    const submit = async () => {
+      const name = input.value.trim();
+      if (!name) {
+        return;
+      }
+      const validationError = getNameValidationError(name);
+      if (validationError) {
+        errorEl.setText(validationError);
+        errorEl.show();
+        return;
+      }
+      if (this.learningStorage.noteExists(name)) {
+        errorEl.setText("A note or canvas with this name already exists.");
+        errorEl.show();
+        input.focus();
+        return;
+      }
+      const topics = topic ? [topic] : [];
+      if (fileType === "canvas" && (!category || !topic)) {
+        errorEl.setText("Select a category and topic before creating a canvas.");
+        errorEl.show();
+        return;
+      }
+      const file = fileType === "canvas" ? await this.learningStorage.createCanvas(name, category, topic) : await this.learningStorage.createNote(name, category != null ? category : null, topics);
+      close();
+      if (!file) {
+        new import_obsidian4.Notice("Could not create the note. Try a different name.");
+        return;
+      }
+      await this.leaf.openFile(file);
+    };
+    createButton.addEventListener("click", () => void submit());
+    input.addEventListener("input", () => {
+      const validationError = getNameValidationError(input.value);
+      errorEl.toggle(validationError !== null);
+      errorEl.setText(validationError != null ? validationError : "");
+      createButton.disabled = validationError !== null;
+    });
+    input.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        void submit();
+      }
+    });
+    input.focus();
+  }
+  openCreateCategoryOverlay() {
+    const { card, close } = openOverlay("Create Category");
+    const input = card.createEl("input", { type: "text", placeholder: "Category name..." });
     input.addClass("ng-task-input");
     const errorEl = card.createDiv({ cls: "ng-overlay-error" });
     errorEl.hide();
@@ -5682,51 +6082,26 @@ var NeuralGardenMyLearningView = class extends import_obsidian4.ItemView {
       if (!name) {
         return;
       }
-      if (this.learningStorage.noteExists(name)) {
-        errorEl.setText("This Note already exists");
+      const validationError = getNameValidationError(name);
+      if (validationError) {
+        errorEl.setText(validationError);
         errorEl.show();
-        input.value = "";
-        input.focus();
         return;
       }
-      const categories = category && category !== "help" ? [category] : [];
-      const file = await this.learningStorage.createNote(name, topic != null ? topic : null, categories);
-      if (file && category === "help") {
-        await this.learningStorage.setHelpEnabled(file, true);
-      }
+      await this.learningStorage.addCategory(name);
       close();
-      if (!file) {
-        new import_obsidian4.Notice("Could not create the note. Try a different name.");
-        return;
-      }
-      await this.leaf.openFile(file);
-    };
-    createButton.addEventListener("click", () => void submit());
-    input.addEventListener("keydown", (event) => {
-      if (event.key === "Enter") {
-        void submit();
-      }
-    });
-    input.focus();
-  }
-  openCreateTopicOverlay() {
-    const { card, close } = openOverlay("Create Topic");
-    const input = card.createEl("input", { type: "text", placeholder: "Topic name..." });
-    input.addClass("ng-task-input");
-    const actions = card.createDiv({ cls: "ng-overlay-actions" });
-    const createButton = actions.createEl("button", { text: "Create", cls: "ng-overlay-confirm" });
-    const submit = async () => {
-      const name = input.value.trim();
-      if (!name) {
-        return;
-      }
-      await this.learningStorage.addTopic(name);
-      close();
-      this.selectedTopic = name.trim();
-      this.selectedCategory = null;
+      this.selectedCategory = name.trim();
+      this.selectedTopic = null;
+      this.notifySelectionChange();
       await this.render();
     };
     createButton.addEventListener("click", () => void submit());
+    input.addEventListener("input", () => {
+      const validationError = getNameValidationError(input.value);
+      errorEl.toggle(validationError !== null);
+      errorEl.setText(validationError != null ? validationError : "");
+      createButton.disabled = validationError !== null;
+    });
     input.addEventListener("keydown", (event) => {
       if (event.key === "Enter") {
         void submit();
@@ -5734,12 +6109,12 @@ var NeuralGardenMyLearningView = class extends import_obsidian4.ItemView {
     });
     input.focus();
   }
-  openCreateCategoryOverlay(topic) {
-    const { card, close } = openOverlay("Create Category");
-    card.createDiv({ cls: "ng-overlay-subtitle", text: `Topic: ${topic}` });
+  openCreateTopicOverlay(category) {
+    const { card, close } = openOverlay("Create Topic");
+    card.createDiv({ cls: "ng-overlay-subtitle", text: `Category: ${category}` });
     const colorRow = card.createDiv({ cls: "ng-mylearning-category-color-row" });
     const pickedColor = "#ec9a63";
-    const nameInput = colorRow.createEl("input", { type: "text", placeholder: "Category name..." });
+    const nameInput = colorRow.createEl("input", { type: "text", placeholder: "Topic name..." });
     nameInput.addClass("ng-task-input");
     const colorWrap = colorRow.createDiv({ cls: "ng-mylearning-category-color-wrap" });
     const colorInput = colorWrap.createEl("input", { type: "color", value: pickedColor });
@@ -5748,7 +6123,7 @@ var NeuralGardenMyLearningView = class extends import_obsidian4.ItemView {
     colorSwatch.style.setProperty("--ng-mylearning-picked-color", pickedColor);
     colorSwatch.setAttribute("role", "button");
     colorSwatch.setAttribute("tabindex", "0");
-    colorSwatch.setAttribute("aria-label", "Choose category color");
+    colorSwatch.setAttribute("aria-label", "Choose topic color");
     colorSwatch.addEventListener("click", () => {
       colorInput.click();
     });
@@ -5761,6 +6136,8 @@ var NeuralGardenMyLearningView = class extends import_obsidian4.ItemView {
         colorInput.click();
       }
     });
+    const errorEl = card.createDiv({ cls: "ng-overlay-error" });
+    errorEl.hide();
     const actions = card.createDiv({ cls: "ng-overlay-actions" });
     const createButton = actions.createEl("button", { text: "Create", cls: "ng-overlay-confirm" });
     const submit = async () => {
@@ -5768,12 +6145,25 @@ var NeuralGardenMyLearningView = class extends import_obsidian4.ItemView {
       if (!name) {
         return;
       }
-      await this.learningStorage.addCategory(topic, name, colorInput.value);
+      const validationError = getNameValidationError(name);
+      if (validationError) {
+        errorEl.setText(validationError);
+        errorEl.show();
+        return;
+      }
+      await this.learningStorage.addTopic(category, name, colorInput.value);
       close();
-      this.selectedCategory = name.trim();
+      this.selectedTopic = name.trim();
+      this.notifySelectionChange();
       await this.render();
     };
     createButton.addEventListener("click", () => void submit());
+    nameInput.addEventListener("input", () => {
+      const validationError = getNameValidationError(nameInput.value);
+      errorEl.toggle(validationError !== null);
+      errorEl.setText(validationError != null ? validationError : "");
+      createButton.disabled = validationError !== null;
+    });
     nameInput.addEventListener("keydown", (event) => {
       if (event.key === "Enter") {
         void submit();
@@ -5797,27 +6187,27 @@ var NeuralGardenMyLearningView = class extends import_obsidian4.ItemView {
       await this.render();
     });
   }
-  openTopicEditActions(topic) {
-    const { card, close } = openOverlay(`Edit Topic`);
-    card.createDiv({ cls: "ng-overlay-subtitle", text: topic });
+  openCategoryEditActions(category) {
+    const { card, close } = openOverlay(`Edit Category`);
+    card.createDiv({ cls: "ng-overlay-subtitle", text: category });
     const actions = card.createDiv({ cls: "ng-overlay-actions" });
     const renameButton = actions.createEl("button", { text: "Rename", cls: "ng-overlay-confirm" });
     const deleteButton = actions.createEl("button", { text: "Delete", cls: "ng-overlay-danger" });
     const cancelButton = actions.createEl("button", { text: "Cancel", cls: "ng-overlay-cancel" });
     renameButton.addEventListener("click", () => {
       close();
-      this.openRenameTopicOverlay(topic);
+      this.openRenameCategoryOverlay(category);
     });
     deleteButton.addEventListener("click", () => {
       close();
-      this.openDeleteTopicOverlay(topic);
+      this.openDeleteCategoryOverlay(category);
     });
     cancelButton.addEventListener("click", () => close());
   }
-  openCategoryEditActions(topic, category) {
-    const { card, close } = openOverlay(`Edit Category`);
+  openTopicEditActions(category, topic) {
+    const { card, close } = openOverlay(`Edit Topic`);
     card.addClass("ng-mylearning-edit-overlay-wide");
-    card.createDiv({ cls: "ng-overlay-subtitle", text: `${topic} | ${category}` });
+    card.createDiv({ cls: "ng-overlay-subtitle", text: `${category} | ${topic}` });
     const actions = card.createDiv({ cls: "ng-overlay-actions" });
     const renameButton = actions.createEl("button", { text: "Rename", cls: "ng-overlay-confirm" });
     const colorButton = actions.createEl("button", { text: "Color", cls: "ng-overlay-confirm" });
@@ -5825,32 +6215,32 @@ var NeuralGardenMyLearningView = class extends import_obsidian4.ItemView {
     const cancelButton = actions.createEl("button", { text: "Cancel", cls: "ng-overlay-cancel" });
     renameButton.addEventListener("click", () => {
       close();
-      this.openRenameCategoryOverlay(topic, category);
+      this.openRenameTopicOverlay(category, topic);
     });
     colorButton.addEventListener("click", () => {
       close();
-      this.openRecolorCategoryOverlay(topic, category);
+      this.openRecolorTopicOverlay(category, topic);
     });
     deleteButton.addEventListener("click", () => {
       close();
-      this.openDeleteCategoryOverlay(topic, category);
+      this.openDeleteTopicOverlay(category, topic);
     });
     cancelButton.addEventListener("click", () => close());
   }
-  openRecolorCategoryOverlay(topic, category) {
-    const { card, close } = openOverlay("Category Color");
+  openRecolorTopicOverlay(category, topic) {
+    const { card, close } = openOverlay("Topic Color");
     card.addClass("ng-mylearning-edit-overlay-wide");
-    card.createDiv({ cls: "ng-overlay-subtitle", text: `${topic} | ${category}` });
+    card.createDiv({ cls: "ng-overlay-subtitle", text: `${category} | ${topic}` });
     const row = card.createDiv({ cls: "ng-mylearning-category-color-row" });
     row.addClass("is-centered");
     const wrap = row.createDiv({ cls: "ng-mylearning-category-color-wrap" });
-    const colorInput = wrap.createEl("input", { type: "color", value: this.learningStorage.getCategoryColor(topic, category) });
+    const colorInput = wrap.createEl("input", { type: "color", value: this.learningStorage.getTopicColor(category, topic) });
     colorInput.addClass("ng-mylearning-color-input");
     const swatch = wrap.createSpan({ cls: "ng-mylearning-color-swatch" });
     swatch.style.setProperty("--ng-mylearning-picked-color", colorInput.value);
     swatch.setAttribute("role", "button");
     swatch.setAttribute("tabindex", "0");
-    swatch.setAttribute("aria-label", "Choose category color");
+    swatch.setAttribute("aria-label", "Choose topic color");
     swatch.addEventListener("click", () => colorInput.click());
     swatch.addEventListener("keydown", (event) => {
       if (event.key === "Enter" || event.key === " ") {
@@ -5865,9 +6255,9 @@ var NeuralGardenMyLearningView = class extends import_obsidian4.ItemView {
     const saveButton = actions.createEl("button", { text: "Save", cls: "ng-overlay-confirm" });
     const cancelButton = actions.createEl("button", { text: "Cancel", cls: "ng-overlay-cancel" });
     const submit = async () => {
-      const success = await this.learningStorage.setCategoryColor(topic, category, colorInput.value);
+      const success = await this.learningStorage.setTopicColor(category, topic, colorInput.value);
       if (!success) {
-        new import_obsidian4.Notice("Could not update category color.");
+        new import_obsidian4.Notice("Could not update topic color.");
         return;
       }
       close();
@@ -5878,23 +6268,24 @@ var NeuralGardenMyLearningView = class extends import_obsidian4.ItemView {
     });
     cancelButton.addEventListener("click", () => close());
   }
-  openRenameTopicOverlay(previousTopic) {
-    const { card, close } = openOverlay("Rename Topic");
-    const input = card.createEl("input", { type: "text", value: previousTopic, placeholder: "New topic name..." });
+  openRenameCategoryOverlay(previousCategory) {
+    const { card, close } = openOverlay("Rename Category");
+    const input = card.createEl("input", { type: "text", value: previousCategory, placeholder: "New category name..." });
     input.addClass("ng-task-input");
     const actions = card.createDiv({ cls: "ng-overlay-actions" });
     const renameButton = actions.createEl("button", { text: "Rename", cls: "ng-overlay-confirm" });
     const cancelButton = actions.createEl("button", { text: "Cancel", cls: "ng-overlay-cancel" });
     const submit = async () => {
-      const nextTopic = input.value.trim();
-      const success = await this.learningStorage.renameTopic(previousTopic, nextTopic);
+      const nextCategory = input.value.trim();
+      const success = await this.learningStorage.renameCategory(previousCategory, nextCategory);
       if (!success) {
-        new import_obsidian4.Notice("Could not rename topic. Check the new name and try again.");
+        new import_obsidian4.Notice("Could not rename category. Check the new name and try again.");
         return;
       }
-      if (this.selectedTopic === previousTopic) {
-        this.selectedTopic = nextTopic;
-        this.selectedCategory = null;
+      if (this.selectedCategory === previousCategory) {
+        this.selectedCategory = nextCategory;
+        this.selectedTopic = null;
+        this.notifySelectionChange();
       }
       this.editMode = null;
       close();
@@ -5909,21 +6300,22 @@ var NeuralGardenMyLearningView = class extends import_obsidian4.ItemView {
     });
     input.focus();
   }
-  openDeleteTopicOverlay(topic) {
-    const { card, close } = openOverlay("Delete Topic");
-    card.createDiv({ cls: "ng-overlay-text", text: `Delete topic "${topic}" and remove it from all notes?` });
+  openDeleteCategoryOverlay(category) {
+    const { card, close } = openOverlay("Delete Category");
+    card.createDiv({ cls: "ng-overlay-text", text: `Delete category "${category}" and remove it from all notes?` });
     const actions = card.createDiv({ cls: "ng-overlay-actions" });
     const deleteButton = actions.createEl("button", { text: "Delete", cls: "ng-overlay-danger" });
     const cancelButton = actions.createEl("button", { text: "Cancel", cls: "ng-overlay-cancel" });
     const submit = async () => {
-      const success = await this.learningStorage.deleteTopic(topic);
+      const success = await this.learningStorage.deleteCategory(category);
       if (!success) {
-        new import_obsidian4.Notice("Could not delete topic.");
+        new import_obsidian4.Notice("Could not delete category.");
         return;
       }
-      if (this.selectedTopic === topic) {
-        this.selectedTopic = null;
+      if (this.selectedCategory === category) {
         this.selectedCategory = null;
+        this.selectedTopic = null;
+        this.notifySelectionChange();
       }
       this.editMode = null;
       close();
@@ -5932,24 +6324,25 @@ var NeuralGardenMyLearningView = class extends import_obsidian4.ItemView {
     deleteButton.addEventListener("click", () => void submit());
     cancelButton.addEventListener("click", () => close());
   }
-  openRenameCategoryOverlay(topic, previousCategory) {
-    const { card, close } = openOverlay("Rename Category");
+  openRenameTopicOverlay(category, previousTopic) {
+    const { card, close } = openOverlay("Rename Topic");
     card.addClass("ng-mylearning-edit-overlay-wide");
-    card.createDiv({ cls: "ng-overlay-subtitle", text: topic });
-    const input = card.createEl("input", { type: "text", value: previousCategory, placeholder: "New category name..." });
+    card.createDiv({ cls: "ng-overlay-subtitle", text: category });
+    const input = card.createEl("input", { type: "text", value: previousTopic, placeholder: "New topic name..." });
     input.addClass("ng-task-input");
     const actions = card.createDiv({ cls: "ng-overlay-actions" });
     const renameButton = actions.createEl("button", { text: "Rename", cls: "ng-overlay-confirm" });
     const cancelButton = actions.createEl("button", { text: "Cancel", cls: "ng-overlay-cancel" });
     const submit = async () => {
-      const nextCategory = input.value.trim();
-      const success = await this.learningStorage.renameCategory(topic, previousCategory, nextCategory);
+      const nextTopic = input.value.trim();
+      const success = await this.learningStorage.renameTopic(category, previousTopic, nextTopic);
       if (!success) {
-        new import_obsidian4.Notice("Could not rename category. Check the new name and try again.");
+        new import_obsidian4.Notice("Could not rename topic. Check the new name and try again.");
         return;
       }
-      if (this.selectedCategory === previousCategory) {
-        this.selectedCategory = nextCategory;
+      if (this.selectedTopic === previousTopic) {
+        this.selectedTopic = nextTopic;
+        this.notifySelectionChange();
       }
       this.editMode = null;
       close();
@@ -5964,20 +6357,21 @@ var NeuralGardenMyLearningView = class extends import_obsidian4.ItemView {
     });
     input.focus();
   }
-  openDeleteCategoryOverlay(topic, category) {
-    const { card, close } = openOverlay("Delete Category");
-    card.createDiv({ cls: "ng-overlay-text", text: `Delete category "${category}" and remove it from all notes in ${topic}?` });
+  openDeleteTopicOverlay(category, topic) {
+    const { card, close } = openOverlay("Delete Topic");
+    card.createDiv({ cls: "ng-overlay-text", text: `Delete topic "${topic}" and remove it from all notes in ${category}?` });
     const actions = card.createDiv({ cls: "ng-overlay-actions" });
     const deleteButton = actions.createEl("button", { text: "Delete", cls: "ng-overlay-danger" });
     const cancelButton = actions.createEl("button", { text: "Cancel", cls: "ng-overlay-cancel" });
     const submit = async () => {
-      const success = await this.learningStorage.deleteCategory(topic, category);
+      const success = await this.learningStorage.deleteTopic(category, topic);
       if (!success) {
-        new import_obsidian4.Notice("Could not delete category.");
+        new import_obsidian4.Notice("Could not delete topic.");
         return;
       }
-      if (this.selectedCategory === category) {
-        this.selectedCategory = null;
+      if (this.selectedTopic === topic) {
+        this.selectedTopic = null;
+        this.notifySelectionChange();
       }
       this.editMode = null;
       close();
@@ -5990,11 +6384,12 @@ var NeuralGardenMyLearningView = class extends import_obsidian4.ItemView {
 
 // src/myLearningStorage.ts
 var import_obsidian5 = require("obsidian");
-var HELP_CATEGORY = "help";
+var LEGACY_NOTES_CATEGORIES_FOLDER = "Notes/Categories";
+var LEGACY_HELP_TOPIC = "help";
 function isValidHexColor(value) {
   return typeof value === "string" && /^#[0-9a-fA-F]{6}$/.test(value.trim());
 }
-function normalizeCategoryList(value) {
+function normalizeTopicList(value) {
   if (!Array.isArray(value)) {
     return [];
   }
@@ -6003,7 +6398,7 @@ function normalizeCategoryList(value) {
     if (typeof entry !== "string") {
       continue;
     }
-    const trimmed = normalizeCategoryEntry(entry);
+    const trimmed = normalizeTopicEntry(entry);
     if (!trimmed) {
       continue;
     }
@@ -6013,7 +6408,7 @@ function normalizeCategoryList(value) {
   }
   return out;
 }
-function normalizeCategoryEntry(value) {
+function normalizeTopicEntry(value) {
   var _a, _b;
   const trimmed = value.trim();
   const linked = trimmed.match(/^\[\[([^\]]+)\]\]$/);
@@ -6027,16 +6422,23 @@ function normalizeCategoryEntry(value) {
   const pipeIndex = inner.indexOf("|");
   return pipeIndex >= 0 ? inner.slice(0, pipeIndex).trim() : inner;
 }
-function asCategoryLinks(categories) {
-  return categories.map((category) => `[[${category}]]`);
+function asTopicLinks(topics) {
+  return topics.map((topic) => `[[${topic}]]`);
 }
 var MyLearningStorage = class {
   constructor(app) {
     this.app = app;
   }
   async ensureProvisioned() {
-    await this.ensureConfigFile();
+    const configFile = await this.ensureConfigFile();
     await this.ensureFolderExists(LEARNING_FOLDER);
+    await this.ensureFolderExists(NOTES_CATEGORIES_FOLDER);
+    await this.migrateConfigSchema(configFile);
+    for (const file of this.listNotes()) {
+      await this.migrateNoteSchema(file);
+    }
+    await this.migrateCategoryLinkingNotes();
+    await this.ensureCanvasTopicLinks();
   }
   async ensureConfigFile() {
     const existing = this.app.vault.getAbstractFileByPath(MY_LEARNING_CONFIG_FILE_PATH);
@@ -6045,7 +6447,7 @@ var MyLearningStorage = class {
     }
     await this.ensureFolderExists(MY_LEARNING_MAINTENANCE_FOLDER);
     try {
-      return await this.app.vault.create(MY_LEARNING_CONFIG_FILE_PATH, "---\ntopics: {}\ncategoryColors: {}\n---\n# MyLearning\n");
+      return await this.app.vault.create(MY_LEARNING_CONFIG_FILE_PATH, "---\ncategories: {}\ntopicColors: {}\ncanvases: {}\n---\n# MyLearning\n");
     } catch (e) {
       const createdByOtherCall = this.app.vault.getAbstractFileByPath(MY_LEARNING_CONFIG_FILE_PATH);
       if (createdByOtherCall instanceof import_obsidian5.TFile) {
@@ -6054,66 +6456,68 @@ var MyLearningStorage = class {
       throw new Error(`Failed to create MyLearning config at ${MY_LEARNING_CONFIG_FILE_PATH}`);
     }
   }
-  async loadTopicMap() {
+  async loadCategoryMap() {
     const file = await this.ensureConfigFile();
-    const raw = await this.readTopicsFromFile(file);
-    const topicMap = {};
+    const raw = await this.readCategoriesFromFile(file);
+    const categoryMap = {};
     if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
-      return topicMap;
+      return categoryMap;
     }
-    for (const [topic, categories] of Object.entries(raw)) {
-      const trimmedTopic = topic.trim();
-      if (!trimmedTopic) {
+    for (const [category, topics] of Object.entries(raw)) {
+      const trimmedCategory = category.trim();
+      if (!trimmedCategory) {
         continue;
       }
-      const normalized = normalizeCategoryList(categories).filter((name) => name !== HELP_CATEGORY);
-      topicMap[trimmedTopic] = normalized;
+      const normalized = normalizeTopicList(topics);
+      categoryMap[trimmedCategory] = normalized;
     }
-    return topicMap;
+    return categoryMap;
   }
-  async listTopics() {
-    return Object.keys(await this.loadTopicMap()).sort((a, b) => a.localeCompare(b));
+  async listCategories() {
+    return Object.keys(await this.loadCategoryMap()).sort((a, b) => a.localeCompare(b));
   }
-  async addTopic(name) {
-    const topic = this.sanitizeName(name);
-    if (!topic) {
+  async addCategory(name) {
+    const category = this.sanitizeName(name);
+    if (!category) {
       return;
     }
     const file = await this.ensureConfigFile();
     await this.app.fileManager.processFrontMatter(file, (fm) => {
-      const topics = this.getTopicMapFromFrontmatter(fm.topics);
-      if (!(topic in topics)) {
-        topics[topic] = [];
+      const categories = this.getCategoryMapFromFrontmatter(fm.categories);
+      if (!(category in categories)) {
+        categories[category] = [];
       }
-      fm.topics = topics;
+      fm.categories = categories;
     });
+    await this.ensureCategoryLinkingNote(category);
   }
-  async addCategory(topicName, categoryName, color) {
-    const topic = this.sanitizeName(topicName);
+  async addTopic(categoryName, topicName, color) {
     const category = this.sanitizeName(categoryName);
-    if (!topic || !category || category === HELP_CATEGORY) {
+    const topic = this.sanitizeName(topicName);
+    if (!category || !topic) {
       return;
     }
     const normalizedColor = this.sanitizeColor(color);
     const file = await this.ensureConfigFile();
     await this.app.fileManager.processFrontMatter(file, (fm) => {
       var _a, _b;
-      const topics = this.getTopicMapFromFrontmatter(fm.topics);
-      const categories = (_a = topics[topic]) != null ? _a : [];
-      if (!categories.includes(category)) {
-        topics[topic] = [...categories, category];
+      const categories = this.getCategoryMapFromFrontmatter(fm.categories);
+      const topics = (_a = categories[category]) != null ? _a : [];
+      if (!topics.includes(topic)) {
+        categories[category] = [...topics, topic];
       }
-      fm.topics = topics;
+      fm.categories = categories;
       if (normalizedColor) {
-        const categoryColors = this.getCategoryColorMapFromFrontmatter(fm.categoryColors);
-        const topicColors = (_b = categoryColors[topic]) != null ? _b : {};
-        topicColors[category] = normalizedColor;
-        categoryColors[topic] = topicColors;
-        fm.categoryColors = categoryColors;
+        const topicColors = this.getTopicColorMapFromFrontmatter(fm.topicColors);
+        const categoryTopicColors = (_b = topicColors[category]) != null ? _b : {};
+        categoryTopicColors[topic] = normalizedColor;
+        topicColors[category] = categoryTopicColors;
+        fm.topicColors = topicColors;
       }
     });
+    await this.ensureCategoryLinkingNote(category, topic);
   }
-  async renameTopic(previousName, nextName) {
+  async renameCategory(previousName, nextName) {
     const previous = this.sanitizeName(previousName);
     const next = this.sanitizeName(nextName);
     if (!previous || !next || previous === next) {
@@ -6123,225 +6527,256 @@ var MyLearningStorage = class {
     const configFile = await this.ensureConfigFile();
     await this.app.fileManager.processFrontMatter(configFile, (fm) => {
       var _a, _b;
-      const topics = this.getTopicMapFromFrontmatter(fm.topics);
-      if (!(previous in topics) || next in topics) {
+      const categories = this.getCategoryMapFromFrontmatter(fm.categories);
+      if (!(previous in categories) || next in categories) {
         return;
       }
-      topics[next] = (_a = topics[previous]) != null ? _a : [];
-      delete topics[previous];
-      fm.topics = topics;
-      const categoryColors = this.getCategoryColorMapFromFrontmatter(fm.categoryColors);
-      if (previous in categoryColors) {
-        categoryColors[next] = (_b = categoryColors[previous]) != null ? _b : {};
-        delete categoryColors[previous];
+      categories[next] = (_a = categories[previous]) != null ? _a : [];
+      delete categories[previous];
+      fm.categories = categories;
+      const topicColors = this.getTopicColorMapFromFrontmatter(fm.topicColors);
+      if (previous in topicColors) {
+        topicColors[next] = (_b = topicColors[previous]) != null ? _b : {};
+        delete topicColors[previous];
       }
-      fm.categoryColors = categoryColors;
+      fm.topicColors = topicColors;
+      const canvases = this.getCanvasMapFromFrontmatter(fm.canvases);
+      for (const metadata of Object.values(canvases)) {
+        if (metadata.category === previous) {
+          metadata.category = next;
+        }
+      }
+      fm.canvases = canvases;
       renamed = true;
     });
     if (!renamed) {
       return false;
     }
-    const notes = this.notesInTopic(previous);
+    await this.renameCategoryLinkingNote(previous, next);
+    const notes = this.notesInCategory(previous);
     for (const note of notes) {
       await this.app.fileManager.processFrontMatter(note, (fm) => {
-        if (typeof fm.topic === "string" && this.sanitizeName(fm.topic) === previous) {
-          fm.topic = next;
+        if (this.normalizeCategoryScalar(fm.category) === previous) {
+          fm.category = this.toFrontmatterScalar(next);
         }
       });
     }
     return true;
   }
-  async deleteTopic(topicName) {
-    const topic = this.sanitizeName(topicName);
-    if (!topic) {
+  async deleteCategory(categoryName) {
+    const category = this.sanitizeName(categoryName);
+    if (!category) {
       return false;
     }
     let removed = false;
     const configFile = await this.ensureConfigFile();
     await this.app.fileManager.processFrontMatter(configFile, (fm) => {
-      const topics = this.getTopicMapFromFrontmatter(fm.topics);
-      if (!(topic in topics)) {
+      const categories = this.getCategoryMapFromFrontmatter(fm.categories);
+      if (!(category in categories)) {
         return;
       }
-      delete topics[topic];
-      fm.topics = topics;
-      const categoryColors = this.getCategoryColorMapFromFrontmatter(fm.categoryColors);
-      if (topic in categoryColors) {
-        delete categoryColors[topic];
+      delete categories[category];
+      fm.categories = categories;
+      const topicColors = this.getTopicColorMapFromFrontmatter(fm.topicColors);
+      if (category in topicColors) {
+        delete topicColors[category];
       }
-      fm.categoryColors = categoryColors;
+      fm.topicColors = topicColors;
+      const canvases = this.getCanvasMapFromFrontmatter(fm.canvases);
+      for (const [path, metadata] of Object.entries(canvases)) {
+        if (metadata.category === category) {
+          delete canvases[path];
+        }
+      }
+      fm.canvases = canvases;
       removed = true;
     });
     if (!removed) {
       return false;
     }
-    const notes = this.notesInTopic(topic);
+    await this.deleteCategoryLinkingNote(category);
+    const notes = this.notesInCategory(category);
     for (const note of notes) {
       await this.app.fileManager.processFrontMatter(note, (fm) => {
-        if (typeof fm.topic === "string" && this.sanitizeName(fm.topic) === topic) {
-          delete fm.topic;
+        if (this.normalizeCategoryScalar(fm.category) === category) {
+          delete fm.category;
         }
       });
     }
     return true;
   }
-  async renameCategory(topicName, previousName, nextName) {
-    const topic = this.sanitizeName(topicName);
+  async renameTopic(categoryName, previousName, nextName) {
+    const category = this.sanitizeName(categoryName);
     const previous = this.sanitizeName(previousName);
     const next = this.sanitizeName(nextName);
-    if (!topic || !previous || !next || previous === next || previous === HELP_CATEGORY || next === HELP_CATEGORY) {
+    if (!category || !previous || !next || previous === next) {
       return false;
     }
     let renamed = false;
     const configFile = await this.ensureConfigFile();
     await this.app.fileManager.processFrontMatter(configFile, (fm) => {
       var _a, _b;
-      const topics = this.getTopicMapFromFrontmatter(fm.topics);
-      const categories = (_a = topics[topic]) != null ? _a : [];
-      if (!categories.includes(previous) || categories.includes(next)) {
+      const categories = this.getCategoryMapFromFrontmatter(fm.categories);
+      const topics = (_a = categories[category]) != null ? _a : [];
+      if (!topics.includes(previous) || topics.includes(next)) {
         return;
       }
-      topics[topic] = categories.map((entry) => entry === previous ? next : entry);
-      fm.topics = topics;
-      const categoryColors = this.getCategoryColorMapFromFrontmatter(fm.categoryColors);
-      const topicColors = (_b = categoryColors[topic]) != null ? _b : {};
-      const previousColor = topicColors[previous];
+      categories[category] = topics.map((entry) => entry === previous ? next : entry);
+      fm.categories = categories;
+      const topicColors = this.getTopicColorMapFromFrontmatter(fm.topicColors);
+      const categoryTopicColors = (_b = topicColors[category]) != null ? _b : {};
+      const previousColor = categoryTopicColors[previous];
       if (previousColor) {
-        topicColors[next] = previousColor;
+        categoryTopicColors[next] = previousColor;
       }
-      delete topicColors[previous];
-      categoryColors[topic] = topicColors;
-      fm.categoryColors = categoryColors;
+      delete categoryTopicColors[previous];
+      topicColors[category] = categoryTopicColors;
+      fm.topicColors = topicColors;
+      const canvases = this.getCanvasMapFromFrontmatter(fm.canvases);
+      for (const metadata of Object.values(canvases)) {
+        if (metadata.category === category && metadata.topic === previous) {
+          metadata.topic = next;
+        }
+      }
+      fm.canvases = canvases;
       renamed = true;
     });
     if (!renamed) {
       return false;
     }
-    const notes = this.notesInTopic(topic);
+    await this.renameTopicInCategoryLinkingNote(category, previous, next);
+    const notes = this.notesInCategory(category);
     for (const note of notes) {
       await this.app.fileManager.processFrontMatter(note, (fm) => {
-        const current = normalizeCategoryList(fm.categories).filter((entry) => entry !== HELP_CATEGORY);
+        const current = normalizeTopicList(fm.topics);
         if (!current.includes(previous)) {
           return;
         }
         const updated = current.map((entry) => entry === previous ? next : entry).filter((entry, index, arr) => arr.indexOf(entry) === index);
         if (updated.length === 0) {
-          delete fm.categories;
+          delete fm.topics;
         } else {
-          fm.categories = asCategoryLinks(updated);
+          fm.topics = asTopicLinks(updated);
         }
       });
     }
     return true;
   }
-  async deleteCategory(topicName, categoryName) {
-    const topic = this.sanitizeName(topicName);
+  async deleteTopic(categoryName, topicName) {
     const category = this.sanitizeName(categoryName);
-    if (!topic || !category || category === HELP_CATEGORY) {
+    const topic = this.sanitizeName(topicName);
+    if (!category || !topic) {
       return false;
     }
     let removed = false;
     const configFile = await this.ensureConfigFile();
     await this.app.fileManager.processFrontMatter(configFile, (fm) => {
       var _a, _b;
-      const topics = this.getTopicMapFromFrontmatter(fm.topics);
-      const categories = (_a = topics[topic]) != null ? _a : [];
-      if (!categories.includes(category)) {
+      const categories = this.getCategoryMapFromFrontmatter(fm.categories);
+      const topics = (_a = categories[category]) != null ? _a : [];
+      if (!topics.includes(topic)) {
         return;
       }
-      topics[topic] = categories.filter((entry) => entry !== category);
-      fm.topics = topics;
-      const categoryColors = this.getCategoryColorMapFromFrontmatter(fm.categoryColors);
-      const topicColors = (_b = categoryColors[topic]) != null ? _b : {};
-      delete topicColors[category];
-      categoryColors[topic] = topicColors;
-      fm.categoryColors = categoryColors;
+      categories[category] = topics.filter((entry) => entry !== topic);
+      fm.categories = categories;
+      const topicColors = this.getTopicColorMapFromFrontmatter(fm.topicColors);
+      const categoryTopicColors = (_b = topicColors[category]) != null ? _b : {};
+      delete categoryTopicColors[topic];
+      topicColors[category] = categoryTopicColors;
+      fm.topicColors = topicColors;
+      const canvases = this.getCanvasMapFromFrontmatter(fm.canvases);
+      for (const [path, metadata] of Object.entries(canvases)) {
+        if (metadata.category === category && metadata.topic === topic) {
+          delete canvases[path];
+        }
+      }
+      fm.canvases = canvases;
       removed = true;
     });
     if (!removed) {
       return false;
     }
-    const notes = this.notesInTopic(topic);
+    await this.deleteTopicFromCategoryLinkingNote(category, topic);
+    const notes = this.notesInCategory(category);
     for (const note of notes) {
       await this.app.fileManager.processFrontMatter(note, (fm) => {
-        const current = normalizeCategoryList(fm.categories).filter((entry) => entry !== HELP_CATEGORY);
-        if (!current.includes(category)) {
+        const current = normalizeTopicList(fm.topics);
+        if (!current.includes(topic)) {
           return;
         }
-        const updated = current.filter((entry) => entry !== category);
+        const updated = current.filter((entry) => entry !== topic);
         if (updated.length === 0) {
-          delete fm.categories;
+          delete fm.topics;
         } else {
-          fm.categories = asCategoryLinks(updated);
+          fm.topics = asTopicLinks(updated);
         }
       });
     }
     return true;
   }
-  async setCategoryColor(topicName, categoryName, color) {
-    const topic = this.sanitizeName(topicName);
+  async setTopicColor(categoryName, topicName, color) {
     const category = this.sanitizeName(categoryName);
+    const topic = this.sanitizeName(topicName);
     const normalizedColor = this.sanitizeColor(color);
-    if (!topic || !category || category === HELP_CATEGORY || !normalizedColor) {
+    if (!category || !topic || !normalizedColor) {
       return false;
     }
     let updated = false;
     const configFile = await this.ensureConfigFile();
     await this.app.fileManager.processFrontMatter(configFile, (fm) => {
       var _a, _b;
-      const topics = this.getTopicMapFromFrontmatter(fm.topics);
-      const categories = (_a = topics[topic]) != null ? _a : [];
-      if (!categories.includes(category)) {
+      const categories = this.getCategoryMapFromFrontmatter(fm.categories);
+      const topics = (_a = categories[category]) != null ? _a : [];
+      if (!topics.includes(topic)) {
         return;
       }
-      const categoryColors = this.getCategoryColorMapFromFrontmatter(fm.categoryColors);
-      const topicColors = (_b = categoryColors[topic]) != null ? _b : {};
-      topicColors[category] = normalizedColor;
-      categoryColors[topic] = topicColors;
-      fm.categoryColors = categoryColors;
+      const topicColors = this.getTopicColorMapFromFrontmatter(fm.topicColors);
+      const categoryTopicColors = (_b = topicColors[category]) != null ? _b : {};
+      categoryTopicColors[topic] = normalizedColor;
+      topicColors[category] = categoryTopicColors;
+      fm.topicColors = topicColors;
       updated = true;
     });
     return updated;
   }
-  async listCategoriesForTopic(topicName) {
+  async listTopicsForCategory(categoryName) {
     var _a;
-    const topicMap = await this.loadTopicMap();
-    const categories = (_a = topicMap[topicName]) != null ? _a : [];
-    return [HELP_CATEGORY, ...categories.filter((name) => name !== HELP_CATEGORY)];
+    const categoryMap = await this.loadCategoryMap();
+    return (_a = categoryMap[categoryName]) != null ? _a : [];
   }
-  getCategoryColor(topicName, categoryName) {
+  getTopicColor(categoryName, topicName) {
     var _a, _b, _c;
-    const topic = this.sanitizeName(topicName);
     const category = this.sanitizeName(categoryName);
-    if (!category) {
-      return this.fallbackColor(`${topic}:${category}`);
+    const topic = this.sanitizeName(topicName);
+    if (!topic) {
+      return this.fallbackColor(`${category}:${topic}`);
     }
-    if (category === HELP_CATEGORY) {
-      return "#ae2929";
-    }
-    const colors = this.getCategoryColorMapFromFrontmatter(
-      (_b = (_a = this.app.metadataCache.getFileCache(this.app.vault.getAbstractFileByPath(MY_LEARNING_CONFIG_FILE_PATH))) == null ? void 0 : _a.frontmatter) == null ? void 0 : _b.categoryColors
+    const colors = this.getTopicColorMapFromFrontmatter(
+      (_b = (_a = this.app.metadataCache.getFileCache(this.app.vault.getAbstractFileByPath(MY_LEARNING_CONFIG_FILE_PATH))) == null ? void 0 : _a.frontmatter) == null ? void 0 : _b.topicColors
     );
-    const savedColor = (_c = colors[topic]) == null ? void 0 : _c[category];
+    const savedColor = (_c = colors[category]) == null ? void 0 : _c[topic];
     if (isValidHexColor(savedColor)) {
       return savedColor.trim().toLowerCase();
     }
-    return this.fallbackColor(`${topic}:${category}`);
+    return this.fallbackColor(`${category}:${topic}`);
   }
   listNotes() {
-    return this.app.vault.getMarkdownFiles().filter((file) => file.path.startsWith(`${LEARNING_FOLDER}/`)).sort((a, b) => a.basename.localeCompare(b.basename));
+    return this.app.vault.getMarkdownFiles().filter((file) => file.path.startsWith(`${LEARNING_FOLDER}/`) && !file.path.startsWith(`${NOTES_CATEGORIES_FOLDER}/`)).sort((a, b) => a.basename.localeCompare(b.basename));
+  }
+  listEntries() {
+    return this.app.vault.getFiles().filter((file) => file.path.startsWith(`${LEARNING_FOLDER}/`) && !file.path.startsWith(`${NOTES_CATEGORIES_FOLDER}/`) && (file.extension === "md" || file.extension === "canvas")).sort((a, b) => a.basename.localeCompare(b.basename));
   }
   isLearningNoteFile(file) {
-    return !!file && file.extension === "md" && file.path.startsWith(`${LEARNING_FOLDER}/`);
+    return !!file && file.extension === "md" && file.path.startsWith(`${LEARNING_FOLDER}/`) && !file.path.startsWith(`${NOTES_CATEGORIES_FOLDER}/`);
   }
   noteExists(name) {
     const trimmed = this.sanitizeNoteName(name);
     if (!trimmed) {
       return false;
     }
-    return this.app.vault.getAbstractFileByPath(`${LEARNING_FOLDER}/${trimmed}.md`) instanceof import_obsidian5.TFile;
+    return ["md", "canvas"].some((extension) => this.app.vault.getAbstractFileByPath(`${LEARNING_FOLDER}/${trimmed}.${extension}`) instanceof import_obsidian5.TFile);
   }
-  async createNote(name, topic, categories) {
+  async createNote(name, category, topics) {
     const trimmed = this.sanitizeNoteName(name);
     if (!trimmed) {
       return null;
@@ -6353,76 +6788,152 @@ var MyLearningStorage = class {
     }
     await this.ensureProvisioned();
     const file = await this.app.vault.create(path, "");
-    if (topic || categories && categories.length > 0) {
+    if (category || topics && topics.length > 0) {
       await this.app.fileManager.processFrontMatter(file, (fm) => {
-        if (topic) {
-          fm.topic = topic;
+        if (category) {
+          fm.category = this.toFrontmatterScalar(category);
         }
-        if (categories && categories.length > 0) {
-          const normalized = normalizeCategoryList(categories).filter((entry) => entry !== HELP_CATEGORY);
-          fm.categories = asCategoryLinks(normalized);
+        if (topics && topics.length > 0) {
+          const normalized = normalizeTopicList(topics);
+          fm.topics = asTopicLinks(normalized);
         }
       });
     }
     return file;
   }
+  async createCanvas(name, category, topic) {
+    const trimmed = this.sanitizeNoteName(name);
+    if (!trimmed) {
+      return null;
+    }
+    const path = `${LEARNING_FOLDER}/${trimmed}.canvas`;
+    const existing = this.app.vault.getAbstractFileByPath(path);
+    if (existing instanceof import_obsidian5.TFile) {
+      return existing;
+    }
+    await this.ensureProvisioned();
+    const sanitizedTopic = topic ? this.sanitizeName(topic) : "";
+    const nodes = sanitizedTopic ? [this.buildCanvasTopicNode(sanitizedTopic)] : [];
+    const file = await this.app.vault.create(path, JSON.stringify({ nodes, edges: [] }, null, 2));
+    if (category && topic) {
+      const configFile = await this.ensureConfigFile();
+      await this.app.fileManager.processFrontMatter(configFile, (fm) => {
+        const canvases = this.getCanvasMapFromFrontmatter(fm.canvases);
+        canvases[file.path] = { category: this.sanitizeName(category), topic: this.sanitizeName(topic), progress: 0 };
+        fm.canvases = canvases;
+      });
+    }
+    return file;
+  }
   async deleteNote(file) {
+    if (file.extension === "canvas") {
+      const configFile = await this.ensureConfigFile();
+      await this.app.fileManager.processFrontMatter(configFile, (fm) => {
+        const canvases = this.getCanvasMapFromFrontmatter(fm.canvases);
+        delete canvases[file.path];
+        fm.canvases = canvases;
+      });
+    }
     await this.app.vault.trash(file, true);
   }
-  getNoteTopic(file) {
-    var _a, _b;
-    const topic = (_b = (_a = this.app.metadataCache.getFileCache(file)) == null ? void 0 : _a.frontmatter) == null ? void 0 : _b.topic;
-    return typeof topic === "string" && topic.trim().length > 0 ? topic.trim() : null;
+  async handleEntryRename(file, oldPath) {
+    if (file.extension !== "canvas" || oldPath === file.path) {
+      return;
+    }
+    const configFile = await this.ensureConfigFile();
+    await this.app.fileManager.processFrontMatter(configFile, (fm) => {
+      const canvases = this.getCanvasMapFromFrontmatter(fm.canvases);
+      const metadata = canvases[oldPath];
+      if (!metadata) {
+        return;
+      }
+      delete canvases[oldPath];
+      canvases[file.path] = metadata;
+      fm.canvases = canvases;
+    });
   }
-  async setNoteTopic(file, topic) {
-    const trimmed = this.sanitizeName(topic);
+  getEntryCategory(file) {
+    var _a, _b;
+    if (file.extension === "canvas") {
+      return (_b = (_a = this.getCanvasMetadata(file)) == null ? void 0 : _a.category) != null ? _b : null;
+    }
+    return this.getNoteCategory(file);
+  }
+  getCanvasSelection(file) {
+    return file.extension === "canvas" ? this.getCanvasMetadata(file) : null;
+  }
+  getEntryTopics(file) {
+    var _a;
+    if (file.extension === "canvas") {
+      const topic = (_a = this.getCanvasMetadata(file)) == null ? void 0 : _a.topic;
+      return topic ? [topic] : [];
+    }
+    return this.getNoteTopics(file);
+  }
+  getEntryComprehension(file) {
+    var _a, _b;
+    return file.extension === "canvas" ? (_b = (_a = this.getCanvasMetadata(file)) == null ? void 0 : _a.progress) != null ? _b : 0 : this.getComprehension(file);
+  }
+  async setCanvasProgress(file, value) {
+    if (file.extension !== "canvas") {
+      return;
+    }
+    const configFile = await this.ensureConfigFile();
+    await this.app.fileManager.processFrontMatter(configFile, (fm) => {
+      const canvases = this.getCanvasMapFromFrontmatter(fm.canvases);
+      const metadata = canvases[file.path];
+      if (!metadata) {
+        return;
+      }
+      metadata.progress = this.clampComprehension(value);
+      fm.canvases = canvases;
+    });
+  }
+  entriesInCategory(category) {
+    return this.listEntries().filter((file) => this.getEntryCategory(file) === category);
+  }
+  entriesInCategoryTopic(category, topic) {
+    return this.entriesInCategory(category).filter((file) => this.getEntryTopics(file).includes(topic));
+  }
+  getNoteCategory(file) {
+    var _a, _b;
+    const category = (_b = (_a = this.app.metadataCache.getFileCache(file)) == null ? void 0 : _a.frontmatter) == null ? void 0 : _b.category;
+    if (typeof category === "number" && Number.isFinite(category)) {
+      return String(category);
+    }
+    return typeof category === "string" && category.trim().length > 0 ? category.trim() : null;
+  }
+  async setNoteCategory(file, category) {
+    const trimmed = this.sanitizeName(category);
     if (!trimmed) {
       return;
     }
-    await this.addTopic(trimmed);
+    await this.addCategory(trimmed);
     await this.app.fileManager.processFrontMatter(file, (fm) => {
-      fm.topic = trimmed;
+      fm.category = this.toFrontmatterScalar(trimmed);
     });
   }
-  getNoteCategories(file) {
+  getNoteTopics(file) {
     var _a, _b;
-    return normalizeCategoryList((_b = (_a = this.app.metadataCache.getFileCache(file)) == null ? void 0 : _a.frontmatter) == null ? void 0 : _b.categories);
+    return normalizeTopicList((_b = (_a = this.app.metadataCache.getFileCache(file)) == null ? void 0 : _a.frontmatter) == null ? void 0 : _b.topics);
   }
-  async toggleNoteCategory(file, category) {
-    const target = this.sanitizeName(category);
-    if (!target || target === HELP_CATEGORY) {
+  async toggleNoteTopic(file, topic) {
+    const target = this.sanitizeName(topic);
+    if (!target) {
       return false;
     }
     let nowActive = false;
     await this.app.fileManager.processFrontMatter(file, (fm) => {
-      const current = normalizeCategoryList(fm.categories).filter((entry) => entry !== HELP_CATEGORY);
+      const current = normalizeTopicList(fm.topics);
       if (current.includes(target)) {
-        fm.categories = asCategoryLinks(current.filter((entry) => entry !== target));
+        fm.topics = asTopicLinks(current.filter((entry) => entry !== target));
         nowActive = false;
       } else {
-        fm.categories = asCategoryLinks([...current, target]);
+        fm.topics = asTopicLinks([...current, target]);
         nowActive = true;
       }
     });
     return nowActive;
-  }
-  isHelpEnabled(file) {
-    var _a, _b;
-    return ((_b = (_a = this.app.metadataCache.getFileCache(file)) == null ? void 0 : _a.frontmatter) == null ? void 0 : _b.help) === true;
-  }
-  async setHelpEnabled(file, enabled) {
-    await this.app.fileManager.processFrontMatter(file, (fm) => {
-      if (enabled) {
-        fm.help = true;
-      } else {
-        delete fm.help;
-      }
-    });
-  }
-  async toggleHelpEnabled(file) {
-    const next = !this.isHelpEnabled(file);
-    await this.setHelpEnabled(file, next);
-    return next;
   }
   getComprehension(file) {
     var _a, _b;
@@ -6438,20 +6949,210 @@ var MyLearningStorage = class {
       fm.comprehension = next;
     });
   }
-  notesInTopic(topic) {
-    return this.listNotes().filter((file) => this.getNoteTopic(file) === topic);
+  notesInCategory(category) {
+    return this.listNotes().filter((file) => this.getNoteCategory(file) === category);
   }
-  notesInTopicCategory(topic, category) {
-    if (category === HELP_CATEGORY) {
-      return this.notesInTopic(topic).filter((file) => this.isHelpEnabled(file));
+  notesInCategoryTopic(category, topic) {
+    return this.notesInCategory(category).filter((file) => this.getNoteTopics(file).includes(topic));
+  }
+  async ensureCategoryLinkingNote(categoryName, topicName) {
+    const category = this.sanitizeName(categoryName);
+    const topic = topicName ? this.sanitizeName(topicName) : "";
+    if (!category) {
+      return null;
     }
-    return this.notesInTopic(topic).filter((file) => this.getNoteCategories(file).includes(category));
+    await this.ensureFolderExists(NOTES_CATEGORIES_FOLDER);
+    const path = this.buildCategoryLinkingNotePath(category);
+    const existing = this.app.vault.getAbstractFileByPath(path);
+    if (existing instanceof import_obsidian5.TFile) {
+      await this.app.fileManager.processFrontMatter(existing, (fm) => {
+        fm.category = this.toFrontmatterScalar(category);
+        const current = normalizeTopicList(fm.topics);
+        const next = topic && !current.includes(topic) ? [...current, topic] : current;
+        fm.topics = asTopicLinks(next);
+      });
+      return existing;
+    }
+    const categoryValue = this.toFrontmatterScalar(category);
+    const categoryYaml = typeof categoryValue === "number" ? String(categoryValue) : JSON.stringify(categoryValue);
+    const topicsYaml = topic ? `
+  - [[${topic}]]` : " []";
+    const noteBody = `---
+category: ${categoryYaml}
+topics:${topicsYaml}
+---
+
+# ${category}
+`;
+    return this.app.vault.create(path, noteBody);
+  }
+  buildCategoryLinkingNotePath(categoryName) {
+    const category = this.sanitizeNoteName(categoryName);
+    return `${NOTES_CATEGORIES_FOLDER}/${category}.md`;
+  }
+  async renameTopicInCategoryLinkingNote(categoryName, previousTopic, nextTopic) {
+    const category = this.sanitizeName(categoryName);
+    const previous = this.sanitizeName(previousTopic);
+    const next = this.sanitizeName(nextTopic);
+    if (!category || !previous || !next || previous === next) {
+      return;
+    }
+    const path = this.buildCategoryLinkingNotePath(category);
+    const note = this.app.vault.getAbstractFileByPath(path);
+    if (!(note instanceof import_obsidian5.TFile)) {
+      return;
+    }
+    await this.app.fileManager.processFrontMatter(note, (fm) => {
+      const current = normalizeTopicList(fm.topics);
+      if (!current.includes(previous)) {
+        return;
+      }
+      const updated = current.map((entry) => entry === previous ? next : entry).filter((entry, index, arr) => arr.indexOf(entry) === index);
+      fm.topics = asTopicLinks(updated);
+    });
+  }
+  async renameCategoryLinkingNote(previousCategory, nextCategory) {
+    const previous = this.sanitizeName(previousCategory);
+    const next = this.sanitizeName(nextCategory);
+    if (!previous || !next || previous === next) {
+      return;
+    }
+    const sourcePath = this.buildCategoryLinkingNotePath(previous);
+    const source = this.app.vault.getAbstractFileByPath(sourcePath);
+    if (!(source instanceof import_obsidian5.TFile)) {
+      return;
+    }
+    const targetPath = this.buildCategoryLinkingNotePath(next);
+    const target = this.app.vault.getAbstractFileByPath(targetPath);
+    if (target instanceof import_obsidian5.TFile && target.path !== source.path) {
+      await this.app.vault.delete(target);
+    }
+    await this.app.vault.rename(source, targetPath);
+    const renamed = this.app.vault.getAbstractFileByPath(targetPath);
+    if (!(renamed instanceof import_obsidian5.TFile)) {
+      return;
+    }
+    const content = await this.app.vault.cachedRead(renamed);
+    const updatedContent = content.replace(/^# .*$/m, `# ${next}`);
+    if (updatedContent !== content) {
+      await this.app.vault.modify(renamed, updatedContent);
+    }
+    await this.app.fileManager.processFrontMatter(renamed, (fm) => {
+      fm.category = this.toFrontmatterScalar(next);
+      const topics = normalizeTopicList(fm.topics);
+      fm.topics = asTopicLinks(topics);
+    });
+  }
+  async deleteTopicFromCategoryLinkingNote(categoryName, topicName) {
+    const category = this.sanitizeName(categoryName);
+    const topic = this.sanitizeName(topicName);
+    if (!category || !topic) {
+      return;
+    }
+    const path = this.buildCategoryLinkingNotePath(category);
+    const note = this.app.vault.getAbstractFileByPath(path);
+    if (!(note instanceof import_obsidian5.TFile)) {
+      return;
+    }
+    let shouldDelete = false;
+    await this.app.fileManager.processFrontMatter(note, (fm) => {
+      const current = normalizeTopicList(fm.topics);
+      const updated = current.filter((entry) => entry !== topic);
+      if (updated.length === 0) {
+        shouldDelete = true;
+        delete fm.topics;
+        fm.category = this.toFrontmatterScalar(category);
+      } else {
+        fm.topics = asTopicLinks(updated);
+      }
+    });
+    if (shouldDelete) {
+      await this.app.vault.trash(note, true);
+    }
+  }
+  async deleteCategoryLinkingNote(categoryName) {
+    const category = this.sanitizeName(categoryName);
+    if (!category) {
+      return;
+    }
+    const path = this.buildCategoryLinkingNotePath(category);
+    const note = this.app.vault.getAbstractFileByPath(path);
+    if (note instanceof import_obsidian5.TFile) {
+      await this.app.vault.trash(note, true);
+    }
+  }
+  listCategoryLinkingNotes() {
+    return this.app.vault.getMarkdownFiles().filter((file) => file.path.startsWith(`${NOTES_CATEGORIES_FOLDER}/`) || file.path.startsWith(`${LEGACY_NOTES_CATEGORIES_FOLDER}/`)).sort((a, b) => a.path.localeCompare(b.path));
+  }
+  async migrateCategoryLinkingNotes() {
+    var _a;
+    const notes = this.listCategoryLinkingNotes();
+    for (const note of notes) {
+      const frontmatter = (_a = this.app.metadataCache.getFileCache(note)) == null ? void 0 : _a.frontmatter;
+      const separatorIndex = note.basename.indexOf("--");
+      const legacyCategory = separatorIndex >= 0 ? note.basename.slice(0, separatorIndex).trim() : note.basename;
+      const legacyTopic = separatorIndex >= 0 ? note.basename.slice(separatorIndex + 2).trim() : "";
+      const category = typeof (frontmatter == null ? void 0 : frontmatter.category) === "number" ? String(frontmatter.category) : typeof (frontmatter == null ? void 0 : frontmatter.category) === "string" ? frontmatter.category.trim() : typeof (frontmatter == null ? void 0 : frontmatter.topic) === "string" ? frontmatter.topic.trim() : legacyCategory;
+      if (!category) {
+        continue;
+      }
+      const existingTopics = normalizeTopicList(frontmatter == null ? void 0 : frontmatter.topics);
+      const legacyTopics = normalizeTopicList(frontmatter == null ? void 0 : frontmatter.categories);
+      const topics = [...existingTopics, ...legacyTopics, legacyTopic].filter((topic, index, values) => topic && topic !== LEGACY_HELP_TOPIC && values.indexOf(topic) === index);
+      const targetPath = this.buildCategoryLinkingNotePath(category);
+      const target = this.app.vault.getAbstractFileByPath(targetPath);
+      if (target instanceof import_obsidian5.TFile && target.path !== note.path) {
+        await this.app.fileManager.processFrontMatter(target, (fm) => {
+          const merged = [...normalizeTopicList(fm.topics), ...topics].filter((topic, index, values) => topic && topic !== LEGACY_HELP_TOPIC && values.indexOf(topic) === index);
+          fm.category = this.toFrontmatterScalar(category);
+          fm.topics = asTopicLinks(merged);
+          delete fm.topic;
+          if (Array.isArray(fm.categories)) {
+            delete fm.categories;
+          }
+        });
+        await this.app.vault.trash(note, true);
+        continue;
+      }
+      if (note.path !== targetPath) {
+        await this.app.vault.rename(note, targetPath);
+      }
+      const migrated = this.app.vault.getAbstractFileByPath(targetPath);
+      if (!(migrated instanceof import_obsidian5.TFile)) {
+        continue;
+      }
+      await this.app.fileManager.processFrontMatter(migrated, (fm) => {
+        fm.category = this.toFrontmatterScalar(category);
+        fm.topics = asTopicLinks(topics);
+        delete fm.topic;
+        if (Array.isArray(fm.categories)) {
+          delete fm.categories;
+        }
+      });
+      const content = await this.app.vault.cachedRead(migrated);
+      const updatedContent = content.replace(/^# .*$/m, `# ${category}`);
+      if (updatedContent !== content) {
+        await this.app.vault.modify(migrated, updatedContent);
+      }
+    }
   }
   sanitizeNoteName(name) {
     return name.trim().replace(/[\\/:*?"<>|#^[\]]/g, "").trim();
   }
   sanitizeName(name) {
     return name.trim();
+  }
+  toFrontmatterScalar(value) {
+    return /^-?(?:0|[1-9]\d*)(?:\.\d+)?$/.test(value) ? Number(value) : value;
+  }
+  normalizeCategoryScalar(value) {
+    if (typeof value === "number" && Number.isFinite(value)) {
+      return String(value);
+    }
+    if (typeof value === "string" && value.trim()) {
+      return value.trim();
+    }
+    return null;
   }
   sanitizeColor(value) {
     if (!value) {
@@ -6472,71 +7173,158 @@ var MyLearningStorage = class {
     const hue = Math.abs(hash) % 360;
     return `hsl(${hue} 74% 58%)`;
   }
-  getTopicMapFromFrontmatter(raw) {
+  getCategoryMapFromFrontmatter(raw) {
     const map = {};
     if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
       return map;
     }
-    for (const [topic, categories] of Object.entries(raw)) {
-      const trimmedTopic = this.sanitizeName(topic);
-      if (!trimmedTopic) {
+    for (const [category, topics] of Object.entries(raw)) {
+      const trimmedCategory = this.sanitizeName(category);
+      if (!trimmedCategory) {
         continue;
       }
-      map[trimmedTopic] = normalizeCategoryList(categories).filter((name) => name !== HELP_CATEGORY);
+      map[trimmedCategory] = normalizeTopicList(topics);
     }
     return map;
   }
-  getCategoryColorMapFromFrontmatter(raw) {
+  getTopicColorMapFromFrontmatter(raw) {
     const map = {};
     if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
       return map;
     }
-    for (const [topic, categories] of Object.entries(raw)) {
-      const trimmedTopic = this.sanitizeName(topic);
-      if (!trimmedTopic || !categories || typeof categories !== "object" || Array.isArray(categories)) {
+    for (const [category, topics] of Object.entries(raw)) {
+      const trimmedCategory = this.sanitizeName(category);
+      if (!trimmedCategory || !topics || typeof topics !== "object" || Array.isArray(topics)) {
         continue;
       }
-      const topicColors = {};
-      for (const [category, color] of Object.entries(categories)) {
-        const trimmedCategory = this.sanitizeName(category);
-        if (!trimmedCategory || !isValidHexColor(color)) {
+      const categoryTopicColors = {};
+      for (const [topic, color] of Object.entries(topics)) {
+        const trimmedTopic = this.sanitizeName(topic);
+        if (!trimmedTopic || !isValidHexColor(color)) {
           continue;
         }
-        topicColors[trimmedCategory] = color.trim().toLowerCase();
+        categoryTopicColors[trimmedTopic] = color.trim().toLowerCase();
       }
-      if (Object.keys(topicColors).length > 0) {
-        map[trimmedTopic] = topicColors;
+      if (Object.keys(categoryTopicColors).length > 0) {
+        map[trimmedCategory] = categoryTopicColors;
       }
     }
     return map;
   }
-  async readTopicsFromFile(file) {
+  getCanvasMetadata(file) {
+    var _a, _b, _c;
+    const configFile = this.app.vault.getAbstractFileByPath(MY_LEARNING_CONFIG_FILE_PATH);
+    if (!(configFile instanceof import_obsidian5.TFile)) {
+      return null;
+    }
+    const canvases = this.getCanvasMapFromFrontmatter(
+      (_b = (_a = this.app.metadataCache.getFileCache(configFile)) == null ? void 0 : _a.frontmatter) == null ? void 0 : _b.canvases
+    );
+    return (_c = canvases[file.path]) != null ? _c : null;
+  }
+  buildCanvasTopicNode(topic) {
+    return {
+      id: "neural-garden-topic-link",
+      type: "text",
+      text: `### Topic
+Do not touch this.\\
+[[${topic}]]`,
+      x: -1e4,
+      y: -1e4,
+      width: 170,
+      height: 100
+    };
+  }
+  async ensureCanvasTopicLinks() {
+    var _a, _b, _c;
+    const configFile = this.app.vault.getAbstractFileByPath(MY_LEARNING_CONFIG_FILE_PATH);
+    if (!(configFile instanceof import_obsidian5.TFile)) {
+      return;
+    }
+    const canvases = this.getCanvasMapFromFrontmatter(
+      (_b = (_a = this.app.metadataCache.getFileCache(configFile)) == null ? void 0 : _a.frontmatter) == null ? void 0 : _b.canvases
+    );
+    for (const [path, metadata] of Object.entries(canvases)) {
+      const file = this.app.vault.getAbstractFileByPath(path);
+      if (!(file instanceof import_obsidian5.TFile) || file.extension !== "canvas") {
+        continue;
+      }
+      try {
+        const data = JSON.parse(await this.app.vault.cachedRead(file));
+        const nodes = Array.isArray(data.nodes) ? data.nodes : [];
+        const topicNode = this.buildCanvasTopicNode(metadata.topic);
+        const existingIndex = nodes.findIndex((node) => node.id === "neural-garden-topic-link");
+        let changed = false;
+        if (existingIndex >= 0) {
+          const existingNode = (_c = nodes[existingIndex]) != null ? _c : {};
+          if (existingNode.text !== topicNode.text || existingNode.type !== topicNode.type || existingNode.x !== topicNode.x || existingNode.y !== topicNode.y || existingNode.width !== topicNode.width || existingNode.height !== topicNode.height) {
+            nodes[existingIndex] = { ...existingNode, ...topicNode };
+            changed = true;
+          }
+        } else {
+          nodes.unshift(topicNode);
+          changed = true;
+        }
+        if (!changed) {
+          continue;
+        }
+        data.nodes = nodes;
+        data.edges = Array.isArray(data.edges) ? data.edges : [];
+        await this.app.vault.modify(file, JSON.stringify(data, null, 2));
+      } catch (error) {
+        console.error(`[Neural Garden] Could not add topic link to canvas ${path}`, error);
+      }
+    }
+  }
+  getCanvasMapFromFrontmatter(raw) {
+    const map = {};
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+      return map;
+    }
+    for (const [path, value] of Object.entries(raw)) {
+      if (!value || typeof value !== "object" || Array.isArray(value)) {
+        continue;
+      }
+      const metadata = value;
+      const category = typeof metadata.category === "string" ? this.sanitizeName(metadata.category) : "";
+      const topic = typeof metadata.topic === "string" ? this.sanitizeName(metadata.topic) : "";
+      if (path.endsWith(".canvas") && category && topic) {
+        map[path] = {
+          category,
+          topic,
+          progress: this.clampComprehension(typeof metadata.progress === "number" ? metadata.progress : 0)
+        };
+      }
+    }
+    return map;
+  }
+  async readCategoriesFromFile(file) {
     var _a, _b, _c;
     const content = await this.app.vault.cachedRead(file);
     const match = content.match(/^---\n([\s\S]*?)\n---/);
     if (!match) {
       return {};
     }
-    const parsed = this.parseTopicsFrontmatter(match[1]);
+    const parsed = this.parseCategoriesFrontmatter(match[1]);
     if (parsed) {
       return parsed;
     }
-    return (_c = (_b = (_a = this.app.metadataCache.getFileCache(file)) == null ? void 0 : _a.frontmatter) == null ? void 0 : _b.topics) != null ? _c : {};
+    return (_c = (_b = (_a = this.app.metadataCache.getFileCache(file)) == null ? void 0 : _a.frontmatter) == null ? void 0 : _b.categories) != null ? _c : {};
   }
-  parseTopicsFrontmatter(frontmatterText) {
+  parseCategoriesFrontmatter(frontmatterText) {
     var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j;
     const lines = frontmatterText.split(/\r?\n/);
-    const topicsIndex = lines.findIndex((line) => /^topics:\s*/.test(line));
-    if (topicsIndex < 0) {
+    const categoriesIndex = lines.findIndex((line) => /^categories:\s*/.test(line));
+    if (categoriesIndex < 0) {
       return null;
     }
-    const firstLine = (_b = (_a = lines[topicsIndex]) == null ? void 0 : _a.trim()) != null ? _b : "";
-    if (firstLine === "topics: {}") {
+    const firstLine = (_b = (_a = lines[categoriesIndex]) == null ? void 0 : _a.trim()) != null ? _b : "";
+    if (firstLine === "categories: {}") {
       return {};
     }
     const map = {};
-    let currentTopic = null;
-    for (let i = topicsIndex + 1; i < lines.length; i += 1) {
+    let currentCategory = null;
+    for (let i = categoriesIndex + 1; i < lines.length; i += 1) {
       const line = (_c = lines[i]) != null ? _c : "";
       if (!line.trim()) {
         continue;
@@ -6544,34 +7332,80 @@ var MyLearningStorage = class {
       if (!line.startsWith("  ")) {
         break;
       }
-      const topicMatch = line.match(/^  ([^:#][^:]*)\s*:\s*(.*)$/);
-      if (topicMatch) {
-        currentTopic = (_e = (_d = topicMatch[1]) == null ? void 0 : _d.trim()) != null ? _e : null;
-        if (!currentTopic) {
+      const categoryMatch = line.match(/^  ([^:#][^:]*)\s*:\s*(.*)$/);
+      if (categoryMatch) {
+        currentCategory = (_e = (_d = categoryMatch[1]) == null ? void 0 : _d.trim()) != null ? _e : null;
+        if (!currentCategory) {
           continue;
         }
-        if (!(currentTopic in map)) {
-          map[currentTopic] = [];
+        if (!(currentCategory in map)) {
+          map[currentCategory] = [];
         }
-        const inlineValue = (_g = (_f = topicMatch[2]) == null ? void 0 : _f.trim()) != null ? _g : "";
+        const inlineValue = (_g = (_f = categoryMatch[2]) == null ? void 0 : _f.trim()) != null ? _g : "";
         if (inlineValue === "[]") {
           continue;
         }
         if (inlineValue.startsWith("[") && inlineValue.endsWith("]")) {
           const values = inlineValue.slice(1, -1).split(",").map((entry) => entry.trim().replace(/^['\"]|['\"]$/g, "")).filter(Boolean);
-          map[currentTopic] = values;
+          map[currentCategory] = values;
         }
         continue;
       }
-      const categoryMatch = line.match(/^    -\s+(.+)$/);
-      if (categoryMatch && currentTopic) {
-        const category = (_h = categoryMatch[1]) == null ? void 0 : _h.trim().replace(/^['\"]|['\"]$/g, "");
-        if (category && !((_i = map[currentTopic]) == null ? void 0 : _i.includes(category))) {
-          (_j = map[currentTopic]) == null ? void 0 : _j.push(category);
+      const topicMatch = line.match(/^    -\s+(.+)$/);
+      if (topicMatch && currentCategory) {
+        const topic = (_h = topicMatch[1]) == null ? void 0 : _h.trim().replace(/^['\"]|['\"]$/g, "");
+        if (topic && !((_i = map[currentCategory]) == null ? void 0 : _i.includes(topic))) {
+          (_j = map[currentCategory]) == null ? void 0 : _j.push(topic);
         }
       }
     }
     return map;
+  }
+  async migrateConfigSchema(file) {
+    await this.app.fileManager.processFrontMatter(file, (fm) => {
+      if (!fm.categories && fm.topics && typeof fm.topics === "object" && !Array.isArray(fm.topics)) {
+        fm.categories = fm.topics;
+      }
+      if (!fm.topicColors && fm.categoryColors && typeof fm.categoryColors === "object") {
+        fm.topicColors = fm.categoryColors;
+      }
+      delete fm.categoryColors;
+      delete fm.topics;
+      const categories = this.getCategoryMapFromFrontmatter(fm.categories);
+      for (const category of Object.keys(categories)) {
+        categories[category] = categories[category].filter((topic) => topic !== LEGACY_HELP_TOPIC);
+      }
+      const topicColors = this.getTopicColorMapFromFrontmatter(fm.topicColors);
+      for (const colors of Object.values(topicColors)) {
+        delete colors[LEGACY_HELP_TOPIC];
+      }
+      fm.categories = categories;
+      fm.topicColors = topicColors;
+      fm.canvases = this.getCanvasMapFromFrontmatter(fm.canvases);
+    });
+  }
+  async migrateNoteSchema(file) {
+    await this.app.fileManager.processFrontMatter(file, (fm) => {
+      if (!fm.category && typeof fm.topic === "string") {
+        fm.category = this.toFrontmatterScalar(fm.topic);
+      } else {
+        const category = this.normalizeCategoryScalar(fm.category);
+        if (category) {
+          fm.category = this.toFrontmatterScalar(category);
+        }
+      }
+      if (!fm.topics && Array.isArray(fm.categories)) {
+        fm.topics = asTopicLinks(normalizeTopicList(fm.categories));
+      }
+      if (Array.isArray(fm.topics)) {
+        fm.topics = asTopicLinks(normalizeTopicList(fm.topics).filter((topic) => topic !== LEGACY_HELP_TOPIC));
+      }
+      delete fm.help;
+      delete fm.topic;
+      if (Array.isArray(fm.categories)) {
+        delete fm.categories;
+      }
+    });
   }
   async ensureFolderExists(path) {
     const segments = path.split("/").filter(Boolean);
@@ -6599,6 +7433,7 @@ var import_obsidian6 = require("obsidian");
 var FAVOURITE_CATEGORY = "__favourite__";
 var SUPPORT_PREFIX = "support:";
 var OPEN_RIGHT_ICON_CANDIDATES2 = ["separator-vertical", "panel-right-open", "split-square-vertical"];
+var EDIT_ICON_CANDIDATES2 = ["pencil", "pencil-line", "edit-3"];
 function setOpenToRightIcon2(el) {
   for (const iconName of OPEN_RIGHT_ICON_CANDIDATES2) {
     (0, import_obsidian6.setIcon)(el, iconName);
@@ -6608,17 +7443,29 @@ function setOpenToRightIcon2(el) {
   }
   el.setText(">");
 }
+function setEditIcon2(el) {
+  for (const iconName of EDIT_ICON_CANDIDATES2) {
+    (0, import_obsidian6.setIcon)(el, iconName);
+    if (el.querySelector("svg")) {
+      return;
+    }
+  }
+  el.setText("E");
+}
 var NeuralGardenMyNotesView = class extends import_obsidian6.ItemView {
   constructor(leaf, myNotesStorage, openHomeView) {
     super(leaf);
     this.myNotesStorage = myNotesStorage;
     this.openHomeView = openHomeView;
     this.selectedCategory = null;
+    this.editMode = null;
     this.searchQuery = "";
     this.searchDebounceTimer = null;
     this.uncategorizedExpanded = false;
     this.searchHintEl = null;
     this.notesListEl = null;
+    this.categoryPillRowEl = null;
+    this.supportPillRowEl = null;
   }
   getViewType() {
     return VIEW_TYPE_NEURAL_GARDEN_MY_NOTES;
@@ -6660,7 +7507,25 @@ var NeuralGardenMyNotesView = class extends import_obsidian6.ItemView {
   async renderCategoriesSection(parent) {
     const section = parent.createDiv({ cls: "ng-mynotes-categories" });
     const headerRow = section.createDiv({ cls: "ng-mynotes-section-header" });
-    headerRow.createEl("h4", { text: "Categories", cls: "ng-mynotes-section-title" });
+    const titleWrap = headerRow.createDiv({ cls: "ng-mynotes-title-actions" });
+    titleWrap.createEl("h4", { text: "Categories", cls: "ng-mynotes-section-title" });
+    const categoryActions = titleWrap.createDiv({ cls: "ng-mylearning-header-actions ng-mynotes-header-actions" });
+    const createCategoryButton = categoryActions.createEl("button", { cls: "ng-note-header-add-category-icon ng-mylearning-inline-plus" });
+    createCategoryButton.setAttribute("aria-label", "Create Category");
+    createCategoryButton.setAttribute("title", "Create Category");
+    createCategoryButton.setText("+");
+    createCategoryButton.addEventListener("click", () => {
+      this.openCreateCategoryOverlay();
+    });
+    const editCategoryButton = categoryActions.createEl("button", { cls: "ng-note-header-add-category-icon ng-mylearning-inline-edit" });
+    editCategoryButton.setAttribute("aria-label", "Edit Categories");
+    editCategoryButton.setAttribute("title", "Edit Categories");
+    setEditIcon2(editCategoryButton);
+    editCategoryButton.toggleClass("is-active", this.editMode === "category");
+    editCategoryButton.addEventListener("click", () => {
+      this.editMode = this.editMode === "category" ? null : "category";
+      void this.render();
+    });
     const newButton = headerRow.createEl("button", { cls: "ng-mynotes-new-button" });
     const newIcon = newButton.createSpan({ cls: "ng-mynotes-button-icon" });
     (0, import_obsidian6.setIcon)(newIcon, "file-plus-2");
@@ -6669,7 +7534,9 @@ var NeuralGardenMyNotesView = class extends import_obsidian6.ItemView {
       this.openNewNoteOverlay();
     });
     const pillRow = section.createDiv({ cls: "ng-mynotes-pill-row" });
+    this.categoryPillRowEl = pillRow;
     const favouritePill = pillRow.createEl("button", { cls: "ng-mynotes-pill ng-mynotes-pill-favourite" });
+    favouritePill.dataset.categoryKey = FAVOURITE_CATEGORY;
     const heartIcon = favouritePill.createSpan({ cls: "ng-mynotes-button-icon" });
     (0, import_obsidian6.setIcon)(heartIcon, "heart");
     favouritePill.createSpan({ text: "Favourites" });
@@ -6682,11 +7549,17 @@ var NeuralGardenMyNotesView = class extends import_obsidian6.ItemView {
     const categories = await this.myNotesStorage.loadCategories();
     for (const category of categories) {
       const pill = pillRow.createEl("button", { cls: "ng-mynotes-pill" });
+      pill.dataset.categoryKey = category.name;
       pill.createSpan({ text: category.name });
       if (this.selectedCategory === category.name) {
         pill.addClass("is-active");
       }
+      pill.toggleClass("is-edit-target", this.editMode === "category");
       pill.addEventListener("click", () => {
+        if (this.editMode === "category") {
+          this.openCategoryEditActions(category.name);
+          return;
+        }
         void this.selectCategory(category.name);
       });
     }
@@ -6701,9 +7574,11 @@ var NeuralGardenMyNotesView = class extends import_obsidian6.ItemView {
     const section = parent.createDiv({ cls: "ng-mynotes-support" });
     section.createEl("h4", { text: "Support Notes", cls: "ng-mynotes-section-title" });
     const pillRow = section.createDiv({ cls: "ng-mynotes-pill-row" });
+    this.supportPillRowEl = pillRow;
     for (const support of SUPPORT_CATEGORIES) {
       const key = `${SUPPORT_PREFIX}${support.name}`;
       const pill = pillRow.createEl("button", { cls: "ng-mynotes-pill ng-mynotes-support-pill" });
+      pill.dataset.categoryKey = key;
       pill.createSpan({ text: support.name });
       pill.style.setProperty("--ng-support-color", support.color);
       if (this.selectedCategory === key) {
@@ -6740,7 +7615,15 @@ var NeuralGardenMyNotesView = class extends import_obsidian6.ItemView {
   }
   async selectCategory(name) {
     this.selectedCategory = this.selectedCategory === name ? null : name;
-    await this.render();
+    this.syncCategorySelectionState();
+    await this.updateNotesList();
+  }
+  syncCategorySelectionState() {
+    var _a;
+    for (const button of this.contentEl.querySelectorAll(".ng-mynotes-pill[data-category-key]")) {
+      const key = (_a = button.dataset.categoryKey) != null ? _a : null;
+      button.toggleClass("is-active", key === this.selectedCategory);
+    }
   }
   async updateNotesList() {
     const container = this.notesListEl;
@@ -6796,7 +7679,7 @@ var NeuralGardenMyNotesView = class extends import_obsidian6.ItemView {
     } else if ((_a = this.selectedCategory) == null ? void 0 : _a.startsWith(SUPPORT_PREFIX)) {
       files = this.myNotesStorage.notesWithSupport(this.selectedCategory.slice(SUPPORT_PREFIX.length));
     } else if (this.selectedCategory) {
-      files = this.myNotesStorage.notesInCategory(this.selectedCategory);
+      files = await this.myNotesStorage.notesInCategory(this.selectedCategory);
     }
     const query = this.searchQuery;
     if (query.length >= 2) {
@@ -6849,6 +7732,10 @@ var NeuralGardenMyNotesView = class extends import_obsidian6.ItemView {
   openNewNoteOverlay() {
     const { card, close } = openOverlay("Create A Note");
     card.createDiv({ cls: "ng-overlay-subtitle", text: "Write down a name" });
+    if (this.selectedCategory && this.selectedCategory !== FAVOURITE_CATEGORY) {
+      const label = this.selectedCategory.startsWith(SUPPORT_PREFIX) ? `Support-Category: ${this.selectedCategory.slice(SUPPORT_PREFIX.length)}` : `Category: ${this.selectedCategory}`;
+      card.createDiv({ cls: "ng-overlay-text", text: label });
+    }
     const input = card.createEl("input", { type: "text", placeholder: "Note name..." });
     input.addClass("ng-task-input");
     const errorEl = card.createDiv({ cls: "ng-overlay-error" });
@@ -6873,6 +7760,15 @@ var NeuralGardenMyNotesView = class extends import_obsidian6.ItemView {
         new import_obsidian6.Notice("Could not create the note. Try a different name.");
         return;
       }
+      if (this.selectedCategory && this.selectedCategory !== FAVOURITE_CATEGORY) {
+        if (this.selectedCategory.startsWith(SUPPORT_PREFIX)) {
+          const supportName = this.selectedCategory.slice(SUPPORT_PREFIX.length);
+          await this.myNotesStorage.setSupportNote(file, true);
+          await this.myNotesStorage.toggleNoteSupport(file, supportName);
+        } else {
+          await this.myNotesStorage.toggleNoteCategory(file, this.selectedCategory);
+        }
+      }
       await this.leaf.openFile(file);
     };
     createButton.addEventListener("click", () => void submit());
@@ -6882,6 +7778,107 @@ var NeuralGardenMyNotesView = class extends import_obsidian6.ItemView {
       }
     });
     input.focus();
+  }
+  openCreateCategoryOverlay() {
+    const { card, close } = openOverlay("Create Category");
+    const input = card.createEl("input", { type: "text", placeholder: "Category name..." });
+    input.addClass("ng-task-input");
+    const actions = card.createDiv({ cls: "ng-overlay-actions" });
+    const createButton = actions.createEl("button", { text: "Create", cls: "ng-overlay-confirm" });
+    const cancelButton = actions.createEl("button", { text: "Cancel", cls: "ng-overlay-cancel" });
+    const submit = async () => {
+      const name = input.value.trim();
+      if (!name) {
+        return;
+      }
+      await this.myNotesStorage.addCategory(name);
+      this.selectedCategory = name;
+      close();
+      await this.render();
+    };
+    createButton.addEventListener("click", () => {
+      void submit();
+    });
+    cancelButton.addEventListener("click", () => close());
+    input.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        void submit();
+      }
+    });
+    input.focus();
+  }
+  openCategoryEditActions(category) {
+    const { card, close } = openOverlay("Edit Category");
+    card.createDiv({ cls: "ng-overlay-subtitle", text: category });
+    const actions = card.createDiv({ cls: "ng-overlay-actions" });
+    const renameButton = actions.createEl("button", { text: "Rename", cls: "ng-overlay-confirm" });
+    const deleteButton = actions.createEl("button", { text: "Delete", cls: "ng-overlay-danger" });
+    const cancelButton = actions.createEl("button", { text: "Cancel", cls: "ng-overlay-cancel" });
+    renameButton.addEventListener("click", () => {
+      close();
+      this.openRenameCategoryOverlay(category);
+    });
+    deleteButton.addEventListener("click", () => {
+      close();
+      this.openDeleteCategoryOverlay(category);
+    });
+    cancelButton.addEventListener("click", () => close());
+  }
+  openRenameCategoryOverlay(previousCategory) {
+    const { card, close } = openOverlay("Rename Category");
+    const input = card.createEl("input", { type: "text", value: previousCategory, placeholder: "New category name..." });
+    input.addClass("ng-task-input");
+    const actions = card.createDiv({ cls: "ng-overlay-actions" });
+    const renameButton = actions.createEl("button", { text: "Rename", cls: "ng-overlay-confirm" });
+    const cancelButton = actions.createEl("button", { text: "Cancel", cls: "ng-overlay-cancel" });
+    const submit = async () => {
+      const nextCategory = input.value.trim();
+      const success = await this.myNotesStorage.renameCategory(previousCategory, nextCategory);
+      if (!success) {
+        new import_obsidian6.Notice("Could not rename category. Check the new name and try again.");
+        return;
+      }
+      if (this.selectedCategory === previousCategory) {
+        this.selectedCategory = nextCategory;
+      }
+      this.editMode = null;
+      close();
+      await this.render();
+    };
+    renameButton.addEventListener("click", () => {
+      void submit();
+    });
+    cancelButton.addEventListener("click", () => close());
+    input.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        void submit();
+      }
+    });
+    input.focus();
+  }
+  openDeleteCategoryOverlay(category) {
+    const { card, close } = openOverlay("Delete Category");
+    card.createDiv({ cls: "ng-overlay-text", text: `Delete category "${category}" and remove it from all notes?` });
+    const actions = card.createDiv({ cls: "ng-overlay-actions" });
+    const deleteButton = actions.createEl("button", { text: "Delete", cls: "ng-overlay-danger" });
+    const cancelButton = actions.createEl("button", { text: "Cancel", cls: "ng-overlay-cancel" });
+    const submit = async () => {
+      const success = await this.myNotesStorage.deleteCategory(category);
+      if (!success) {
+        new import_obsidian6.Notice("Could not delete category.");
+        return;
+      }
+      if (this.selectedCategory === category) {
+        this.selectedCategory = null;
+      }
+      this.editMode = null;
+      close();
+      await this.render();
+    };
+    deleteButton.addEventListener("click", () => {
+      void submit();
+    });
+    cancelButton.addEventListener("click", () => close());
   }
   openDeleteOverlay(file, row) {
     const { card, close } = openOverlay("Delete Note");
@@ -7825,9 +8822,158 @@ function stripLink(value) {
 function toLink(name) {
   return `[[${name}]]`;
 }
+function parseCategoryMap(value) {
+  const trimmed = value.trim();
+  if (!trimmed || trimmed === "{}") {
+    return {};
+  }
+  const inner = trimmed.replace(/^\{/, "").replace(/\}$/, "");
+  const entries = {};
+  for (const part of inner.split(",")) {
+    const [rawName, rawCount] = part.split(":");
+    if (!rawName || !rawCount) {
+      continue;
+    }
+    const name = rawName.trim().replace(/^['"]|['"]$/g, "");
+    const count = Number(rawCount.trim());
+    entries[name] = Number.isFinite(count) ? Math.max(0, count) : 0;
+  }
+  return entries;
+}
+function parseCategoriesFromText(text) {
+  var _a, _b;
+  const lines = text.split(/\r?\n/);
+  const frontmatterStart = lines.indexOf("---");
+  if (frontmatterStart < 0) {
+    return {};
+  }
+  let inCategories = false;
+  const block = [];
+  for (let index = frontmatterStart + 1; index < lines.length; index += 1) {
+    const line = lines[index];
+    if (line === "---") {
+      break;
+    }
+    if (!inCategories) {
+      const match = line.match(/^categories:\s*(.*)$/);
+      if (!match) {
+        continue;
+      }
+      const inlineValue = (_b = (_a = match[1]) == null ? void 0 : _a.trim()) != null ? _b : "";
+      if (inlineValue) {
+        return parseCategoryMap(inlineValue);
+      }
+      inCategories = true;
+      continue;
+    }
+    if (/^\S/.test(line)) {
+      break;
+    }
+    const entry = line.match(/^\s{2}([^:]+):\s*(.*)$/);
+    if (entry) {
+      block.push(`${entry[1].trim()}: ${entry[2].trim()}`);
+    }
+  }
+  return parseCategoryMap(`{${block.join(",")}}`);
+}
+function parseNoteCategoriesFromText(text) {
+  var _a, _b;
+  const lines = text.split(/\r?\n/);
+  const frontmatterStart = lines.indexOf("---");
+  if (frontmatterStart < 0) {
+    return [];
+  }
+  let inCategoryBlock = false;
+  const categories = [];
+  for (let index = frontmatterStart + 1; index < lines.length; index += 1) {
+    const line = lines[index];
+    if (line === "---") {
+      break;
+    }
+    if (!inCategoryBlock) {
+      const match = line.match(/^category:\s*(.*)$/);
+      if (!match) {
+        continue;
+      }
+      const inlineValue = (_b = (_a = match[1]) == null ? void 0 : _a.trim()) != null ? _b : "";
+      if (inlineValue.startsWith("[") && inlineValue.endsWith("]")) {
+        const inner = inlineValue.slice(1, -1);
+        for (const entry2 of inner.split(",")) {
+          const clean = stripLink(entry2.trim().replace(/^['"]|['"]$/g, ""));
+          if (clean) {
+            categories.push(clean);
+          }
+        }
+        return categories;
+      }
+      inCategoryBlock = true;
+      continue;
+    }
+    if (/^\S/.test(line)) {
+      break;
+    }
+    const entry = line.match(/^\s*-\s*(.*)$/);
+    if (entry) {
+      const clean = stripLink(entry[1].trim().replace(/^['"]|['"]$/g, ""));
+      if (clean) {
+        categories.push(clean);
+      }
+    }
+  }
+  return categories;
+}
+function parseSupportFromText(text) {
+  var _a, _b;
+  const lines = text.split(/\r?\n/);
+  const frontmatterStart = lines.indexOf("---");
+  if (frontmatterStart < 0) {
+    return [];
+  }
+  let inSupportBlock = false;
+  const supports = [];
+  for (let index = frontmatterStart + 1; index < lines.length; index += 1) {
+    const line = lines[index];
+    if (line === "---") {
+      break;
+    }
+    if (!inSupportBlock) {
+      const match = line.match(/^support:\s*(.*)$/);
+      if (!match) {
+        continue;
+      }
+      const inlineValue = (_b = (_a = match[1]) == null ? void 0 : _a.trim()) != null ? _b : "";
+      if (inlineValue.startsWith("[") && inlineValue.endsWith("]")) {
+        const inner = inlineValue.slice(1, -1);
+        for (const entry2 of inner.split(",")) {
+          const clean = entry2.trim().replace(/^['"]|['"]$/g, "");
+          if (clean) {
+            supports.push(clean);
+          }
+        }
+        return supports;
+      }
+      inSupportBlock = true;
+      continue;
+    }
+    if (/^\S/.test(line)) {
+      break;
+    }
+    const entry = line.match(/^\s*-\s*(.*)$/);
+    if (entry) {
+      const clean = entry[1].trim().replace(/^['"]|['"]$/g, "");
+      if (clean) {
+        supports.push(clean);
+      }
+    }
+  }
+  return supports;
+}
 var MyNotesStorage = class {
   constructor(app) {
     this.app = app;
+  }
+  toCategoryLinks(names) {
+    return names.map((name) => toLink(name));
   }
   async ensureCategoriesFile() {
     const existing = this.app.vault.getAbstractFileByPath(MY_NOTES_CATEGORIES_FILE_PATH);
@@ -7846,14 +8992,12 @@ var MyNotesStorage = class {
     }
   }
   async loadCategories() {
-    var _a, _b;
     const file = await this.ensureCategoriesFile();
-    const raw = (_b = (_a = this.app.metadataCache.getFileCache(file)) == null ? void 0 : _a.frontmatter) == null ? void 0 : _b.categories;
+    const text = await this.app.vault.read(file);
+    const raw = parseCategoriesFromText(text);
     const categories = [];
-    if (raw && typeof raw === "object" && !Array.isArray(raw)) {
-      for (const [name, count] of Object.entries(raw)) {
-        categories.push({ name, count: typeof count === "number" && Number.isFinite(count) ? Math.max(0, count) : 0 });
-      }
+    for (const [name, count] of Object.entries(raw)) {
+      categories.push({ name, count });
     }
     return categories;
   }
@@ -7870,6 +9014,77 @@ var MyNotesStorage = class {
       }
       fm.categories = categories;
     });
+  }
+  async renameCategory(previousName, nextName) {
+    const previous = previousName.trim();
+    const next = nextName.trim();
+    if (!previous || !next) {
+      return false;
+    }
+    if (previous === next) {
+      return true;
+    }
+    const file = await this.ensureCategoriesFile();
+    let renamed = false;
+    await this.app.fileManager.processFrontMatter(file, (fm) => {
+      const categories = fm.categories && typeof fm.categories === "object" && !Array.isArray(fm.categories) ? fm.categories : {};
+      if (!(previous in categories) || next in categories) {
+        return;
+      }
+      const nextCategories = {};
+      for (const [name, count] of Object.entries(categories)) {
+        if (name === previous) {
+          nextCategories[next] = count;
+        } else {
+          nextCategories[name] = count;
+        }
+      }
+      fm.categories = nextCategories;
+      renamed = true;
+    });
+    if (!renamed) {
+      return false;
+    }
+    for (const note of await this.notesInCategory(previous)) {
+      await this.app.fileManager.processFrontMatter(note, (fm) => {
+        const current = Array.isArray(fm.category) ? fm.category.map(stripLink).filter(Boolean) : [];
+        if (!current.includes(previous)) {
+          return;
+        }
+        fm.category = this.toCategoryLinks(current.map((name) => name === previous ? next : name));
+      });
+    }
+    return true;
+  }
+  async deleteCategory(name) {
+    const target = name.trim();
+    if (!target) {
+      return false;
+    }
+    const file = await this.ensureCategoriesFile();
+    let removed = false;
+    await this.app.fileManager.processFrontMatter(file, (fm) => {
+      const categories = fm.categories && typeof fm.categories === "object" && !Array.isArray(fm.categories) ? fm.categories : {};
+      if (!(target in categories)) {
+        return;
+      }
+      delete categories[target];
+      fm.categories = categories;
+      removed = true;
+    });
+    if (!removed) {
+      return false;
+    }
+    for (const note of await this.notesInCategory(target)) {
+      await this.app.fileManager.processFrontMatter(note, (fm) => {
+        const current = Array.isArray(fm.category) ? fm.category.map(stripLink).filter(Boolean) : [];
+        if (!current.includes(target)) {
+          return;
+        }
+        fm.category = this.toCategoryLinks(current.filter((entry) => entry !== target));
+      });
+    }
+    return true;
   }
   async adjustCategoryCount(name, delta) {
     const file = await this.ensureCategoriesFile();
@@ -7924,6 +9139,10 @@ var MyNotesStorage = class {
     }
     return raw.map(stripLink).filter(Boolean);
   }
+  async getNoteCategoriesFresh(file) {
+    const text = await this.app.vault.read(file);
+    return parseNoteCategoriesFromText(text);
+  }
   async toggleNoteCategory(file, name) {
     let nowActive = false;
     await this.app.fileManager.processFrontMatter(file, (fm) => {
@@ -7955,6 +9174,25 @@ var MyNotesStorage = class {
     var _a, _b;
     return ((_b = (_a = this.app.metadataCache.getFileCache(file)) == null ? void 0 : _a.frontmatter) == null ? void 0 : _b.SupportNote) === true;
   }
+  async isSupportNoteFresh(file) {
+    const text = await this.app.vault.read(file);
+    const lines = text.split(/\r?\n/);
+    const frontmatterStart = lines.indexOf("---");
+    if (frontmatterStart < 0) {
+      return false;
+    }
+    for (let index = frontmatterStart + 1; index < lines.length; index += 1) {
+      const line = lines[index];
+      if (line === "---") {
+        break;
+      }
+      const match = line.match(/^SupportNote:\s*(true|false)$/i);
+      if (match) {
+        return match[1].toLowerCase() === "true";
+      }
+    }
+    return false;
+  }
   async setSupportNote(file, value) {
     await this.app.fileManager.processFrontMatter(file, (fm) => {
       fm.SupportNote = value;
@@ -7971,6 +9209,10 @@ var MyNotesStorage = class {
     }
     return raw.filter((entry) => typeof entry === "string");
   }
+  async getNoteSupportsFresh(file) {
+    const text = await this.app.vault.read(file);
+    return parseSupportFromText(text);
+  }
   async toggleNoteSupport(file, name) {
     let nowActive = false;
     await this.app.fileManager.processFrontMatter(file, (fm) => {
@@ -7985,8 +9227,16 @@ var MyNotesStorage = class {
     });
     return nowActive;
   }
-  notesInCategory(name) {
-    return this.listNotes().filter((file) => this.getNoteCategories(file).includes(name));
+  async notesInCategory(name) {
+    const files = this.listNotes();
+    const matches = [];
+    for (const file of files) {
+      const text = await this.app.vault.read(file);
+      if (parseNoteCategoriesFromText(text).includes(name)) {
+        matches.push(file);
+      }
+    }
+    return matches;
   }
   favouriteNotes() {
     return this.listNotes().filter((file) => this.isFavourite(file));
@@ -8025,6 +9275,7 @@ var NoteHeaderManager = class {
     this.openHomeView = openHomeView;
     this.openMyNotesView = openMyNotesView;
     this.openMyLearningView = openMyLearningView;
+    this.headerDisposers = /* @__PURE__ */ new WeakMap();
   }
   sync() {
     for (const leaf of this.app.workspace.getLeavesOfType("markdown")) {
@@ -8039,38 +9290,277 @@ var NoteHeaderManager = class {
       const existing = content.querySelector(":scope > .ng-note-header");
       const file = view.file;
       if (!file) {
+        this.disposeHeader(existing);
         existing == null ? void 0 : existing.remove();
+        content.removeClass("ng-mynotes-header-host");
         continue;
       }
       const isMyNotesFile = this.myNotesStorage.isNoteFile(file);
       const isMyLearningFile = this.myLearningStorage.isLearningNoteFile(file);
       if (!isMyNotesFile && !isMyLearningFile) {
+        this.disposeHeader(existing);
         existing == null ? void 0 : existing.remove();
+        content.removeClass("ng-mynotes-header-host");
         continue;
       }
       const headerKind = isMyNotesFile ? "mynotes" : "mylearning";
       if (existing instanceof HTMLElement && existing.getAttribute("data-path") === file.path && existing.getAttribute("data-kind") === headerKind) {
         continue;
       }
+      this.disposeHeader(existing);
       existing == null ? void 0 : existing.remove();
       if (isMyNotesFile) {
         void this.renderMyNotesHeader(content, leaf, file);
-      } else {
+      } else if (isMyLearningFile) {
         void this.renderMyLearningHeader(content, leaf, file);
+      } else {
+        content.removeClass("ng-mynotes-header-host");
       }
     }
+    this.syncCanvasNavigation();
   }
   detachAll() {
-    document.querySelectorAll(".ng-note-header").forEach((el) => el.remove());
+    document.querySelectorAll(".ng-note-header, .ng-learning-canvas-controls").forEach((el) => {
+      this.disposeHeader(el);
+      el.remove();
+    });
+  }
+  syncCanvasNavigation() {
+    const canvasLeaves = this.app.workspace.getLeavesOfType("canvas");
+    const activeContainers = /* @__PURE__ */ new Set();
+    for (const leaf of canvasLeaves) {
+      const container = leaf.view.containerEl;
+      activeContainers.add(container);
+      const state = leaf.getViewState().state;
+      const path = typeof (state == null ? void 0 : state.file) === "string" ? state.file : "";
+      const file = path ? this.app.vault.getAbstractFileByPath(path) : null;
+      const selection = file instanceof import_obsidian10.TFile ? this.myLearningStorage.getCanvasSelection(file) : null;
+      const existing = container.querySelector(":scope > .ng-learning-canvas-controls");
+      if (!selection) {
+        existing == null ? void 0 : existing.remove();
+        continue;
+      }
+      if ((existing == null ? void 0 : existing.dataset.path) === file.path) {
+        const fill = existing.querySelector(".ng-learning-progress-fill");
+        if (fill) {
+          fill.style.width = `${selection.progress}%`;
+        }
+        continue;
+      }
+      existing == null ? void 0 : existing.remove();
+      const controls = container.createDiv({ cls: "ng-learning-canvas-controls" });
+      controls.dataset.path = file.path;
+      const button = controls.createEl("button", {
+        cls: "ng-learning-canvas-back",
+        text: "\u2190 MyLearning"
+      });
+      button.setAttribute("aria-label", "Back to MyLearning");
+      button.addEventListener("click", async () => {
+        await this.openMyLearningView(true, leaf, selection.category, selection.topic);
+      });
+      const progress = controls.createDiv({ cls: "ng-learning-canvas-progress" });
+      progress.createSpan({ text: "Progress" });
+      const progressTrack = progress.createDiv({ cls: "ng-learning-progress-track" });
+      const progressFill = progressTrack.createDiv({ cls: "ng-learning-progress-fill" });
+      let currentProgress = selection.progress;
+      const syncProgress = (clientX) => {
+        const rect = progressTrack.getBoundingClientRect();
+        if (rect.width <= 0) {
+          return;
+        }
+        currentProgress = Math.max(0, Math.min(100, Math.round((clientX - rect.left) / rect.width * 100)));
+        progressFill.style.width = `${currentProgress}%`;
+      };
+      progressFill.style.width = `${currentProgress}%`;
+      let dragging = false;
+      progressTrack.addEventListener("pointerdown", (event) => {
+        dragging = true;
+        progressTrack.setPointerCapture(event.pointerId);
+        syncProgress(event.clientX);
+        void this.myLearningStorage.setCanvasProgress(file, currentProgress);
+      });
+      progressTrack.addEventListener("pointermove", (event) => {
+        if (!dragging) {
+          return;
+        }
+        syncProgress(event.clientX);
+        void this.myLearningStorage.setCanvasProgress(file, currentProgress);
+      });
+      progressTrack.addEventListener("pointerup", async (event) => {
+        if (!dragging) {
+          return;
+        }
+        dragging = false;
+        progressTrack.releasePointerCapture(event.pointerId);
+        await this.myLearningStorage.setCanvasProgress(file, currentProgress);
+      });
+      this.focusCanvasOrigin(leaf.view);
+    }
+    document.querySelectorAll(".ng-learning-canvas-controls").forEach((controls) => {
+      if (!activeContainers.has(controls.parentElement)) {
+        controls.remove();
+      }
+    });
+  }
+  focusCanvasOrigin(view) {
+    const canvas = view.canvas;
+    if (!canvas) {
+      return;
+    }
+    window.requestAnimationFrame(() => {
+      if (typeof canvas.zoomToBbox === "function") {
+        canvas.zoomToBbox({ minX: -500, minY: -350, maxX: 500, maxY: 350 });
+        return;
+      }
+      if (typeof canvas.setViewport === "function") {
+        if (canvas.setViewport.length >= 3) {
+          canvas.setViewport(0, 0, 1);
+        } else {
+          canvas.setViewport({ x: 0, y: 0, zoom: 1 });
+        }
+      }
+    });
+  }
+  disposeHeader(header) {
+    var _a;
+    if (!(header instanceof HTMLElement)) {
+      return;
+    }
+    (_a = this.headerDisposers.get(header)) == null ? void 0 : _a();
+    this.headerDisposers.delete(header);
+  }
+  resolveScrollHost(content) {
+    const cmScroller = content.querySelector(".markdown-source-view.mod-cm6 .cm-scroller");
+    if (cmScroller instanceof HTMLElement) {
+      return cmScroller;
+    }
+    return content;
+  }
+  bindMyNotesCollapseBehavior(content, header) {
+    const scrollHost = this.resolveScrollHost(content);
+    const stage = header.querySelector(".ng-note-header-stage");
+    const fullHeader = header.querySelector(".ng-note-header-full");
+    const compactHeader = header.querySelector(".ng-note-header-collapsed-summary");
+    let lastTop = scrollHost.scrollTop;
+    let collapsed = false;
+    let lastTouchY = null;
+    let resizeObserver = null;
+    const syncStageHeights = () => {
+      if (!(stage instanceof HTMLElement) || !(fullHeader instanceof HTMLElement) || !(compactHeader instanceof HTMLElement)) {
+        return;
+      }
+      const fullHeight = Math.ceil(fullHeader.scrollHeight);
+      const compactHeight = Math.ceil(compactHeader.scrollHeight);
+      stage.style.setProperty("--ng-note-header-full-height", `${fullHeight}px`);
+      stage.style.setProperty("--ng-note-header-compact-height", `${compactHeight}px`);
+    };
+    const setCollapsed = (value) => {
+      if (collapsed === value) {
+        return;
+      }
+      collapsed = value;
+      header.toggleClass("is-collapsed", value);
+    };
+    const syncFromScroll = () => {
+      const top = scrollHost.scrollTop;
+      if (top <= 2) {
+        if (top < lastTop) {
+          setCollapsed(false);
+        } else if (top > lastTop) {
+          setCollapsed(true);
+        }
+      } else if (top > lastTop) {
+        setCollapsed(true);
+      }
+      lastTop = top;
+      header.toggleClass("is-away-from-top", top > 2);
+    };
+    const onScroll = () => {
+      syncFromScroll();
+    };
+    const onWheel = (event) => {
+      if (collapsed && scrollHost.scrollTop <= 2 && event.deltaY < 0) {
+        setCollapsed(false);
+        return;
+      }
+      if (!collapsed && event.deltaY > 0 && !event.ctrlKey && event.cancelable) {
+        const deltaScale = event.deltaMode === WheelEvent.DOM_DELTA_LINE ? 16 : event.deltaMode === WheelEvent.DOM_DELTA_PAGE ? scrollHost.clientHeight : 1;
+        event.preventDefault();
+        setCollapsed(true);
+        scrollHost.scrollBy({ top: event.deltaY * deltaScale * 0.5, behavior: "auto" });
+      }
+    };
+    const onTouchStart = (event) => {
+      var _a, _b;
+      lastTouchY = (_b = (_a = event.touches[0]) == null ? void 0 : _a.clientY) != null ? _b : null;
+    };
+    const onTouchMove = (event) => {
+      var _a;
+      const touchY = (_a = event.touches[0]) == null ? void 0 : _a.clientY;
+      if (touchY === void 0 || lastTouchY === null) {
+        return;
+      }
+      if (collapsed && scrollHost.scrollTop <= 2 && touchY > lastTouchY + 4) {
+        setCollapsed(false);
+      }
+      lastTouchY = touchY;
+    };
+    const onTouchEnd = () => {
+      lastTouchY = null;
+    };
+    const onKeyDown = (event) => {
+      if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) {
+        return;
+      }
+      if (event.target instanceof Element && event.target.closest(".ng-note-header")) {
+        return;
+      }
+      const key = event.key;
+      const isTypingKey = key.length === 1 || key === "Backspace" || key === "Delete" || key === "Enter" || key === "ArrowUp" || key === "ArrowDown" || key === "ArrowLeft" || key === "ArrowRight";
+      if (!isTypingKey) {
+        return;
+      }
+      setCollapsed(true);
+    };
+    syncFromScroll();
+    syncStageHeights();
+    if (typeof ResizeObserver !== "undefined" && fullHeader instanceof HTMLElement && compactHeader instanceof HTMLElement) {
+      resizeObserver = new ResizeObserver(() => {
+        syncStageHeights();
+      });
+      resizeObserver.observe(fullHeader);
+      resizeObserver.observe(compactHeader);
+    }
+    scrollHost.addEventListener("scroll", onScroll, { passive: true });
+    scrollHost.addEventListener("wheel", onWheel, { passive: false });
+    scrollHost.addEventListener("touchstart", onTouchStart, { passive: true });
+    scrollHost.addEventListener("touchmove", onTouchMove, { passive: true });
+    scrollHost.addEventListener("touchend", onTouchEnd, { passive: true });
+    content.addEventListener("keydown", onKeyDown, true);
+    return () => {
+      if (resizeObserver) {
+        resizeObserver.disconnect();
+      }
+      scrollHost.removeEventListener("scroll", onScroll);
+      scrollHost.removeEventListener("wheel", onWheel);
+      scrollHost.removeEventListener("touchstart", onTouchStart);
+      scrollHost.removeEventListener("touchmove", onTouchMove);
+      scrollHost.removeEventListener("touchend", onTouchEnd);
+      content.removeEventListener("keydown", onKeyDown, true);
+    };
   }
   async renderMyNotesHeader(content, leaf, file) {
+    this.disposeHeader(content.querySelector(":scope > .ng-note-header"));
+    content.addClass("ng-mynotes-header-host");
     const header = document.createElement("div");
     header.className = "ng-note-header";
     header.setAttribute("data-path", file.path);
     header.setAttribute("data-kind", "mynotes");
     content.prepend(header);
+    const scrollHost = this.resolveScrollHost(content);
     const navRow = header.createDiv({ cls: "ng-note-header-top" });
     const navLeft = navRow.createDiv({ cls: "ng-note-header-top-left" });
+    const collapsedName = navRow.createEl("h4", { cls: "ng-note-header-note-name", text: file.basename });
     const navRight = navRow.createDiv({ cls: "ng-note-header-top-right" });
     const myNotesButton = navLeft.createEl("button", { text: "\u2190 MyNotes", cls: "ng-journal-nav-button" });
     myNotesButton.addEventListener("click", async () => {
@@ -8080,8 +9570,40 @@ var NoteHeaderManager = class {
     homeButton.addEventListener("click", async () => {
       await this.openHomeView(true, leaf);
     });
-    header.createDiv({ cls: "ng-note-header-spacer" });
-    const box = header.createDiv({ cls: "ng-note-header-box" });
+    const stage = header.createDiv({ cls: "ng-note-header-stage" });
+    const collapsedSummary = stage.createDiv({ cls: "ng-note-header-collapsed-summary" });
+    const collapsedCategories = collapsedSummary.createDiv({ cls: "ng-note-header-collapsed-categories" });
+    const collapsedControls = collapsedSummary.createDiv({ cls: "ng-note-header-collapsed-controls" });
+    const toTopButton = collapsedControls.createEl("button", { cls: "ng-note-header-to-top" });
+    toTopButton.setAttribute("aria-label", "Back to top");
+    toTopButton.setAttribute("title", "Back to top");
+    toTopButton.setText("\u2191");
+    toTopButton.addEventListener("click", () => {
+      scrollHost.scrollTo({ top: 0, behavior: "smooth" });
+    });
+    const fullHeader = stage.createDiv({ cls: "ng-note-header-full" });
+    fullHeader.createDiv({ cls: "ng-note-header-spacer" });
+    const box = fullHeader.createDiv({ cls: "ng-note-header-box" });
+    const syncCollapsedSummary = async () => {
+      collapsedCategories.empty();
+      const activeCategories = await this.myNotesStorage.getNoteCategoriesFresh(file);
+      const activeSupport = await this.myNotesStorage.getNoteSupportsFresh(file);
+      if (activeCategories.length === 0 && activeSupport.length === 0) {
+        collapsedCategories.createDiv({ cls: "ng-note-header-collapsed-empty", text: "No categories" });
+        return;
+      }
+      for (const category of activeCategories) {
+        collapsedCategories.createSpan({ cls: "ng-note-header-mini-pill", text: category });
+      }
+      for (const support of activeSupport) {
+        const supportPill = collapsedCategories.createSpan({ cls: "ng-note-header-mini-pill ng-note-header-mini-pill-support", text: support });
+        const supportEntry = SUPPORT_CATEGORIES.find((entry) => entry.name === support);
+        if (supportEntry) {
+          supportPill.style.setProperty("--ng-support-color", supportEntry.color);
+        }
+      }
+    };
+    await syncCollapsedSummary();
     const categoriesHeader = box.createDiv({ cls: "ng-note-header-categories-row" });
     categoriesHeader.createEl("h4", { text: "Categories", cls: "ng-mynotes-section-title" });
     const categoriesActions = categoriesHeader.createDiv({ cls: "ng-note-header-categories-actions" });
@@ -8095,10 +9617,13 @@ var NoteHeaderManager = class {
     favouriteButton.setAttribute("aria-label", "Favourite");
     favouriteButton.setAttribute("title", "Favourite");
     (0, import_obsidian10.setIcon)(favouriteButton, "heart");
-    favouriteButton.toggleClass("is-favourite", this.myNotesStorage.isFavourite(file));
+    const syncFavouriteButtons = (isFavourite) => {
+      favouriteButton.toggleClass("is-favourite", isFavourite);
+    };
+    syncFavouriteButtons(this.myNotesStorage.isFavourite(file));
     favouriteButton.addEventListener("click", async () => {
       const nowFavourite = await this.myNotesStorage.toggleFavourite(file);
-      favouriteButton.toggleClass("is-favourite", nowFavourite);
+      syncFavouriteButtons(nowFavourite);
       favouriteButton.removeClass("ng-heart-pop");
       void favouriteButton.offsetWidth;
       favouriteButton.addClass("ng-heart-pop");
@@ -8136,7 +9661,7 @@ var NoteHeaderManager = class {
       }
     });
     const pillRow = box.createDiv({ cls: "ng-mynotes-pill-row" });
-    await this.renderMyNotesCategoryPills(pillRow, file);
+    await this.renderMyNotesCategoryPills(pillRow, file, void 0, syncCollapsedSummary);
     const submitNewCategory = async () => {
       const name = addInput.value.trim();
       if (!name) {
@@ -8150,7 +9675,8 @@ var NoteHeaderManager = class {
       addInput.value = "";
       addRow.hide();
       updateAddButton();
-      await this.renderMyNotesCategoryPills(pillRow, file, name);
+      await this.renderMyNotesCategoryPills(pillRow, file, name, () => void syncCollapsedSummary());
+      void syncCollapsedSummary();
     };
     addInput.addEventListener("keydown", (event) => {
       if (event.key === "Enter") {
@@ -8174,6 +9700,7 @@ var NoteHeaderManager = class {
         pill.addEventListener("click", async () => {
           const nowActive = await this.myNotesStorage.toggleNoteSupport(file, support.name);
           pill.toggleClass("is-active", nowActive);
+          void syncCollapsedSummary();
         });
       }
     };
@@ -8188,6 +9715,7 @@ var NoteHeaderManager = class {
       if (supportActive) {
         renderSupportPills();
       }
+      void syncCollapsedSummary();
     };
     supportButton.addEventListener("click", () => {
       void toggleSupport();
@@ -8198,90 +9726,76 @@ var NoteHeaderManager = class {
         void toggleSupport();
       }
     });
+    const disposeCollapseBehavior = this.bindMyNotesCollapseBehavior(content, header);
+    this.headerDisposers.set(header, () => {
+      disposeCollapseBehavior();
+      content.removeClass("ng-mynotes-header-host");
+    });
   }
   async renderMyLearningHeader(content, leaf, file) {
+    this.disposeHeader(content.querySelector(":scope > .ng-note-header"));
+    content.addClass("ng-mynotes-header-host");
     const header = document.createElement("div");
     header.className = "ng-note-header ng-learning-note-header";
     header.setAttribute("data-path", file.path);
     header.setAttribute("data-kind", "mylearning");
     content.prepend(header);
-    const navRow = header.createDiv({ cls: "ng-learning-note-header-top" });
-    const leftNav = navRow.createDiv({ cls: "ng-learning-note-header-top-left" });
-    const rightNav = navRow.createDiv({ cls: "ng-learning-note-header-top-right" });
+    const scrollHost = this.resolveScrollHost(content);
+    const navRow = header.createDiv({ cls: "ng-note-header-top" });
+    const leftNav = navRow.createDiv({ cls: "ng-note-header-top-left" });
+    navRow.createEl("h4", { cls: "ng-note-header-note-name", text: file.basename });
+    const rightNav = navRow.createDiv({ cls: "ng-note-header-top-right" });
     const backButton = leftNav.createEl("button", { text: "\u2190 MyLearning", cls: "ng-journal-nav-button" });
     backButton.addEventListener("click", async () => {
       var _a;
-      const selectedTopic = (_a = this.myLearningStorage.getNoteTopic(file)) != null ? _a : void 0;
-      await this.openMyLearningView(true, leaf, selectedTopic);
+      const selectedCategory = (_a = this.myLearningStorage.getNoteCategory(file)) != null ? _a : void 0;
+      const selectedTopic = this.myLearningStorage.getNoteTopics(file)[0];
+      await this.openMyLearningView(true, leaf, selectedCategory, selectedTopic);
     });
     const homeButton = rightNav.createEl("button", { text: "Home", cls: "ng-journal-nav-button" });
     homeButton.addEventListener("click", async () => {
       await this.openHomeView(true, leaf);
     });
-    const deleteButton = rightNav.createEl("button", { cls: "ng-learning-delete-button" });
-    deleteButton.setAttribute("aria-label", "Delete Note");
-    deleteButton.setAttribute("title", "Delete Note");
-    deleteButton.setText("\xD7");
-    deleteButton.addEventListener("click", async () => {
-      const { card, close } = openOverlay("Delete Note");
-      card.createDiv({
-        cls: "ng-overlay-text",
-        text: `Are you sure you want to delete "${file.basename}"?`
-      });
-      const actions = card.createDiv({ cls: "ng-overlay-actions" });
-      const cancelButton = actions.createEl("button", { text: "Cancel", cls: "ng-overlay-cancel" });
-      const confirmButton = actions.createEl("button", { text: "Delete", cls: "ng-overlay-danger" });
-      let deleting = false;
-      const confirmDelete = async () => {
-        if (deleting) {
-          return;
-        }
-        deleting = true;
-        await this.myLearningStorage.deleteNote(file);
-        close();
-        await this.openMyLearningView(true, leaf);
-      };
-      cancelButton.addEventListener("click", () => close());
-      confirmButton.addEventListener("click", () => {
-        void confirmDelete();
-      });
-      card.addEventListener("keydown", (event) => {
-        if (event.key === "Enter") {
-          event.preventDefault();
-          event.stopPropagation();
-          void confirmDelete();
-          return;
-        }
-        if (event.key === "Escape") {
-          event.preventDefault();
-          event.stopPropagation();
-          close();
-        }
-      });
-      confirmButton.focus();
+    const stage = header.createDiv({ cls: "ng-note-header-stage" });
+    const collapsedSummary = stage.createDiv({ cls: "ng-note-header-collapsed-summary ng-learning-collapsed-summary" });
+    const collapsedRow = collapsedSummary.createDiv({ cls: "ng-learning-collapsed-row" });
+    const collapsedCategory = collapsedRow.createDiv({ cls: "ng-learning-collapsed-category" });
+    const collapsedTopics = collapsedRow.createDiv({ cls: "ng-note-header-collapsed-categories" });
+    const collapsedProgress = collapsedRow.createDiv({ cls: "ng-learning-progress-wrap ng-learning-progress-wrap-compact" });
+    const collapsedProgressTrack = collapsedProgress.createDiv({ cls: "ng-learning-progress-track" });
+    const collapsedProgressFill = collapsedProgressTrack.createDiv({ cls: "ng-learning-progress-fill" });
+    const collapsedControls = collapsedRow.createDiv({ cls: "ng-note-header-collapsed-controls" });
+    const toTopButton = collapsedControls.createEl("button", { cls: "ng-note-header-to-top" });
+    toTopButton.setAttribute("aria-label", "Back to top");
+    toTopButton.setAttribute("title", "Back to top");
+    toTopButton.setText("\u2191");
+    toTopButton.addEventListener("click", () => {
+      scrollHost.scrollTo({ top: 0, behavior: "smooth" });
     });
-    const topicHeading = header.createEl("h3", { cls: "ng-learning-topic-heading" });
-    let currentTopic = this.myLearningStorage.getNoteTopic(file);
-    const syncTopicHeading = () => {
-      topicHeading.setText(currentTopic != null ? currentTopic : "Assign a Topic");
-      topicHeading.toggleClass("is-placeholder", !currentTopic);
+    const fullHeader = stage.createDiv({ cls: "ng-note-header-full" });
+    const box = fullHeader.createDiv({ cls: "ng-note-header-box ng-learning-note-box" });
+    const categoryHeading = box.createEl("h3", { cls: "ng-learning-topic-heading" });
+    let currentCategory = this.myLearningStorage.getNoteCategory(file);
+    const syncCategoryHeading = () => {
+      const text = currentCategory != null ? currentCategory : "Assign a Category";
+      categoryHeading.setText(text);
+      categoryHeading.toggleClass("is-placeholder", !currentCategory);
+      collapsedCategory.setText(`${text}:`);
+      collapsedCategory.toggleClass("is-placeholder", !currentCategory);
     };
-    syncTopicHeading();
-    const box = header.createDiv({ cls: "ng-note-header-box ng-learning-note-box" });
+    syncCategoryHeading();
     const categoriesHeader = box.createDiv({ cls: "ng-note-header-categories-row" });
     const categoriesLeft = categoriesHeader.createDiv({ cls: "ng-learning-categories-left" });
-    categoriesLeft.createEl("h4", { text: "Categories", cls: "ng-mynotes-section-title" });
+    categoriesLeft.createEl("h4", { text: "Topics", cls: "ng-mynotes-section-title" });
     const addButton = categoriesLeft.createEl("button", { cls: "ng-note-header-add-category-icon" });
-    addButton.setAttribute("aria-label", "Add Category");
-    addButton.setAttribute("title", "Add Category");
-    const helpButton = categoriesHeader.createEl("button", { cls: "ng-note-header-support-toggle ng-learning-help-toggle" });
-    helpButton.setAttribute("aria-label", "Toggle Help");
-    helpButton.setAttribute("title", "Toggle Help");
-    (0, import_obsidian10.setIcon)(helpButton, "circle-question-mark");
+    addButton.setAttribute("aria-label", "Add Topic");
+    addButton.setAttribute("title", "Add Topic");
     const addRow = box.createDiv({ cls: "ng-note-header-add-row" });
     addRow.hide();
-    const addInput = addRow.createEl("input", { type: "text", placeholder: "Category name..." });
+    const addInput = addRow.createEl("input", { type: "text", placeholder: "Topic name..." });
     addInput.addClass("ng-task-input");
+    const addError = addRow.createDiv({ cls: "ng-overlay-error ng-note-header-input-error" });
+    addError.hide();
     const pillRow = box.createDiv({ cls: "ng-mynotes-pill-row" });
     const updateAddButton = () => {
       const open = addRow.isShown();
@@ -8295,68 +9809,94 @@ var NoteHeaderManager = class {
         addButton.setText("-");
       }
     };
-    const syncHelpButton = () => {
-      (0, import_obsidian10.setIcon)(helpButton, "circle-question-mark");
-      helpButton.toggleClass("is-active", this.myLearningStorage.isHelpEnabled(file));
+    let displayedTopics = this.myLearningStorage.getNoteTopics(file);
+    const syncCollapsedTopics = () => {
+      collapsedTopics.empty();
+      if (displayedTopics.length === 0) {
+        collapsedTopics.createDiv({ cls: "ng-note-header-collapsed-empty", text: "No topics" });
+        return;
+      }
+      for (const topic of displayedTopics) {
+        const compactPill = collapsedTopics.createSpan({ cls: "ng-note-header-mini-pill", text: topic });
+        compactPill.style.setProperty(
+          "--ng-mylearning-category-color",
+          this.myLearningStorage.getTopicColor(currentCategory != null ? currentCategory : "", topic)
+        );
+      }
     };
-    const renderLearningCategoryPills = async (ensureCategory) => {
+    const renderLearningTopicPills = async (ensureTopic) => {
       pillRow.empty();
-      if (!currentTopic) {
-        pillRow.createDiv({ cls: "ng-empty", text: "Assign a topic first." });
+      if (!currentCategory) {
+        pillRow.createDiv({ cls: "ng-empty", text: "Assign a category first." });
         return;
       }
-      const categories = (await this.myLearningStorage.listCategoriesForTopic(currentTopic)).filter((name) => name !== "help");
-      if (ensureCategory && !categories.includes(ensureCategory)) {
-        categories.push(ensureCategory);
+      const topics = await this.myLearningStorage.listTopicsForCategory(currentCategory);
+      if (ensureTopic && !topics.includes(ensureTopic)) {
+        topics.push(ensureTopic);
       }
-      const active = this.myLearningStorage.getNoteCategories(file);
-      if (ensureCategory && !active.includes(ensureCategory)) {
-        active.push(ensureCategory);
+      const active = this.myLearningStorage.getNoteTopics(file);
+      if (ensureTopic && !active.includes(ensureTopic)) {
+        active.push(ensureTopic);
       }
-      if (categories.length === 0) {
-        pillRow.createDiv({ cls: "ng-empty", text: "No categories yet." });
+      displayedTopics = [...active];
+      if (topics.length === 0) {
+        pillRow.createDiv({ cls: "ng-empty", text: "No topics yet." });
         return;
       }
-      for (const category of categories) {
+      for (const topic of topics) {
         const pill = pillRow.createEl("button", { cls: "ng-mynotes-pill ng-note-header-category-pill" });
-        pill.style.setProperty("--ng-mylearning-category-color", this.myLearningStorage.getCategoryColor(currentTopic, category));
-        pill.createSpan({ text: category });
-        pill.toggleClass("is-active", active.includes(category));
+        pill.style.setProperty("--ng-mylearning-category-color", this.myLearningStorage.getTopicColor(currentCategory, topic));
+        pill.createSpan({ text: topic });
+        pill.toggleClass("is-active", active.includes(topic));
         pill.addEventListener("click", async () => {
-          const nowActive = await this.myLearningStorage.toggleNoteCategory(file, category);
+          const nowActive = await this.myLearningStorage.toggleNoteTopic(file, topic);
           pill.toggleClass("is-active", nowActive);
+          displayedTopics = nowActive ? [...displayedTopics, topic].filter((entry, index, topics2) => topics2.indexOf(entry) === index) : displayedTopics.filter((entry) => entry !== topic);
+          syncCollapsedTopics();
         });
       }
+      syncCollapsedTopics();
     };
     updateAddButton();
-    syncHelpButton();
-    await renderLearningCategoryPills();
-    const submitNewCategory = async () => {
-      if (!currentTopic) {
-        await this.openTopicPicker(file, async (topic) => {
-          currentTopic = topic;
-          syncTopicHeading();
-          await renderLearningCategoryPills();
+    syncCollapsedTopics();
+    await renderLearningTopicPills();
+    const submitNewTopic = async () => {
+      if (!currentCategory) {
+        await this.openCategoryPicker(file, async (category) => {
+          currentCategory = category;
+          syncCategoryHeading();
+          await renderLearningTopicPills();
         });
       }
       const name = addInput.value.trim();
-      if (!currentTopic || !name) {
+      if (!currentCategory || !name) {
         return;
       }
-      await this.myLearningStorage.addCategory(currentTopic, name);
-      const active = this.myLearningStorage.getNoteCategories(file);
+      const validationError = getNameValidationError(name);
+      if (validationError) {
+        addError.setText(validationError);
+        addError.show();
+        return;
+      }
+      await this.myLearningStorage.addTopic(currentCategory, name);
+      const active = this.myLearningStorage.getNoteTopics(file);
       if (!active.includes(name)) {
-        await this.myLearningStorage.toggleNoteCategory(file, name);
+        await this.myLearningStorage.toggleNoteTopic(file, name);
       }
       addInput.value = "";
       addRow.hide();
       updateAddButton();
-      await renderLearningCategoryPills(name);
+      await renderLearningTopicPills(name);
     };
     addInput.addEventListener("input", updateAddButton);
+    addInput.addEventListener("input", () => {
+      const validationError = getNameValidationError(addInput.value);
+      addError.toggle(validationError !== null);
+      addError.setText(validationError != null ? validationError : "");
+    });
     addInput.addEventListener("keydown", (event) => {
       if (event.key === "Enter") {
-        void submitNewCategory();
+        void submitNewTopic();
       }
     });
     addButton.addEventListener("click", () => {
@@ -8367,69 +9907,70 @@ var NoteHeaderManager = class {
         return;
       }
       if (addInput.value.trim().length > 0) {
-        void submitNewCategory();
+        void submitNewTopic();
       } else {
         addRow.hide();
         updateAddButton();
       }
     });
-    topicHeading.addEventListener("click", () => {
-      void this.openTopicPicker(file, async (topic) => {
-        currentTopic = topic;
-        syncTopicHeading();
-        await renderLearningCategoryPills();
+    categoryHeading.addEventListener("click", () => {
+      void this.openCategoryPicker(file, async (category) => {
+        currentCategory = category;
+        syncCategoryHeading();
+        await renderLearningTopicPills();
       });
     });
-    helpButton.addEventListener("click", async () => {
-      const enabled = await this.myLearningStorage.toggleHelpEnabled(file);
-      (0, import_obsidian10.setIcon)(helpButton, "circle-question-mark");
-      helpButton.toggleClass("is-active", enabled);
-      helpButton.removeClass("ng-heart-pop");
-      void helpButton.offsetWidth;
-      helpButton.addClass("ng-heart-pop");
-    });
     const progressWrap = box.createDiv({ cls: "ng-learning-progress-wrap" });
-    progressWrap.createEl("h5", { text: "Progress", cls: "ng-learning-progress-heading" });
     const progressTrack = progressWrap.createDiv({ cls: "ng-learning-progress-track" });
     const progressFill = progressTrack.createDiv({ cls: "ng-learning-progress-fill" });
     let currentComprehension = this.myLearningStorage.getComprehension(file);
     const syncProgressValue = (value) => {
       currentComprehension = Math.max(0, Math.min(100, Math.round(value)));
       progressFill.style.width = `${currentComprehension}%`;
+      collapsedProgressFill.style.width = `${currentComprehension}%`;
     };
     syncProgressValue(currentComprehension);
-    const updateFromPointer = (clientX) => {
-      const rect = progressTrack.getBoundingClientRect();
-      if (rect.width <= 0) {
-        return;
-      }
-      const pct = (clientX - rect.left) / rect.width * 100;
-      syncProgressValue(pct);
+    const bindProgressTrack = (track) => {
+      const updateFromPointer = (clientX) => {
+        const rect = track.getBoundingClientRect();
+        if (rect.width <= 0) {
+          return;
+        }
+        syncProgressValue((clientX - rect.left) / rect.width * 100);
+      };
+      let dragging = false;
+      track.addEventListener("pointerdown", (event) => {
+        event.stopPropagation();
+        dragging = true;
+        track.setPointerCapture(event.pointerId);
+        updateFromPointer(event.clientX);
+        void this.myLearningStorage.setComprehension(file, currentComprehension);
+      });
+      track.addEventListener("pointermove", (event) => {
+        if (!dragging) {
+          return;
+        }
+        updateFromPointer(event.clientX);
+        void this.myLearningStorage.setComprehension(file, currentComprehension);
+      });
+      track.addEventListener("pointerup", async (event) => {
+        if (!dragging) {
+          return;
+        }
+        dragging = false;
+        track.releasePointerCapture(event.pointerId);
+        await this.myLearningStorage.setComprehension(file, currentComprehension);
+      });
     };
-    let dragging = false;
-    progressTrack.addEventListener("pointerdown", (event) => {
-      dragging = true;
-      progressTrack.setPointerCapture(event.pointerId);
-      updateFromPointer(event.clientX);
-      void this.myLearningStorage.setComprehension(file, currentComprehension);
-    });
-    progressTrack.addEventListener("pointermove", (event) => {
-      if (!dragging) {
-        return;
-      }
-      updateFromPointer(event.clientX);
-      void this.myLearningStorage.setComprehension(file, currentComprehension);
-    });
-    progressTrack.addEventListener("pointerup", async (event) => {
-      if (!dragging) {
-        return;
-      }
-      dragging = false;
-      progressTrack.releasePointerCapture(event.pointerId);
-      await this.myLearningStorage.setComprehension(file, currentComprehension);
+    bindProgressTrack(progressTrack);
+    bindProgressTrack(collapsedProgressTrack);
+    const disposeCollapseBehavior = this.bindMyNotesCollapseBehavior(content, header);
+    this.headerDisposers.set(header, () => {
+      disposeCollapseBehavior();
+      content.removeClass("ng-mynotes-header-host");
     });
   }
-  async renderMyNotesCategoryPills(pillRow, file, ensureCategory) {
+  async renderMyNotesCategoryPills(pillRow, file, ensureCategory, onToggle) {
     pillRow.empty();
     const categories = await this.myNotesStorage.loadCategories();
     if (ensureCategory && !categories.some((category) => category.name === ensureCategory)) {
@@ -8450,24 +9991,25 @@ var NoteHeaderManager = class {
       pill.addEventListener("click", async () => {
         const nowActive = await this.myNotesStorage.toggleNoteCategory(file, category.name);
         pill.toggleClass("is-active", nowActive);
+        onToggle == null ? void 0 : onToggle();
       });
     }
   }
-  async openTopicPicker(file, onSelect) {
-    const topics = await this.myLearningStorage.listTopics();
-    const { card, close } = openOverlay("Assign Topic");
-    if (topics.length === 0) {
-      card.createDiv({ cls: "ng-empty", text: "No topics yet. Create one from the MyLearning view." });
+  async openCategoryPicker(file, onSelect) {
+    const categories = await this.myLearningStorage.listCategories();
+    const { card, close } = openOverlay("Assign Category");
+    if (categories.length === 0) {
+      card.createDiv({ cls: "ng-empty", text: "No categories yet. Create one from the MyLearning view." });
       return;
     }
     const row = card.createDiv({ cls: "ng-mynotes-pill-row" });
-    for (const topic of topics) {
+    for (const category of categories) {
       const button = row.createEl("button", { cls: "ng-mynotes-pill" });
-      button.createSpan({ text: topic });
+      button.createSpan({ text: category });
       button.addEventListener("click", async () => {
-        await this.myLearningStorage.setNoteTopic(file, topic);
+        await this.myLearningStorage.setNoteCategory(file, category);
         close();
-        await onSelect(topic);
+        await onSelect(category);
       });
     }
   }
@@ -9018,6 +10560,10 @@ function unique(items) {
 var NeuralGardenPlugin = class extends import_obsidian13.Plugin {
   constructor() {
     super(...arguments);
+    this.myLearningSelection = {
+      category: null,
+      topic: null
+    };
     this.openHomeView = async (makeActive, targetLeaf) => {
       const leaf = targetLeaf != null ? targetLeaf : this.app.workspace.getLeaf(true);
       await leaf.setViewState({ type: VIEW_TYPE_NEURAL_GARDEN_HOME, active: makeActive });
@@ -9041,12 +10587,15 @@ var NeuralGardenPlugin = class extends import_obsidian13.Plugin {
         this.app.workspace.revealLeaf(leaf);
       }
     };
-    this.openMyLearningView = async (makeActive, targetLeaf, selectedTopic) => {
+    this.openMyLearningView = async (makeActive, targetLeaf, selectedCategory, selectedTopic) => {
+      var _a, _b;
       const leaf = targetLeaf != null ? targetLeaf : this.app.workspace.getLeaf(true);
       await leaf.setViewState({ type: VIEW_TYPE_NEURAL_GARDEN_MY_LEARNING, active: makeActive });
       const view = leaf.view;
-      if (selectedTopic && view instanceof NeuralGardenMyLearningView) {
-        await view.setSelectedTopic(selectedTopic);
+      if (view instanceof NeuralGardenMyLearningView) {
+        const category = (_b = (_a = this.myLearningSelection.category) != null ? _a : selectedCategory) != null ? _b : null;
+        const topic = category === this.myLearningSelection.category ? this.myLearningSelection.topic : selectedTopic != null ? selectedTopic : null;
+        await view.setSelection(category, topic);
       }
       if (makeActive) {
         this.app.workspace.revealLeaf(leaf);
@@ -9092,7 +10641,15 @@ var NeuralGardenPlugin = class extends import_obsidian13.Plugin {
     );
     this.registerView(
       VIEW_TYPE_NEURAL_GARDEN_MY_LEARNING,
-      (leaf) => new NeuralGardenMyLearningView(leaf, this.myLearningStorage, this.openHomeView)
+      (leaf) => new NeuralGardenMyLearningView(
+        leaf,
+        this.myLearningStorage,
+        this.openHomeView,
+        this.myLearningSelection,
+        (category, topic) => {
+          this.myLearningSelection = { category, topic };
+        }
+      )
     );
     this.registerView(
       VIEW_TYPE_NEURAL_GARDEN_JOURNALING,
@@ -9162,6 +10719,20 @@ var NeuralGardenPlugin = class extends import_obsidian13.Plugin {
     this.registerEvent(
       this.app.workspace.on("file-open", () => {
         this.noteHeaderManager.sync();
+      })
+    );
+    this.registerEvent(
+      this.app.vault.on("rename", async (file, oldPath) => {
+        if (file instanceof import_obsidian13.TFile) {
+          await this.myLearningStorage.handleEntryRename(file, oldPath);
+        }
+        window.setTimeout(() => {
+          for (const leaf of this.app.workspace.getLeavesOfType(VIEW_TYPE_NEURAL_GARDEN_MY_LEARNING)) {
+            if (leaf.view instanceof NeuralGardenMyLearningView) {
+              void leaf.view.refresh();
+            }
+          }
+        }, 100);
       })
     );
     this.app.workspace.onLayoutReady(() => {

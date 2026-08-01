@@ -507,7 +507,21 @@ export function injectNeuralGardenStyles(): void {
       border-color: #ec9a63;
     }
     .ng-mylearning-search {
-      margin: 0 0 2px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      margin: 0;
+    }
+    .ng-mylearning-search > .ng-task-input,
+    .ng-mylearning-search > .ng-search-results {
+      width: 60%;
+      box-sizing: border-box;
+    }
+    .ng-mylearning-search > .ng-search-results {
+      min-height: 0;
+      margin-top: 0;
+      gap: 0;
     }
     .ng-search-title {
       font-weight: 600;
@@ -1825,6 +1839,15 @@ export function injectNeuralGardenStyles(): void {
       display: inline-flex;
       align-items: center;
       gap: 8px;
+      margin-left: 0;
+    }
+    .ng-mylearning-heading-group {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      min-width: 0;
+    }
+    .ng-mylearning-heading-add-note {
       margin-left: auto;
     }
     .ng-mylearning-header-actions .ng-note-header-add-category-icon {
@@ -1938,9 +1961,10 @@ export function injectNeuralGardenStyles(): void {
       height: 20px !important;
     }
     .ng-mylearning .ng-mylearning-category-pill {
-      border-color: color-mix(in srgb, var(--ng-mylearning-category-color) 52%, var(--background-modifier-border));
+      border-color: color-mix(in srgb, var(--ng-mylearning-category-color) 40%, transparent);
       background: color-mix(in srgb, var(--ng-mylearning-category-color) 4%, transparent);
       box-shadow: 0 0 0 1px color-mix(in srgb, var(--ng-mylearning-category-color) 14%, transparent), 0 0 8px color-mix(in srgb, var(--ng-mylearning-category-color) 9%, transparent);
+      color: var(--text-normal);
     }
     .ng-mylearning .ng-mylearning-category-pill:not(.is-active):hover {
       border-color: color-mix(in srgb, var(--ng-mylearning-category-color) 78%, var(--background-modifier-border));
@@ -1951,21 +1975,127 @@ export function injectNeuralGardenStyles(): void {
       background: color-mix(in srgb, var(--ng-mylearning-category-color) 8%, var(--background-primary));
       box-shadow: 0 0 0 2px color-mix(in srgb, var(--ng-mylearning-category-color) 30%, transparent), 0 0 12px color-mix(in srgb, var(--ng-mylearning-category-color) 20%, transparent);
     }
-    .ng-mylearning .ng-mylearning-category-pill.is-help,
-    .ng-mylearning .ng-mylearning-category-pill.is-help:not(.is-active) {
-      border-color: color-mix(in srgb, #ae2929 68%, var(--background-modifier-border));
-    }
-    .ng-mylearning .ng-mylearning-category-pill.is-help:hover {
-      border-color: #ae2929;
-      box-shadow: 0 0 0 1px color-mix(in srgb, #ae2929 22%, transparent), 0 0 10px color-mix(in srgb, #ae2929 14%, transparent);
-    }
-    .ng-mylearning .ng-mylearning-category-pill.is-help.is-active {
-      border-color: #ae2929;
-      box-shadow: 0 0 0 2px color-mix(in srgb, #ae2929 24%, transparent), 0 0 12px color-mix(in srgb, #ae2929 16%, transparent);
-    }
     .ng-mylearning .ng-mynotes-pill.is-edit-target {
       border-style: dashed;
       cursor: pointer;
+    }
+    .ng-mylearning-progress-summary {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      margin-left: 4px;
+    }
+    .ng-mylearning-progress-count {
+      font-size: 0.78em;
+      font-weight: 700;
+    }
+    .ng-mylearning-progress-count.is-green { color: #45c978; }
+    .ng-mylearning-progress-count.is-yellow { color: #e4bd4d; }
+    .ng-mylearning-progress-count.is-orange { color: #ec9a63; }
+    .ng-mylearning-average-track {
+      display: inline-block;
+      width: 38px;
+      height: 5px;
+      border-radius: 999px;
+      overflow: hidden;
+      background: var(--background-modifier-border);
+    }
+    .ng-mylearning-average-fill {
+      display: block;
+      height: 100%;
+      border-radius: inherit;
+      background: #00f0ff;
+    }
+    .ng-mylearning-entry-list {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .ng-mylearning-entry-list .ng-mynotes-note-row {
+      width: 100%;
+      padding: 2px 8px;
+      box-sizing: border-box;
+    }
+    .ng-mynotes-note-row.is-low-comprehension {
+      background: color-mix(in srgb, #fb2c36 7%, transparent);
+    }
+    .ng-mylearning-entry-progress {
+      width: 55px;
+      height: 6px;
+      flex: 0 0 55px;
+      overflow: hidden;
+      border-radius: 999px;
+    }
+    .ng-mylearning-entry-progress.is-green { background: color-mix(in srgb, #45c978 28%, transparent); }
+    .ng-mylearning-entry-progress.is-yellow { background: color-mix(in srgb, #e4bd4d 28%, transparent); }
+    .ng-mylearning-entry-progress.is-orange { background: color-mix(in srgb, #ec9a63 28%, transparent); }
+    .ng-mylearning-entry-progress-fill {
+      height: 100%;
+      border-radius: inherit;
+    }
+    .ng-mylearning-entry-progress-fill.is-green { background: #45c978; }
+    .ng-mylearning-entry-progress-fill.is-yellow { background: #e4bd4d; }
+    .ng-mylearning-entry-progress-fill.is-orange { background: #ec9a63; }
+    .ng-mylearning-entry-type {
+      color: var(--text-muted);
+      font-size: 0.78em;
+    }
+    .ng-mylearning-type-control {
+      display: inline-flex;
+      align-self: center;
+      padding: 2px;
+      border: 1px solid var(--background-modifier-border);
+      border-radius: 6px;
+    }
+    .ng-mylearning-type-control button {
+      border: none;
+      border-radius: 4px;
+      background: transparent;
+      box-shadow: none;
+    }
+    .ng-mylearning-type-control button.is-active {
+      background: var(--background-modifier-hover);
+      color: #ec9a63;
+    }
+    .ng-note-header-input-error {
+      width: 100%;
+      margin-top: 4px;
+    }
+    .ng-learning-canvas-controls {
+      position: absolute;
+      top: 44px;
+      left: 12px;
+      z-index: 30;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 5px 8px;
+      border: 1px solid var(--background-modifier-border);
+      border-radius: 6px;
+      background: var(--background-primary);
+      color: var(--text-normal);
+      box-shadow: var(--shadow-s);
+    }
+    .ng-learning-canvas-back {
+      border: 0;
+      padding: 3px 5px;
+      background: transparent;
+      color: inherit;
+      box-shadow: none;
+    }
+    .ng-learning-canvas-back:hover {
+      color: #ec9a63;
+    }
+    .ng-learning-canvas-progress {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--text-muted);
+      font-size: 0.78rem;
+    }
+    .ng-learning-canvas-progress .ng-learning-progress-track {
+      width: 134px;
+      height: 12px;
     }
     .ng-mylearning-grid {
       display: grid;
@@ -2143,7 +2273,16 @@ export function injectNeuralGardenStyles(): void {
       gap: 8px;
     }
     .ng-learning-note-header {
-      gap: 10px;
+      gap: 0;
+    }
+    .ng-learning-note-header .ng-note-header-note-name {
+      opacity: 1;
+      transition: none;
+    }
+    .ng-note-header-collapsed-summary.ng-learning-collapsed-summary {
+      min-height: 0;
+      gap: 2px;
+      padding: 3px 0 3px;
     }
     .ng-learning-note-header-top {
       display: flex;
@@ -2167,6 +2306,53 @@ export function injectNeuralGardenStyles(): void {
       color: var(--text-normal);
       cursor: pointer;
       font-weight: 550;
+    }
+    .ng-learning-collapsed-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+    .ng-learning-collapsed-row .ng-learning-collapsed-category {
+      flex: 0 0 auto;
+    }
+    .ng-learning-collapsed-row .ng-note-header-collapsed-categories {
+      flex: 1 1 auto;
+      width: auto;
+      min-width: 0;
+    }
+    .ng-learning-collapsed-row .ng-note-header-mini-pill {
+      border-color: var(--ng-mylearning-category-color);
+    }
+    .ng-learning-collapsed-row .ng-learning-progress-wrap-compact {
+      margin-left: auto;
+      width: min(180px, 30%);
+      flex: 0 1 180px;
+    }
+    .ng-learning-collapsed-row .ng-note-header-collapsed-controls {
+      position: static;
+      flex: 0 0 auto;
+      width: auto;
+      margin: 0;
+      padding: 0;
+    }
+    .ng-learning-collapsed-row .ng-note-header-to-top {
+      width: 36px;
+      min-width: 36px;
+      justify-content: center;
+    }
+    .ng-learning-collapsed-category {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text-normal);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .ng-learning-collapsed-category.is-placeholder {
+      color: var(--text-muted);
+      font-style: italic;
+      font-weight: 500;
     }
     .ng-learning-topic-heading.is-placeholder {
       color: var(--text-muted);
@@ -2201,60 +2387,21 @@ export function injectNeuralGardenStyles(): void {
       align-items: center;
       gap: 6px;
     }
-    .ng-learning-help-toggle {
-      color: var(--text-muted);
-      border: none !important;
-      background: transparent !important;
-      box-shadow: none !important;
-    }
-    .ng-learning-note-header .ng-learning-help-toggle svg,
-    .ng-learning-note-header .ng-learning-help-toggle svg * {
-      fill: transparent !important;
-      stroke: currentColor !important;
-    }
-    .ng-learning-help-toggle:hover {
-      color: #ae2929;
-      background: transparent !important;
-      box-shadow: none !important;
-    }
-    .ng-learning-help-toggle.is-active {
-      color: #ae2929;
-      background: transparent !important;
-      box-shadow: none !important;
-    }
-    .ng-learning-help-toggle:hover svg,
-    .ng-learning-help-toggle:hover svg *,
-    .ng-learning-help-toggle.is-active svg,
-    .ng-learning-help-toggle.is-active svg * {
-      stroke: #ae2929 !important;
-      fill: #ae2929 !important;
-    }
-    .ng-learning-delete-button {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      border: none !important;
-      background: transparent !important;
-      box-shadow: none !important;
-      color: #FF6565;
-      cursor: pointer;
-      padding: 0;
-      line-height: 1;
-      font-size: 1.2rem;
-      font-weight: 700;
-    }
-    .ng-learning-delete-button:hover {
-      color: #fb2c36;
-      background: transparent !important;
-      box-shadow: none !important;
-    }
     .ng-learning-progress-wrap {
-      width: min(430px, 100%);
+      width: 50%;
       margin: 2px auto 0;
       display: flex;
       flex-direction: column;
       gap: 6px;
       align-items: center;
+    }
+    .ng-learning-progress-wrap-compact {
+      margin: 0;
+      align-items: stretch;
+    }
+    .ng-learning-progress-wrap-compact .ng-learning-progress-track {
+      height: 8px;
+      cursor: pointer;
     }
     .ng-learning-progress-heading {
       margin: 0;
@@ -2338,6 +2485,21 @@ export function injectNeuralGardenStyles(): void {
       justify-content: space-between;
       align-items: center;
     }
+    .ng-mynotes-title-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+    .ng-mynotes-header-actions {
+      margin-left: 0;
+    }
+    .ng-mynotes-create-target {
+      margin-top: -4px;
+      font-size: 0.85em;
+      color: var(--text-muted);
+      font-style: italic;
+    }
     .ng-mynotes-section-title {
       margin: 0;
       font-size: 1.3em;
@@ -2407,6 +2569,10 @@ export function injectNeuralGardenStyles(): void {
       border-color: #ec9a63;
       background: transparent;
       box-shadow: 0 0 0 2px rgba(236, 154, 99, 0.2);
+    }
+    .ng-mynotes-pill.is-edit-target {
+      border-style: dashed;
+      cursor: pointer;
     }
     .ng-mynotes-pill-favourite .ng-mynotes-button-icon svg {
       color: #ff6565;
@@ -2650,19 +2816,183 @@ export function injectNeuralGardenStyles(): void {
     .ng-overlay-danger:hover {
       background: rgba(251, 44, 54, 0.15);
     }
+    .view-content.ng-mynotes-header-host {
+      display: flex !important;
+      flex-direction: column;
+      overflow: hidden !important;
+    }
+    .view-content.ng-mynotes-header-host > .markdown-source-view,
+    .view-content.ng-mynotes-header-host > .markdown-reading-view {
+      flex: 1 1 auto;
+      min-height: 0;
+      height: auto !important;
+      width: 100%;
+      position: relative !important;
+      inset: auto !important;
+      overflow: hidden;
+      box-sizing: border-box;
+    }
     .ng-note-header {
       max-width: 720px;
-      margin: 8px auto 4px;
+      width: 100%;
+      flex: 0 0 auto;
+      margin: 0 auto;
       padding: 0;
       border: none;
+      border-bottom: 1px solid var(--background-modifier-border);
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 0;
       background: transparent;
+      position: relative;
+      z-index: 18;
+    }
+    .ng-note-header-top {
+      position: relative;
+      z-index: 2;
+      background: transparent;
+      border-bottom: none;
+      padding: 6px 0;
+    }
+    .ng-note-header-top .ng-note-header-note-name {
+      position: absolute;
+      left: 50%;
+      max-width: min(48%, 360px);
+      opacity: 0;
+      transform: translateX(-50%);
+      pointer-events: none;
+      transition: opacity 203ms ease;
+    }
+    .ng-note-header.is-collapsed .ng-note-header-top .ng-note-header-note-name {
+      opacity: 1;
+      transition: opacity 254ms ease 203ms;
+    }
+    .ng-note-header .ng-journal-nav-button {
+      border: none !important;
+      background: none !important;
+      box-shadow: none !important;
+      padding: 0;
+      width: auto;
+    }
+    .ng-note-header .ng-journal-nav-button:hover {
+      border: none !important;
+      background: none !important;
+      box-shadow: none !important;
+    }
+    .ng-note-header-stage {
+      position: relative;
+      height: var(--ng-note-header-full-height, 1px);
+      overflow: hidden;
+      transition: height 355ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .ng-note-header-collapsed-summary {
+      display: flex;
+      position: absolute;
+      inset: 0 0 auto;
+      flex-direction: column;
+      gap: 4px;
+      min-height: 44px;
+      opacity: 0;
+      transform: translateY(-3px);
+      padding: 6px 42px 8px 0;
+      box-sizing: border-box;
+      border-bottom: none;
+      background: transparent;
+      pointer-events: none;
+      transition: opacity 203ms ease, transform 203ms ease;
+    }
+    .ng-note-header.is-collapsed .ng-note-header-collapsed-summary {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+      transition: opacity 254ms ease 203ms, transform 254ms ease 203ms;
+    }
+    .ng-note-header-collapsed-controls {
+      display: inline-flex;
+      position: absolute;
+      right: 0;
+      bottom: 4px;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 4px;
+    }
+    .ng-note-header-note-name {
+      margin: 0;
+      font-size: 1.365em;
+      color: var(--text-normal);
+      font-weight: 600;
+      line-height: 1.25;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .ng-note-header-collapsed-categories {
+      display: flex;
+      flex-wrap: wrap;
+      width: 100%;
+      gap: 6px;
+    }
+    .ng-note-header-mini-pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid color-mix(in srgb, #ec9a63 30%, transparent);
+      font-size: 0.82em;
+      color: var(--text-muted);
+      background: transparent;
+    }
+    .ng-note-header-mini-pill-support {
+      border-color: var(--ng-support-color);
+    }
+    .ng-note-header-collapsed-empty {
+      font-size: 0.82em;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+    .ng-note-header-full {
+      position: absolute;
+      inset: 0 0 auto;
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+      transition: opacity 254ms ease 203ms, transform 254ms ease 203ms;
+    }
+    .ng-note-header.is-collapsed .ng-note-header-stage {
+      height: var(--ng-note-header-compact-height, 1px);
+    }
+    .ng-note-header.is-collapsed .ng-note-header-full {
+      opacity: 0;
+      transform: translateY(-3px);
+      pointer-events: none;
+      transition: opacity 203ms ease, transform 203ms ease;
+    }
+    .ng-note-header-to-top {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      margin-left: 0;
+      padding: 0;
+      border: none !important;
+      background: none !important;
+      box-shadow: none !important;
+      color: color-mix(in srgb, #ec9a63 62%, white);
+      font-size: 28px;
+      font-weight: 700;
+      line-height: 1;
+      cursor: pointer;
+      opacity: 1;
+      pointer-events: auto;
+      transition: color 150ms ease, transform 150ms ease;
+    }
+    .ng-note-header-to-top:hover {
+      color: #ec9a63;
+      transform: translateY(-1px);
     }
     .ng-note-header-box {
       border: none;
-      border-bottom: 1px solid var(--background-modifier-border);
       border-radius: 0;
       padding: 4px 0 10px;
       display: flex;
@@ -2747,14 +3077,14 @@ export function injectNeuralGardenStyles(): void {
       width: 18px;
       height: 18px;
     }
-    .ng-note-header-support-toggle:not(.ng-learning-help-toggle):hover {
+    .ng-note-header-support-toggle:hover {
       color: #00f0ff;
     }
-    .ng-note-header-support-toggle.is-active:not(.ng-learning-help-toggle) {
+    .ng-note-header-support-toggle.is-active {
       color: #00f0ff;
     }
-    .ng-note-header-support-toggle.is-active:not(.ng-learning-help-toggle) svg,
-    .ng-note-header-support-toggle.is-active:not(.ng-learning-help-toggle) svg * {
+    .ng-note-header-support-toggle.is-active svg,
+    .ng-note-header-support-toggle.is-active svg * {
       stroke: #00f0ff;
       fill: #00f0ff !important;
     }
@@ -2789,10 +3119,10 @@ export function injectNeuralGardenStyles(): void {
       color: var(--text-muted);
     }
     .ng-learning-note-header .ng-note-header-category-pill {
-      border-color: color-mix(in srgb, var(--ng-mylearning-category-color) 52%, var(--background-modifier-border));
+      border-color: color-mix(in srgb, var(--ng-mylearning-category-color) 34%, var(--background-modifier-border));
       background: color-mix(in srgb, var(--ng-mylearning-category-color) 4%, transparent);
-      box-shadow: 0 0 0 1px color-mix(in srgb, var(--ng-mylearning-category-color) 13%, transparent), 0 0 8px color-mix(in srgb, var(--ng-mylearning-category-color) 8%, transparent);
-      color: var(--text-normal);
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--ng-mylearning-category-color) 8%, transparent);
+      color: color-mix(in srgb, var(--text-normal) 90%, var(--background-primary));
     }
     .ng-learning-note-header .ng-note-header-category-pill:not(.is-active):hover {
       border-color: color-mix(in srgb, var(--ng-mylearning-category-color) 76%, var(--background-modifier-border));
@@ -2801,10 +3131,31 @@ export function injectNeuralGardenStyles(): void {
       border-color: var(--ng-mylearning-category-color);
       background: color-mix(in srgb, var(--ng-mylearning-category-color) 8%, var(--background-primary));
       box-shadow: 0 0 0 2px color-mix(in srgb, var(--ng-mylearning-category-color) 28%, transparent), 0 0 12px color-mix(in srgb, var(--ng-mylearning-category-color) 18%, transparent);
+      color: var(--text-normal);
     }
     .ng-learning-note-header .ng-mynotes-pill.is-edit-target {
       border-style: dashed;
       cursor: pointer;
+    }
+    .ng-mylearning .ng-mylearning-category-pill.ng-mynotes-pill:not(.is-active) {
+      border-color: color-mix(in srgb, var(--ng-mylearning-category-color) 40%, transparent);
+      color: var(--text-normal);
+    }
+    .ng-mylearning .ng-mylearning-category-pill.ng-mynotes-pill:not(.is-active):hover {
+      border-color: color-mix(in srgb, var(--ng-mylearning-category-color) 78%, var(--background-modifier-border));
+      color: var(--text-normal);
+    }
+    @media (max-width: 1024px), (hover: none) {
+      .ng-mynotes-categories .ng-mylearning-inline-edit {
+        width: 22px;
+        min-width: 22px;
+        height: 22px;
+        color: color-mix(in srgb, var(--text-normal) 84%, white);
+      }
+      .ng-mynotes-categories .ng-mylearning-inline-edit svg {
+        width: 14px;
+        height: 14px;
+      }
     }
   `;
   document.head.appendChild(style);

@@ -1,7 +1,7 @@
 {
   "id": "neural-garden",
   "name": "Neural Garden",
-  "version": "0.7.3",
+  "version": "0.4.7",
   "minAppVersion": "1.0.0",
   "description": "A life supporting system, equipped with journaling, note-taking, A learning plattform and task management. Local first & No-AI-policy, just Background-Math.",
   "author": "Delucian612",

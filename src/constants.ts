@@ -17,6 +17,7 @@ export const MY_NOTES_CATEGORIES_FILE_PATH = "Maintenance/MyNotes/Categories.md"
 export const MY_LEARNING_MAINTENANCE_FOLDER = "Maintenance/MyLearning";
 export const MY_LEARNING_CONFIG_FILE_PATH = "Maintenance/MyLearning/MyLearning.md";
 export const LEARNING_FOLDER = "Learning";
+export const NOTES_CATEGORIES_FOLDER = "Learning/Categories";
 export const WEEKLY_RECAP_MIN_ENTRIES = 4;
 export const WEEKLY_RECAP_HOME_HINT_MIN_ENTRIES = 5;
 

@@ -1,6 +1,7 @@
 import { ItemView, Notice, TFile, WorkspaceLeaf, setIcon } from "obsidian";
 import { VIEW_TYPE_NEURAL_GARDEN_MY_LEARNING } from "./constants";
 import { MyLearningStorage } from "./myLearningStorage";
+import { getNameValidationError } from "./nameValidation";
 import { openOverlay } from "./overlay";
 
 const OPEN_RIGHT_ICON_CANDIDATES = ["separator-vertical", "panel-right-open", "split-square-vertical"];
@@ -26,22 +27,11 @@ function setEditIcon(el: HTMLElement): void {
   el.setText("E");
 }
 
-function colorFromString(value: string): string {
-  let hash = 0;
-  for (let index = 0; index < value.length; index += 1) {
-    hash = ((hash << 5) - hash) + value.charCodeAt(index);
-    hash |= 0;
-  }
-  const hue = Math.abs(hash) % 360;
-  return `hsl(${hue} 74% 58%)`;
-}
-
 export class NeuralGardenMyLearningView extends ItemView {
-  private selectedTopic: string | null = null;
   private selectedCategory: string | null = null;
+  private selectedTopic: string | null = null;
   private editMode: "topic" | "category" | null = null;
   private uncategorizedExpanded = false;
-  private comprehensionExpanded = true;
   private searchQuery = "";
   private searchDebounceTimer: number | null = null;
 
@@ -49,8 +39,12 @@ export class NeuralGardenMyLearningView extends ItemView {
     leaf: WorkspaceLeaf,
     private readonly learningStorage: MyLearningStorage,
     private readonly openHomeView: (makeActive: boolean, targetLeaf?: WorkspaceLeaf) => Promise<void>,
+    initialSelection?: { category: string | null; topic: string | null },
+    private readonly onSelectionChange?: (category: string | null, topic: string | null) => void,
   ) {
     super(leaf);
+    this.selectedCategory = initialSelection?.category ?? null;
+    this.selectedTopic = initialSelection?.topic ?? null;
   }
 
   getViewType(): string {
@@ -77,10 +71,19 @@ export class NeuralGardenMyLearningView extends ItemView {
     }
   }
 
-  async setSelectedTopic(topic: string | null): Promise<void> {
-    this.selectedTopic = topic;
-    this.selectedCategory = null;
+  async setSelection(category: string | null, topic?: string | null): Promise<void> {
+    this.selectedCategory = category;
+    this.selectedTopic = topic ?? null;
+    this.notifySelectionChange();
     await this.render();
+  }
+
+  async refresh(): Promise<void> {
+    await this.render();
+  }
+
+  private notifySelectionChange(): void {
+    this.onSelectionChange?.(this.selectedCategory, this.selectedTopic);
   }
 
   private async render(): Promise<void> {
@@ -96,22 +99,13 @@ export class NeuralGardenMyLearningView extends ItemView {
       await this.openHomeView(true, this.leaf);
     });
 
-    const addNoteButton = topBar.createEl("button", { cls: "ng-mynotes-new-button" });
-    const addNoteIcon = addNoteButton.createSpan({ cls: "ng-mynotes-button-icon" });
-    setIcon(addNoteIcon, "file-plus");
-    addNoteButton.createSpan({ text: "Add Note" });
-    addNoteButton.addEventListener("click", () => {
-      this.openNewNoteOverlay();
-    });
-
     const headingRow = wrapper.createDiv({ cls: "ng-mylearning-heading-row" });
     headingRow.createEl("h2", { text: "MyLearning", cls: "ng-mynotes-heading" });
 
     await this.renderSearchSection(wrapper);
-    await this.renderTopicsSection(wrapper);
     await this.renderCategoriesSection(wrapper);
+    await this.renderTopicsSection(wrapper);
     await this.renderNotesGrid(wrapper);
-    this.renderComprehensionSection(wrapper);
     this.renderUncategorizedSection(wrapper);
   }
 
@@ -145,17 +139,17 @@ export class NeuralGardenMyLearningView extends ItemView {
     }
 
     const q = query.toLowerCase();
-    const files = this.learningStorage.listNotes();
+    const files = this.learningStorage.listEntries();
     const matches: TFile[] = [];
 
     for (const file of files) {
       const basenameMatch = file.basename.toLowerCase().includes(q);
-      const topic = this.learningStorage.getNoteTopic(file)?.toLowerCase() ?? "";
-      const categories = this.learningStorage.getNoteCategories(file).map((entry) => entry.toLowerCase());
-      const metadataMatch = topic.includes(q) || categories.some((entry) => entry.includes(q));
+      const category = this.learningStorage.getEntryCategory(file)?.toLowerCase() ?? "";
+      const topics = this.learningStorage.getEntryTopics(file).map((entry) => entry.toLowerCase());
+      const metadataMatch = category.includes(q) || topics.some((entry) => entry.includes(q));
 
       let contentMatch = false;
-      if (!basenameMatch && !metadataMatch) {
+      if (file.extension === "md" && !basenameMatch && !metadataMatch) {
         const content = await this.app.vault.cachedRead(file);
         contentMatch = content.toLowerCase().includes(q);
       }
@@ -171,20 +165,84 @@ export class NeuralGardenMyLearningView extends ItemView {
     }
 
     for (const file of matches.slice(0, 20)) {
-      this.renderNoteRow(container, file, this.selectedCategory);
+      this.renderNoteRow(container, file, this.selectedTopic);
     }
   }
 
-  private async renderTopicsSection(parent: HTMLElement): Promise<void> {
+  private async renderCategoriesSection(parent: HTMLElement): Promise<void> {
     const section = parent.createDiv({ cls: "ng-mylearning-topics" });
 
     const header = section.createDiv({ cls: "ng-mynotes-section-header" });
-    header.createEl("div", { text: "Topics", cls: "ng-mylearning-label" });
-    const actionsRow = header.createDiv({ cls: "ng-mylearning-header-actions" });
+    const titleGroup = header.createDiv({ cls: "ng-mylearning-heading-group" });
+    titleGroup.createEl("div", { text: "Categories", cls: "ng-mylearning-label" });
+    const actionsRow = titleGroup.createDiv({ cls: "ng-mylearning-header-actions" });
     const createButton = actionsRow.createEl("button", { cls: "ng-note-header-add-category-icon ng-mylearning-inline-plus" });
     createButton.setText("+");
     createButton.addEventListener("click", () => {
-      this.openCreateTopicOverlay();
+      this.openCreateCategoryOverlay();
+    });
+    const editButton = actionsRow.createEl("button", { cls: "ng-note-header-add-category-icon ng-mylearning-inline-edit" });
+    editButton.setAttribute("aria-label", "Edit Category");
+    editButton.setAttribute("title", "Edit Category");
+    setEditIcon(editButton);
+    editButton.toggleClass("is-active", this.editMode === "category");
+    editButton.addEventListener("click", () => {
+      this.editMode = this.editMode === "category" ? null : "category";
+      void this.render();
+    });
+    const addNoteButton = header.createEl("button", { cls: "ng-mynotes-new-button ng-mylearning-heading-add-note" });
+    const addNoteIcon = addNoteButton.createSpan({ cls: "ng-mynotes-button-icon" });
+    setIcon(addNoteIcon, "file-plus");
+    addNoteButton.createSpan({ text: "Add Note" });
+    addNoteButton.addEventListener("click", () => {
+      this.openNewNoteOverlay(this.selectedCategory, this.selectedTopic);
+    });
+
+    const row = section.createDiv({ cls: "ng-mynotes-pill-row" });
+    const categories = await this.learningStorage.listCategories();
+    for (const category of categories) {
+      const pill = row.createEl("button", { cls: "ng-mynotes-pill ng-mylearning-topic-pill" });
+      pill.createSpan({ text: category });
+      this.renderProgressSummary(pill, this.learningStorage.entriesInCategory(category));
+      pill.toggleClass("is-active", this.selectedCategory === category);
+      pill.toggleClass("is-edit-target", this.editMode === "category");
+      pill.addEventListener("click", () => {
+        if (this.editMode === "category") {
+          this.openCategoryEditActions(category);
+          return;
+        }
+        this.selectedCategory = this.selectedCategory === category ? null : category;
+        this.selectedTopic = null;
+        this.notifySelectionChange();
+        void this.render();
+      });
+    }
+
+    if (categories.length === 0) {
+      section.createDiv({ cls: "ng-empty", text: "No categories yet. Click the plus button to add one." });
+    }
+
+    section.createDiv({ cls: "ng-mylearning-divider" });
+  }
+
+  private async renderTopicsSection(parent: HTMLElement): Promise<void> {
+    if (!this.selectedCategory) {
+      return;
+    }
+
+    const section = parent.createDiv({ cls: "ng-mylearning-categories" });
+
+    const header = section.createDiv({ cls: "ng-mynotes-section-header" });
+    const titleGroup = header.createDiv({ cls: "ng-mylearning-heading-group" });
+    titleGroup.createEl("div", { text: "Topics", cls: "ng-mylearning-label" });
+    const actionsRow = titleGroup.createDiv({ cls: "ng-mylearning-header-actions" });
+    const createButton = actionsRow.createEl("button", { cls: "ng-note-header-add-category-icon ng-mylearning-inline-plus" });
+    createButton.setText("+");
+    createButton.addEventListener("click", () => {
+      if (!this.selectedCategory) {
+        return;
+      }
+      this.openCreateTopicOverlay(this.selectedCategory);
     });
     const editButton = actionsRow.createEl("button", { cls: "ng-note-header-add-category-icon ng-mylearning-inline-edit" });
     editButton.setAttribute("aria-label", "Edit Topic");
@@ -197,77 +255,23 @@ export class NeuralGardenMyLearningView extends ItemView {
     });
 
     const row = section.createDiv({ cls: "ng-mynotes-pill-row" });
-    const topics = await this.learningStorage.listTopics();
+    const topics = await this.learningStorage.listTopicsForCategory(this.selectedCategory);
     for (const topic of topics) {
-      const pill = row.createEl("button", { cls: "ng-mynotes-pill ng-mylearning-topic-pill" });
+      const pill = row.createEl("button", { cls: "ng-mynotes-pill ng-mylearning-category-pill" });
+      pill.style.setProperty("--ng-mylearning-category-color", this.learningStorage.getTopicColor(this.selectedCategory, topic));
       pill.createSpan({ text: topic });
+      this.renderProgressSummary(pill, this.learningStorage.entriesInCategoryTopic(this.selectedCategory, topic));
       pill.toggleClass("is-active", this.selectedTopic === topic);
       pill.toggleClass("is-edit-target", this.editMode === "topic");
       pill.addEventListener("click", () => {
         if (this.editMode === "topic") {
-          this.openTopicEditActions(topic);
-          return;
-        }
-        this.selectedTopic = this.selectedTopic === topic ? null : topic;
-        this.selectedCategory = null;
-        void this.render();
-      });
-    }
-
-    if (topics.length === 0) {
-      section.createDiv({ cls: "ng-empty", text: "No topics yet. Click on the plus button on the right to add one." });
-    }
-
-    section.createDiv({ cls: "ng-mylearning-divider" });
-  }
-
-  private async renderCategoriesSection(parent: HTMLElement): Promise<void> {
-    if (!this.selectedTopic) {
-      return;
-    }
-
-    const section = parent.createDiv({ cls: "ng-mylearning-categories" });
-
-    const header = section.createDiv({ cls: "ng-mynotes-section-header" });
-    header.createEl("div", { text: "Categories", cls: "ng-mylearning-label" });
-    const actionsRow = header.createDiv({ cls: "ng-mylearning-header-actions" });
-    const createButton = actionsRow.createEl("button", { cls: "ng-note-header-add-category-icon ng-mylearning-inline-plus" });
-    createButton.setText("+");
-    createButton.addEventListener("click", () => {
-      if (!this.selectedTopic) {
-        return;
-      }
-      this.openCreateCategoryOverlay(this.selectedTopic);
-    });
-    const editButton = actionsRow.createEl("button", { cls: "ng-note-header-add-category-icon ng-mylearning-inline-edit" });
-    editButton.setAttribute("aria-label", "Edit Category");
-    editButton.setAttribute("title", "Edit Category");
-    setEditIcon(editButton);
-    editButton.toggleClass("is-active", this.editMode === "category");
-    editButton.addEventListener("click", () => {
-      this.editMode = this.editMode === "category" ? null : "category";
-      void this.render();
-    });
-
-    const row = section.createDiv({ cls: "ng-mynotes-pill-row" });
-    const categories = await this.learningStorage.listCategoriesForTopic(this.selectedTopic);
-    for (const category of categories) {
-      const pill = row.createEl("button", { cls: "ng-mynotes-pill ng-mylearning-category-pill" });
-      pill.style.setProperty("--ng-mylearning-category-color", this.learningStorage.getCategoryColor(this.selectedTopic, category));
-      if (category === "help") {
-        pill.addClass("is-help");
-      }
-      pill.createSpan({ text: category });
-      pill.toggleClass("is-active", this.selectedCategory === category);
-      pill.toggleClass("is-edit-target", this.editMode === "category" && category !== "help");
-      pill.addEventListener("click", () => {
-        if (this.editMode === "category") {
-          if (category !== "help" && this.selectedTopic) {
-            this.openCategoryEditActions(this.selectedTopic, category);
+          if (this.selectedCategory) {
+            this.openTopicEditActions(this.selectedCategory, topic);
           }
           return;
         }
-        this.selectedCategory = this.selectedCategory === category ? null : category;
+        this.selectedTopic = this.selectedTopic === topic ? null : topic;
+        this.notifySelectionChange();
         void this.render();
       });
     }
@@ -276,107 +280,28 @@ export class NeuralGardenMyLearningView extends ItemView {
   }
 
   private async renderNotesGrid(parent: HTMLElement): Promise<void> {
-    if (!this.selectedCategory) {
+    if (!this.selectedTopic) {
       return;
     }
 
     const section = parent.createDiv({ cls: "ng-mylearning-notes" });
 
-    const notesHeader = section.createDiv({ cls: "ng-mylearning-notes-header" });
-    const notesTitleWrap = notesHeader.createDiv({ cls: "ng-mylearning-notes-title-wrap" });
-    notesTitleWrap.createDiv({ cls: "ng-mylearning-notes-title", text: "Notes" });
+    section.createDiv({ cls: "ng-mylearning-notes-title", text: "Notes & Canvases" });
 
-    if (this.selectedTopic && this.selectedCategory) {
-      const quickCreate = notesTitleWrap.createEl("button", {
-        cls: "ng-mylearning-quick-create",
-        attr: { type: "button", "aria-label": "Quick create note" },
-      });
-      const quickCreateIcon = quickCreate.createSpan({ cls: "ng-mynotes-button-icon" });
-      setIcon(quickCreateIcon, "file-plus");
-      const triggerQuickCreate = () => {
-        this.openNewNoteOverlay(this.selectedTopic, this.selectedCategory);
-      };
-      quickCreate.addEventListener("click", triggerQuickCreate);
-      quickCreate.addEventListener("keydown", (event) => {
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          triggerQuickCreate();
-        }
-      });
-    }
-
-    if (!this.selectedTopic) {
-      section.createDiv({ cls: "ng-empty", text: "Select a topic to view notes." });
+    if (!this.selectedCategory) {
+      section.createDiv({ cls: "ng-empty", text: "Select a category to view notes." });
       return;
     }
 
-    const files = this.collectTopicNotes(this.selectedTopic, this.selectedCategory);
+    const files = this.collectCategoryNotes(this.selectedCategory, this.selectedTopic);
     if (files.length === 0) {
       section.createDiv({ cls: "ng-empty", text: "No notes found." });
       return;
     }
 
-    const grid = section.createDiv({ cls: "ng-mylearning-grid" });
-    grid.createDiv({ cls: "ng-mylearning-grid-divider" });
+    const grid = section.createDiv({ cls: "ng-mylearning-entry-list" });
     for (const file of files) {
-      this.renderNoteRow(grid, file, this.selectedCategory);
-    }
-  }
-
-  private renderComprehensionSection(parent: HTMLElement): void {
-    if (!this.selectedTopic) {
-      return;
-    }
-
-    const section = parent.createDiv({ cls: "ng-mylearning-comprehension" });
-    const toggle = section.createEl("button", {
-      cls: "ng-mynotes-subheading ng-mynotes-subheading-toggle",
-    });
-    toggle.createSpan({
-      cls: "ng-mynotes-caret",
-      text: this.comprehensionExpanded ? "\u25BC" : "\u25B6",
-    });
-    toggle.createSpan({ cls: "ng-mynotes-subheading-label", text: "Comprehension Tracker" });
-    toggle.addEventListener("click", () => {
-      this.comprehensionExpanded = !this.comprehensionExpanded;
-      void this.render();
-    });
-
-    if (!this.comprehensionExpanded) {
-      return;
-    }
-
-    const rows = this.learningStorage
-      .notesInTopic(this.selectedTopic)
-      .slice()
-      .sort((a, b) => this.learningStorage.getComprehension(a) - this.learningStorage.getComprehension(b))
-      .slice(0, 10);
-
-    if (rows.length === 0) {
-      section.createDiv({ cls: "ng-empty", text: "No notes in this topic yet." });
-      return;
-    }
-
-    const list = section.createDiv({ cls: "ng-mylearning-comprehension-list" });
-    for (const file of rows) {
-      const row = list.createDiv({ cls: "ng-mylearning-comprehension-row ng-mylearning-comprehension-item" });
-      const textWrap = row.createDiv({ cls: "ng-mylearning-comprehension-text" });
-      const titleLine = textWrap.createDiv({ cls: "ng-mylearning-comprehension-title-line" });
-      titleLine.createDiv({ cls: "ng-mynotes-note-title", text: file.basename });
-      const categoryBadgeRow = titleLine.createDiv({ cls: "ng-mylearning-topic-badge-row" });
-      const categories = this.learningStorage.getNoteCategories(file);
-      for (const category of categories) {
-        const badge = categoryBadgeRow.createDiv({ cls: "ng-mylearning-topic-badge ng-mylearning-category-badge" });
-        const noteTopic = this.learningStorage.getNoteTopic(file);
-        badge.style.setProperty("--ng-mylearning-category-color", this.learningStorage.getCategoryColor(noteTopic ?? "", category));
-        badge.setText(category);
-      }
-      const track = row.createDiv({ cls: "ng-mylearning-mini-progress" });
-      const fill = track.createDiv({ cls: "ng-mylearning-mini-progress-fill" });
-      fill.style.width = `${this.learningStorage.getComprehension(file)}%`;
-      row.addEventListener("click", async () => {
-        await this.leaf.openFile(file);
-      });
+      this.renderNoteRow(grid, file, this.selectedTopic);
     }
   }
 
@@ -400,7 +325,7 @@ export class NeuralGardenMyLearningView extends ItemView {
       return;
     }
 
-    const uncategorized = this.learningStorage.listNotes().filter((file) => this.isUncategorized(file));
+    const uncategorized = this.learningStorage.listEntries().filter((file) => this.isUncategorized(file));
     if (uncategorized.length === 0) {
       section.createDiv({ cls: "ng-empty", text: "No uncategorized notes." });
       return;
@@ -411,24 +336,35 @@ export class NeuralGardenMyLearningView extends ItemView {
     }
   }
 
-  private collectTopicNotes(topic: string, category: string | null): TFile[] {
-    if (!category) {
-      return this.learningStorage.notesInTopic(topic);
+  private collectCategoryNotes(category: string, topic: string | null): TFile[] {
+    if (!topic) {
+      return this.learningStorage.entriesInCategory(category);
     }
-    return this.learningStorage.notesInTopicCategory(topic, category);
+    return this.learningStorage.entriesInCategoryTopic(category, topic);
   }
 
-  private renderNoteRow(container: HTMLElement, file: TFile, activeCategory: string | null): void {
+  private renderNoteRow(container: HTMLElement, file: TFile, activeTopic: string | null): void {
     const row = container.createDiv({ cls: "ng-mynotes-note-row" });
 
+    const comprehension = this.learningStorage.getEntryComprehension(file);
+    row.toggleClass("is-low-comprehension", comprehension < 20);
     const indicator = row.createDiv({ cls: "ng-mynotes-note-indicator" });
-    const category = this.resolveIndicatorCategory(file, activeCategory);
-    const topic = this.learningStorage.getNoteTopic(file) ?? "";
-    indicator.style.background = this.learningStorage.getCategoryColor(topic, category ?? file.basename);
+    const topic = this.resolveIndicatorTopic(file, activeTopic);
+    const category = this.learningStorage.getEntryCategory(file) ?? "";
+    indicator.style.background = this.learningStorage.getTopicColor(category, topic ?? file.basename);
 
     row.createDiv({ cls: "ng-mynotes-note-title", text: file.basename });
+    if (file.extension === "canvas") {
+      row.createSpan({ cls: "ng-mylearning-entry-type", text: "Canvas" });
+    }
 
     const actions = row.createDiv({ cls: "ng-mylearning-row-actions" });
+    const progressTone = comprehension > 70 ? "is-green" : comprehension > 50 ? "is-yellow" : "is-orange";
+    const progressTrack = actions.createDiv({ cls: `ng-mylearning-entry-progress ${progressTone}` });
+    const progressFill = progressTrack.createDiv({
+      cls: `ng-mylearning-entry-progress-fill ${progressTone}`,
+    });
+    progressFill.style.width = `${comprehension}%`;
 
     const openRightButton = actions.createEl("button", { cls: "ng-mynotes-note-open-right" });
     openRightButton.setAttribute("aria-label", "Open to the right");
@@ -439,45 +375,82 @@ export class NeuralGardenMyLearningView extends ItemView {
       await rightLeaf.openFile(file);
     });
 
+    const deleteButton = actions.createEl("button", { cls: "ng-mynotes-note-delete" });
+    deleteButton.setAttribute("aria-label", `Delete ${file.basename}`);
+    setIcon(deleteButton, "x");
+    deleteButton.addEventListener("click", (event) => {
+      event.stopPropagation();
+      this.openDeleteOverlay(file);
+    });
+
     row.addEventListener("click", async () => {
       await this.leaf.openFile(file);
     });
   }
 
-  private resolveIndicatorCategory(file: TFile, activeCategory: string | null): string | null {
-    if (activeCategory && activeCategory !== "help") {
-      return activeCategory;
+  private resolveIndicatorTopic(file: TFile, activeTopic: string | null): string | null {
+    if (activeTopic) {
+      return activeTopic;
     }
-    const categories = this.learningStorage.getNoteCategories(file);
-    if (categories.length > 0) {
-      return categories[0] ?? null;
+    const topics = this.learningStorage.getEntryTopics(file);
+    if (topics.length > 0) {
+      return topics[0] ?? null;
     }
-    return this.learningStorage.getNoteTopic(file);
+    return this.learningStorage.getEntryCategory(file);
   }
 
   private isUncategorized(file: TFile): boolean {
-    const topic = this.learningStorage.getNoteTopic(file);
-    const categories = this.learningStorage.getNoteCategories(file);
-    return !topic || categories.length === 0;
+    const category = this.learningStorage.getEntryCategory(file);
+    const topics = this.learningStorage.getEntryTopics(file);
+    return !category || topics.length === 0;
   }
 
-  private openNewNoteOverlay(topic?: string | null, category?: string | null): void {
+  private renderProgressSummary(container: HTMLElement, files: TFile[]): void {
+    const total = files.length;
+    const learned = files.filter((file) => this.learningStorage.getEntryComprehension(file) > 60).length;
+    const average = total === 0
+      ? 0
+      : Math.round(files.reduce((sum, file) => sum + this.learningStorage.getEntryComprehension(file), 0) / total);
+    const ratio = total === 0 ? 0 : (learned / total) * 100;
+    const summary = container.createSpan({ cls: "ng-mylearning-progress-summary" });
+    summary.createSpan({
+      cls: `ng-mylearning-progress-count ${ratio > 70 ? "is-green" : ratio > 50 ? "is-yellow" : "is-orange"}`,
+      text: `${learned}|${total}`,
+    });
+    const track = summary.createSpan({ cls: "ng-mylearning-average-track" });
+    const fill = track.createSpan({ cls: "ng-mylearning-average-fill" });
+    fill.style.width = `${average}%`;
+  }
+
+  private openNewNoteOverlay(category?: string | null, topic?: string | null): void {
     const { card, close } = openOverlay("Create A Note");
     card.createDiv({ cls: "ng-overlay-subtitle", text: "Write down a name" });
 
-    if (topic || category) {
+    if (category || topic) {
       const parts: string[] = [];
-      if (topic) {
-        parts.push(`Topic: ${topic}`);
-      }
       if (category) {
         parts.push(`Category: ${category}`);
+      }
+      if (topic) {
+        parts.push(`Topic: ${topic}`);
       }
       card.createDiv({ cls: "ng-overlay-text", text: parts.join(" | ") });
     }
 
     const input = card.createEl("input", { type: "text", placeholder: "Note name..." });
     input.addClass("ng-task-input");
+
+    const typeControl = card.createDiv({ cls: "ng-mylearning-type-control" });
+    const markdownButton = typeControl.createEl("button", { text: "Markdown", cls: "is-active" });
+    const canvasButton = typeControl.createEl("button", { text: "Canvas" });
+    let fileType: "markdown" | "canvas" = "markdown";
+    const setFileType = (next: "markdown" | "canvas") => {
+      fileType = next;
+      markdownButton.toggleClass("is-active", next === "markdown");
+      canvasButton.toggleClass("is-active", next === "canvas");
+    };
+    markdownButton.addEventListener("click", () => setFileType("markdown"));
+    canvasButton.addEventListener("click", () => setFileType("canvas"));
 
     const errorEl = card.createDiv({ cls: "ng-overlay-error" });
     errorEl.hide();
@@ -490,23 +463,30 @@ export class NeuralGardenMyLearningView extends ItemView {
       if (!name) {
         return;
       }
-      if (this.learningStorage.noteExists(name)) {
-        errorEl.setText("This Note already exists");
+      const validationError = getNameValidationError(name);
+      if (validationError) {
+        errorEl.setText(validationError);
         errorEl.show();
-        input.value = "";
+        return;
+      }
+      if (this.learningStorage.noteExists(name)) {
+        errorEl.setText("A note or canvas with this name already exists.");
+        errorEl.show();
         input.focus();
         return;
       }
 
-      const categories = category && category !== "help"
-        ? [category]
-        : [];
+      const topics = topic ? [topic] : [];
 
-      const file = await this.learningStorage.createNote(name, topic ?? null, categories);
-      if (file && category === "help") {
-        await this.learningStorage.setHelpEnabled(file, true);
+      if (fileType === "canvas" && (!category || !topic)) {
+        errorEl.setText("Select a category and topic before creating a canvas.");
+        errorEl.show();
+        return;
       }
 
+      const file = fileType === "canvas"
+        ? await this.learningStorage.createCanvas(name, category, topic)
+        : await this.learningStorage.createNote(name, category ?? null, topics);
       close();
       if (!file) {
         new Notice("Could not create the note. Try a different name.");
@@ -517,6 +497,12 @@ export class NeuralGardenMyLearningView extends ItemView {
     };
 
     createButton.addEventListener("click", () => void submit());
+    input.addEventListener("input", () => {
+      const validationError = getNameValidationError(input.value);
+      errorEl.toggle(validationError !== null);
+      errorEl.setText(validationError ?? "");
+      createButton.disabled = validationError !== null;
+    });
     input.addEventListener("keydown", (event) => {
       if (event.key === "Enter") {
         void submit();
@@ -525,10 +511,12 @@ export class NeuralGardenMyLearningView extends ItemView {
     input.focus();
   }
 
-  private openCreateTopicOverlay(): void {
-    const { card, close } = openOverlay("Create Topic");
-    const input = card.createEl("input", { type: "text", placeholder: "Topic name..." });
+  private openCreateCategoryOverlay(): void {
+    const { card, close } = openOverlay("Create Category");
+    const input = card.createEl("input", { type: "text", placeholder: "Category name..." });
     input.addClass("ng-task-input");
+    const errorEl = card.createDiv({ cls: "ng-overlay-error" });
+    errorEl.hide();
 
     const actions = card.createDiv({ cls: "ng-overlay-actions" });
     const createButton = actions.createEl("button", { text: "Create", cls: "ng-overlay-confirm" });
@@ -538,14 +526,27 @@ export class NeuralGardenMyLearningView extends ItemView {
       if (!name) {
         return;
       }
-      await this.learningStorage.addTopic(name);
+      const validationError = getNameValidationError(name);
+      if (validationError) {
+        errorEl.setText(validationError);
+        errorEl.show();
+        return;
+      }
+      await this.learningStorage.addCategory(name);
       close();
-      this.selectedTopic = name.trim();
-      this.selectedCategory = null;
+      this.selectedCategory = name.trim();
+      this.selectedTopic = null;
+      this.notifySelectionChange();
       await this.render();
     };
 
     createButton.addEventListener("click", () => void submit());
+    input.addEventListener("input", () => {
+      const validationError = getNameValidationError(input.value);
+      errorEl.toggle(validationError !== null);
+      errorEl.setText(validationError ?? "");
+      createButton.disabled = validationError !== null;
+    });
     input.addEventListener("keydown", (event) => {
       if (event.key === "Enter") {
         void submit();
@@ -554,13 +555,13 @@ export class NeuralGardenMyLearningView extends ItemView {
     input.focus();
   }
 
-  private openCreateCategoryOverlay(topic: string): void {
-    const { card, close } = openOverlay("Create Category");
-    card.createDiv({ cls: "ng-overlay-subtitle", text: `Topic: ${topic}` });
+  private openCreateTopicOverlay(category: string): void {
+    const { card, close } = openOverlay("Create Topic");
+    card.createDiv({ cls: "ng-overlay-subtitle", text: `Category: ${category}` });
 
     const colorRow = card.createDiv({ cls: "ng-mylearning-category-color-row" });
     const pickedColor = "#ec9a63";
-    const nameInput = colorRow.createEl("input", { type: "text", placeholder: "Category name..." });
+    const nameInput = colorRow.createEl("input", { type: "text", placeholder: "Topic name..." });
     nameInput.addClass("ng-task-input");
     const colorWrap = colorRow.createDiv({ cls: "ng-mylearning-category-color-wrap" });
     const colorInput = colorWrap.createEl("input", { type: "color", value: pickedColor });
@@ -569,7 +570,7 @@ export class NeuralGardenMyLearningView extends ItemView {
     colorSwatch.style.setProperty("--ng-mylearning-picked-color", pickedColor);
     colorSwatch.setAttribute("role", "button");
     colorSwatch.setAttribute("tabindex", "0");
-    colorSwatch.setAttribute("aria-label", "Choose category color");
+    colorSwatch.setAttribute("aria-label", "Choose topic color");
     colorSwatch.addEventListener("click", () => {
       colorInput.click();
     });
@@ -583,6 +584,9 @@ export class NeuralGardenMyLearningView extends ItemView {
       }
     });
 
+    const errorEl = card.createDiv({ cls: "ng-overlay-error" });
+    errorEl.hide();
+
     const actions = card.createDiv({ cls: "ng-overlay-actions" });
     const createButton = actions.createEl("button", { text: "Create", cls: "ng-overlay-confirm" });
 
@@ -591,13 +595,26 @@ export class NeuralGardenMyLearningView extends ItemView {
       if (!name) {
         return;
       }
-      await this.learningStorage.addCategory(topic, name, colorInput.value);
+      const validationError = getNameValidationError(name);
+      if (validationError) {
+        errorEl.setText(validationError);
+        errorEl.show();
+        return;
+      }
+      await this.learningStorage.addTopic(category, name, colorInput.value);
       close();
-      this.selectedCategory = name.trim();
+      this.selectedTopic = name.trim();
+      this.notifySelectionChange();
       await this.render();
     };
 
     createButton.addEventListener("click", () => void submit());
+    nameInput.addEventListener("input", () => {
+      const validationError = getNameValidationError(nameInput.value);
+      errorEl.toggle(validationError !== null);
+      errorEl.setText(validationError ?? "");
+      createButton.disabled = validationError !== null;
+    });
     nameInput.addEventListener("keydown", (event) => {
       if (event.key === "Enter") {
         void submit();
@@ -625,9 +642,9 @@ export class NeuralGardenMyLearningView extends ItemView {
     });
   }
 
-  private openTopicEditActions(topic: string): void {
-    const { card, close } = openOverlay(`Edit Topic`);
-    card.createDiv({ cls: "ng-overlay-subtitle", text: topic });
+  private openCategoryEditActions(category: string): void {
+    const { card, close } = openOverlay(`Edit Category`);
+    card.createDiv({ cls: "ng-overlay-subtitle", text: category });
 
     const actions = card.createDiv({ cls: "ng-overlay-actions" });
     const renameButton = actions.createEl("button", { text: "Rename", cls: "ng-overlay-confirm" });
@@ -636,19 +653,19 @@ export class NeuralGardenMyLearningView extends ItemView {
 
     renameButton.addEventListener("click", () => {
       close();
-      this.openRenameTopicOverlay(topic);
+      this.openRenameCategoryOverlay(category);
     });
     deleteButton.addEventListener("click", () => {
       close();
-      this.openDeleteTopicOverlay(topic);
+      this.openDeleteCategoryOverlay(category);
     });
     cancelButton.addEventListener("click", () => close());
   }
 
-  private openCategoryEditActions(topic: string, category: string): void {
-    const { card, close } = openOverlay(`Edit Category`);
+  private openTopicEditActions(category: string, topic: string): void {
+    const { card, close } = openOverlay(`Edit Topic`);
     card.addClass("ng-mylearning-edit-overlay-wide");
-    card.createDiv({ cls: "ng-overlay-subtitle", text: `${topic} | ${category}` });
+    card.createDiv({ cls: "ng-overlay-subtitle", text: `${category} | ${topic}` });
 
     const actions = card.createDiv({ cls: "ng-overlay-actions" });
     const renameButton = actions.createEl("button", { text: "Rename", cls: "ng-overlay-confirm" });
@@ -658,34 +675,34 @@ export class NeuralGardenMyLearningView extends ItemView {
 
     renameButton.addEventListener("click", () => {
       close();
-      this.openRenameCategoryOverlay(topic, category);
+      this.openRenameTopicOverlay(category, topic);
     });
     colorButton.addEventListener("click", () => {
       close();
-      this.openRecolorCategoryOverlay(topic, category);
+      this.openRecolorTopicOverlay(category, topic);
     });
     deleteButton.addEventListener("click", () => {
       close();
-      this.openDeleteCategoryOverlay(topic, category);
+      this.openDeleteTopicOverlay(category, topic);
     });
     cancelButton.addEventListener("click", () => close());
   }
 
-  private openRecolorCategoryOverlay(topic: string, category: string): void {
-    const { card, close } = openOverlay("Category Color");
+  private openRecolorTopicOverlay(category: string, topic: string): void {
+    const { card, close } = openOverlay("Topic Color");
     card.addClass("ng-mylearning-edit-overlay-wide");
-    card.createDiv({ cls: "ng-overlay-subtitle", text: `${topic} | ${category}` });
+    card.createDiv({ cls: "ng-overlay-subtitle", text: `${category} | ${topic}` });
 
     const row = card.createDiv({ cls: "ng-mylearning-category-color-row" });
     row.addClass("is-centered");
     const wrap = row.createDiv({ cls: "ng-mylearning-category-color-wrap" });
-    const colorInput = wrap.createEl("input", { type: "color", value: this.learningStorage.getCategoryColor(topic, category) });
+    const colorInput = wrap.createEl("input", { type: "color", value: this.learningStorage.getTopicColor(category, topic) });
     colorInput.addClass("ng-mylearning-color-input");
     const swatch = wrap.createSpan({ cls: "ng-mylearning-color-swatch" });
     swatch.style.setProperty("--ng-mylearning-picked-color", colorInput.value);
     swatch.setAttribute("role", "button");
     swatch.setAttribute("tabindex", "0");
-    swatch.setAttribute("aria-label", "Choose category color");
+    swatch.setAttribute("aria-label", "Choose topic color");
     swatch.addEventListener("click", () => colorInput.click());
     swatch.addEventListener("keydown", (event) => {
       if (event.key === "Enter" || event.key === " ") {
@@ -702,9 +719,9 @@ export class NeuralGardenMyLearningView extends ItemView {
     const cancelButton = actions.createEl("button", { text: "Cancel", cls: "ng-overlay-cancel" });
 
     const submit = async () => {
-      const success = await this.learningStorage.setCategoryColor(topic, category, colorInput.value);
+      const success = await this.learningStorage.setTopicColor(category, topic, colorInput.value);
       if (!success) {
-        new Notice("Could not update category color.");
+        new Notice("Could not update topic color.");
         return;
       }
       close();
@@ -717,24 +734,25 @@ export class NeuralGardenMyLearningView extends ItemView {
     cancelButton.addEventListener("click", () => close());
   }
 
-  private openRenameTopicOverlay(previousTopic: string): void {
-    const { card, close } = openOverlay("Rename Topic");
-    const input = card.createEl("input", { type: "text", value: previousTopic, placeholder: "New topic name..." });
+  private openRenameCategoryOverlay(previousCategory: string): void {
+    const { card, close } = openOverlay("Rename Category");
+    const input = card.createEl("input", { type: "text", value: previousCategory, placeholder: "New category name..." });
     input.addClass("ng-task-input");
     const actions = card.createDiv({ cls: "ng-overlay-actions" });
     const renameButton = actions.createEl("button", { text: "Rename", cls: "ng-overlay-confirm" });
     const cancelButton = actions.createEl("button", { text: "Cancel", cls: "ng-overlay-cancel" });
 
     const submit = async () => {
-      const nextTopic = input.value.trim();
-      const success = await this.learningStorage.renameTopic(previousTopic, nextTopic);
+      const nextCategory = input.value.trim();
+      const success = await this.learningStorage.renameCategory(previousCategory, nextCategory);
       if (!success) {
-        new Notice("Could not rename topic. Check the new name and try again.");
+        new Notice("Could not rename category. Check the new name and try again.");
         return;
       }
-      if (this.selectedTopic === previousTopic) {
-        this.selectedTopic = nextTopic;
-        this.selectedCategory = null;
+      if (this.selectedCategory === previousCategory) {
+        this.selectedCategory = nextCategory;
+        this.selectedTopic = null;
+        this.notifySelectionChange();
       }
       this.editMode = null;
       close();
@@ -751,22 +769,23 @@ export class NeuralGardenMyLearningView extends ItemView {
     input.focus();
   }
 
-  private openDeleteTopicOverlay(topic: string): void {
-    const { card, close } = openOverlay("Delete Topic");
-    card.createDiv({ cls: "ng-overlay-text", text: `Delete topic \"${topic}\" and remove it from all notes?` });
+  private openDeleteCategoryOverlay(category: string): void {
+    const { card, close } = openOverlay("Delete Category");
+    card.createDiv({ cls: "ng-overlay-text", text: `Delete category \"${category}\" and remove it from all notes?` });
     const actions = card.createDiv({ cls: "ng-overlay-actions" });
     const deleteButton = actions.createEl("button", { text: "Delete", cls: "ng-overlay-danger" });
     const cancelButton = actions.createEl("button", { text: "Cancel", cls: "ng-overlay-cancel" });
 
     const submit = async () => {
-      const success = await this.learningStorage.deleteTopic(topic);
+      const success = await this.learningStorage.deleteCategory(category);
       if (!success) {
-        new Notice("Could not delete topic.");
+        new Notice("Could not delete category.");
         return;
       }
-      if (this.selectedTopic === topic) {
-        this.selectedTopic = null;
+      if (this.selectedCategory === category) {
         this.selectedCategory = null;
+        this.selectedTopic = null;
+        this.notifySelectionChange();
       }
       this.editMode = null;
       close();
@@ -777,25 +796,26 @@ export class NeuralGardenMyLearningView extends ItemView {
     cancelButton.addEventListener("click", () => close());
   }
 
-  private openRenameCategoryOverlay(topic: string, previousCategory: string): void {
-    const { card, close } = openOverlay("Rename Category");
+  private openRenameTopicOverlay(category: string, previousTopic: string): void {
+    const { card, close } = openOverlay("Rename Topic");
     card.addClass("ng-mylearning-edit-overlay-wide");
-    card.createDiv({ cls: "ng-overlay-subtitle", text: topic });
-    const input = card.createEl("input", { type: "text", value: previousCategory, placeholder: "New category name..." });
+    card.createDiv({ cls: "ng-overlay-subtitle", text: category });
+    const input = card.createEl("input", { type: "text", value: previousTopic, placeholder: "New topic name..." });
     input.addClass("ng-task-input");
     const actions = card.createDiv({ cls: "ng-overlay-actions" });
     const renameButton = actions.createEl("button", { text: "Rename", cls: "ng-overlay-confirm" });
     const cancelButton = actions.createEl("button", { text: "Cancel", cls: "ng-overlay-cancel" });
 
     const submit = async () => {
-      const nextCategory = input.value.trim();
-      const success = await this.learningStorage.renameCategory(topic, previousCategory, nextCategory);
+      const nextTopic = input.value.trim();
+      const success = await this.learningStorage.renameTopic(category, previousTopic, nextTopic);
       if (!success) {
-        new Notice("Could not rename category. Check the new name and try again.");
+        new Notice("Could not rename topic. Check the new name and try again.");
         return;
       }
-      if (this.selectedCategory === previousCategory) {
-        this.selectedCategory = nextCategory;
+      if (this.selectedTopic === previousTopic) {
+        this.selectedTopic = nextTopic;
+        this.notifySelectionChange();
       }
       this.editMode = null;
       close();
@@ -812,21 +832,22 @@ export class NeuralGardenMyLearningView extends ItemView {
     input.focus();
   }
 
-  private openDeleteCategoryOverlay(topic: string, category: string): void {
-    const { card, close } = openOverlay("Delete Category");
-    card.createDiv({ cls: "ng-overlay-text", text: `Delete category \"${category}\" and remove it from all notes in ${topic}?` });
+  private openDeleteTopicOverlay(category: string, topic: string): void {
+    const { card, close } = openOverlay("Delete Topic");
+    card.createDiv({ cls: "ng-overlay-text", text: `Delete topic \"${topic}\" and remove it from all notes in ${category}?` });
     const actions = card.createDiv({ cls: "ng-overlay-actions" });
     const deleteButton = actions.createEl("button", { text: "Delete", cls: "ng-overlay-danger" });
     const cancelButton = actions.createEl("button", { text: "Cancel", cls: "ng-overlay-cancel" });
 
     const submit = async () => {
-      const success = await this.learningStorage.deleteCategory(topic, category);
+      const success = await this.learningStorage.deleteTopic(category, topic);
       if (!success) {
-        new Notice("Could not delete category.");
+        new Notice("Could not delete topic.");
         return;
       }
-      if (this.selectedCategory === category) {
-        this.selectedCategory = null;
+      if (this.selectedTopic === topic) {
+        this.selectedTopic = null;
+        this.notifySelectionChange();
       }
       this.editMode = null;
       close();

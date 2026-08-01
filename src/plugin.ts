@@ -1,4 +1,4 @@
-import { Plugin, WorkspaceLeaf } from "obsidian";
+import { Plugin, TFile, WorkspaceLeaf } from "obsidian";
 import { NeuralGardenHomeView } from "./homeView";
 import { NeuralGardenJournalEntryView } from "./journalingEntryView";
 import { NeuralGardenJournalingView } from "./journalingView";
@@ -27,6 +27,10 @@ export default class NeuralGardenPlugin extends Plugin {
   private myLearningStorage!: MyLearningStorage;
   private noteHeaderManager!: NoteHeaderManager;
   private weeklyRecapManager!: WeeklyRecapManager;
+  private myLearningSelection: { category: string | null; topic: string | null } = {
+    category: null,
+    topic: null,
+  };
 
   async onload() {
     this.storage = new TaskManagerStorage(this.app);
@@ -65,7 +69,15 @@ export default class NeuralGardenPlugin extends Plugin {
       new NeuralGardenMyNotesView(leaf, this.myNotesStorage, this.openHomeView),
     );
     this.registerView(VIEW_TYPE_NEURAL_GARDEN_MY_LEARNING, (leaf) =>
-      new NeuralGardenMyLearningView(leaf, this.myLearningStorage, this.openHomeView),
+      new NeuralGardenMyLearningView(
+        leaf,
+        this.myLearningStorage,
+        this.openHomeView,
+        this.myLearningSelection,
+        (category, topic) => {
+          this.myLearningSelection = { category, topic };
+        },
+      ),
     );
     this.registerView(VIEW_TYPE_NEURAL_GARDEN_JOURNALING, (leaf) =>
       new NeuralGardenJournalingView(leaf, this.storage, this.journalingStorage, this.openHomeView, this.openJournalEntryView, this.openWeeklyRecap),
@@ -140,6 +152,20 @@ export default class NeuralGardenPlugin extends Plugin {
     this.registerEvent(
       this.app.workspace.on("file-open", () => {
         this.noteHeaderManager.sync();
+      }),
+    );
+    this.registerEvent(
+      this.app.vault.on("rename", async (file, oldPath) => {
+        if (file instanceof TFile) {
+          await this.myLearningStorage.handleEntryRename(file, oldPath);
+        }
+        window.setTimeout(() => {
+          for (const leaf of this.app.workspace.getLeavesOfType(VIEW_TYPE_NEURAL_GARDEN_MY_LEARNING)) {
+            if (leaf.view instanceof NeuralGardenMyLearningView) {
+              void leaf.view.refresh();
+            }
+          }
+        }, 100);
       }),
     );
     this.app.workspace.onLayoutReady(() => {
@@ -227,12 +253,21 @@ export default class NeuralGardenPlugin extends Plugin {
     }
   }
 
-  private openMyLearningView = async (makeActive: boolean, targetLeaf?: WorkspaceLeaf, selectedTopic?: string): Promise<void> => {
+  private openMyLearningView = async (
+    makeActive: boolean,
+    targetLeaf?: WorkspaceLeaf,
+    selectedCategory?: string,
+    selectedTopic?: string,
+  ): Promise<void> => {
     const leaf = targetLeaf ?? this.app.workspace.getLeaf(true);
     await leaf.setViewState({ type: VIEW_TYPE_NEURAL_GARDEN_MY_LEARNING, active: makeActive });
     const view = leaf.view;
-    if (selectedTopic && view instanceof NeuralGardenMyLearningView) {
-      await view.setSelectedTopic(selectedTopic);
+    if (view instanceof NeuralGardenMyLearningView) {
+      const category = this.myLearningSelection.category ?? selectedCategory ?? null;
+      const topic = category === this.myLearningSelection.category
+        ? this.myLearningSelection.topic
+        : selectedTopic ?? null;
+      await view.setSelection(category, topic);
     }
     if (makeActive) {
       this.app.workspace.revealLeaf(leaf);
