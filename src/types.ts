@@ -105,6 +105,18 @@ export type WeeklyTaskAdjustments = {
   forcedBreakLength: { from: number; to: number };
 };
 
+export type WeeklyHighlight = {
+  date: string;
+  text: string;
+};
+
+export type WeeklyTaskEffort = "light" | "easy" | "fair" | "hard" | "heavy";
+
+export type WeeklyPlannedTask = {
+  taskName: string;
+  effort: WeeklyTaskEffort;
+};
+
 export type WeeklyRecapFrontmatter = {
   week: number;
   year: number;
@@ -116,7 +128,8 @@ export type WeeklyRecapFrontmatter = {
   missingSupportSymptoms: string[];
   criticalDays: Record<string, string[]>;
   supportHints: string[];
-  seeds: string[];
+  highlights: WeeklyHighlight[];
+  nextWeekTasks: WeeklyPlannedTask[];
   averages: WeeklyAverages;
   emotionCounts: WeeklyEmotionCounts;
   trackerCounts: Record<string, number>;

@@ -11,6 +11,8 @@ import {
   JournalTaskSnapshot,
   JournalTrackerFrontmatter,
   JournalTrackerRecord,
+  WeeklyHighlight,
+  WeeklyPlannedTask,
   WeeklyRecapFrontmatter,
 } from "./types";
 
@@ -288,7 +290,8 @@ function defaultWeeklyFrontmatter(year: number, week: number): WeeklyRecapFrontm
     missingSupportSymptoms: [],
     criticalDays: {},
     supportHints: [],
-    seeds: [],
+    highlights: [],
+    nextWeekTasks: [],
     averages: {
       mood: 0,
       sleep: 0,
@@ -341,7 +344,8 @@ function normalizeWeeklyFrontmatter(raw: Record<string, unknown>): WeeklyRecapFr
     missingSupportSymptoms: stringArrayOr(raw.missingSupportSymptoms),
     criticalDays: normalizeStringArrayMap(raw.criticalDays),
     supportHints: stringArrayOr(raw.supportHints),
-    seeds: stringArrayOr(raw.seeds),
+    highlights: normalizeWeeklyHighlights(raw.highlights),
+    nextWeekTasks: normalizeWeeklyTasks(raw.nextWeekTasks),
     averages: {
       mood: numberOr(averagesRaw.mood, defaults.averages.mood),
       sleep: numberOr(averagesRaw.sleep, defaults.averages.sleep),
@@ -414,6 +418,37 @@ function normalizeStringArrayMap(value: unknown): Record<string, string[]> {
     map[key] = stringArrayOr(raw);
   }
   return map;
+}
+
+function normalizeWeeklyHighlights(value: unknown): WeeklyHighlight[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value.flatMap((item) => {
+    if (!item || typeof item !== "object") {
+      return [];
+    }
+    const record = item as Record<string, unknown>;
+    const date = stringOr(record.date, "");
+    const text = stringOr(record.text, "").trim();
+    return date && text ? [{ date, text }] : [];
+  });
+}
+
+function normalizeWeeklyTasks(value: unknown): WeeklyPlannedTask[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  const validEfforts = new Set<WeeklyPlannedTask["effort"]>(["light", "easy", "fair", "hard", "heavy"]);
+  return value.flatMap((item) => {
+    if (!item || typeof item !== "object") {
+      return [];
+    }
+    const record = item as Record<string, unknown>;
+    const taskName = stringOr(record.taskName, "").trim();
+    const effort = stringOr(record.effort, "") as WeeklyPlannedTask["effort"];
+    return taskName && validEfforts.has(effort) ? [{ taskName, effort }] : [];
+  }).slice(0, 5);
 }
 
 function normalizeDelta(value: unknown, fallback: { from: number; to: number }): { from: number; to: number } {

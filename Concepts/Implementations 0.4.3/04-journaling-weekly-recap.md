@@ -78,6 +78,10 @@ weekly-scoped task planning feature.
 week's tasks" button integration step will read from — keep the frontmatter
 key names stable/documented so that step can reference them.
 
+**Stable frontmatter schema:** `nextWeekTasks` is a list of objects containing
+`taskName` and `effort`. Valid effort values are `light`, `easy`, `fair`,
+`hard`, and `heavy`.
+
 **Open question:** exact placement of the resulting buttons in the Task
 Manager UI wasn't decided — flagged for you to confirm before/while
 implementing `05-taskmanager.md`'s integration step.

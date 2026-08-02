@@ -404,24 +404,6 @@ function injectNeuralGardenStyles() {
     .ng-weekly-breath-count.is-fading {
       opacity: 0;
     }
-    .ng-weekly-seed-form {
-      width: 100%;
-      display: grid;
-      grid-template-columns: 1fr 1fr auto;
-      gap: 6px;
-      align-items: center;
-    }
-    .ng-weekly-seed-submit {
-      border: 1px solid #ec9a63;
-      border-radius: 8px;
-      background: transparent;
-      cursor: pointer;
-      padding: 7px 11px;
-      color: var(--text-normal);
-    }
-    .ng-weekly-seed-form.is-locked {
-      opacity: 0.45;
-    }
     .ng-weekly-view {
       max-width: 720px;
       margin: 0 auto;
@@ -654,9 +636,120 @@ function injectNeuralGardenStyles() {
     .ng-weekly-support-reason {
       color: #FF6565;
     }
-    .ng-weekly-critical-title,
-    .ng-weekly-critical-line {
-      color: #FF6565;
+    .ng-weekly-critical-section,
+    .ng-weekly-highlights-section {
+      gap: 10px;
+    }
+    .ng-weekly-critical-day,
+    .ng-weekly-highlight {
+      display: grid;
+      justify-items: center;
+      gap: 4px;
+      padding: 8px 4px;
+      transition: opacity 900ms ease, transform 900ms ease;
+    }
+    .ng-weekly-critical-date,
+    .ng-weekly-highlight-day {
+      color: var(--text-normal);
+      font-size: 1.2em;
+      font-weight: 600;
+      text-align: center;
+    }
+    .ng-weekly-critical-symptom {
+      color: color-mix(in srgb, #ff6565 82%, var(--text-normal));
+    }
+    .ng-weekly-highlight-text {
+      color: color-mix(in srgb, #39e05a 78%, var(--text-normal));
+    }
+    .ng-weekly-critical-symptoms {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 5px;
+    }
+    .ng-weekly-critical-symptom {
+      font-size: 0.85rem;
+    }
+    .ng-weekly-critical-symptom + .ng-weekly-critical-symptom::before {
+      content: "\xB7";
+      margin-right: 5px;
+    }
+    .ng-weekly-highlights-subtext {
+      font-style: italic;
+    }
+    .ng-weekly-highlight-text {
+      text-align: center;
+      line-height: 1.45;
+      overflow-wrap: anywhere;
+    }
+    .ng-weekly-next-tasks {
+      display: grid;
+      gap: 7px;
+    }
+    .ng-weekly-next-task-row {
+      display: grid;
+      grid-template-columns: minmax(140px, 0.8fr) minmax(260px, 1.2fr) 24px;
+      align-items: center;
+      gap: 8px;
+    }
+    .ng-weekly-next-task-input {
+      min-width: 0;
+      width: 100%;
+      padding: 7px 9px;
+      border: 1px solid var(--background-modifier-border);
+      border-radius: 8px;
+      background: transparent !important;
+      box-shadow: none !important;
+    }
+    .ng-weekly-task-efforts {
+      flex-wrap: nowrap;
+      min-width: 0;
+      gap: 3px;
+    }
+    .ng-weekly-task-effort {
+      flex: 1 1 0;
+      min-width: 0;
+      padding: 4px 5px;
+      white-space: nowrap;
+    }
+    .ng-weekly-task-effort.is-active {
+      border-color: var(--ng-task-effort-color);
+      background: color-mix(in srgb, var(--ng-task-effort-color) 16%, transparent);
+      color: var(--ng-task-effort-color);
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--ng-task-effort-color) 24%, transparent);
+    }
+    .ng-weekly-task-delete {
+      display: grid;
+      width: 24px;
+      height: 24px;
+      padding: 0;
+      border: 0 !important;
+      background: transparent !important;
+      box-shadow: none !important;
+      color: color-mix(in srgb, #ff6565 72%, var(--text-normal));
+      cursor: pointer;
+      place-items: center;
+      font-size: 0.72rem;
+      font-weight: 700;
+    }
+    .ng-weekly-task-delete:hover,
+    .ng-weekly-task-delete:focus-visible {
+      color: #ff6565;
+      outline: none;
+    }
+    .ng-weekly-next-task-input:focus,
+    .ng-weekly-next-task-input:focus-visible {
+      border-color: color-mix(in srgb, var(--background-modifier-border) 65%, var(--text-normal) 35%) !important;
+      box-shadow: none !important;
+      outline: none;
+    }
+    @media (max-width: 520px) {
+      .ng-weekly-next-task-row {
+        grid-template-columns: 1fr;
+      }
+      .ng-weekly-next-task-input {
+        width: 100%;
+      }
     }
     .ng-weekly-task-status {
       display: flex;
@@ -5824,7 +5917,7 @@ var NeuralGardenJournalingView = class extends import_obsidian3.ItemView {
       key,
       year: weekYear,
       week: weekNumber,
-      generated: recap.body.trim().length > 0,
+      generated: Boolean(recap.frontmatter.generatedAt),
       frontmatter: recap.frontmatter
     };
     this.render();
@@ -5834,7 +5927,7 @@ var NeuralGardenJournalingView = class extends import_obsidian3.ItemView {
     const files = this.app.vault.getFiles().filter((file) => file.path.startsWith("Journal/Weekly/") && file.extension === "md");
     for (const file of files) {
       const recap = await this.journalingStorage.readWeeklyRecap(file);
-      if (recap.body.trim().length > 0) {
+      if (recap.frontmatter.generatedAt) {
         keys.add(`${recap.frontmatter.year}-W${String(recap.frontmatter.week).padStart(2, "0")}`);
       }
     }
@@ -8756,6 +8849,13 @@ var NeuralGardenMyNotesView = class extends import_obsidian6.ItemView {
 // src/weeklyRecapView.ts
 var import_obsidian7 = require("obsidian");
 var WEEKLY_ANIMATION_SCALE = 2;
+var WEEKLY_TASK_EFFORTS = [
+  { key: "light", label: "Light", color: "#3FD6FF" },
+  { key: "easy", label: "Easy", color: "#39E05A" },
+  { key: "fair", label: "Fair", color: "#F0A04C" },
+  { key: "hard", label: "Hard", color: "#E06E2C" },
+  { key: "heavy", label: "Heavy", color: "#FF6565" }
+];
 var NeuralGardenWeeklyRecapView = class extends import_obsidian7.ItemView {
   constructor(leaf, journalingStorage, weeklyRecapManager, openHomeView, openJournalingView) {
     super(leaf);
@@ -8771,6 +8871,7 @@ var NeuralGardenWeeklyRecapView = class extends import_obsidian7.ItemView {
     this.sectionObserver = null;
     this.supportRevealPlayed = false;
     this.revealTimeouts = [];
+    this.weeklyTaskSaveChain = Promise.resolve();
   }
   getViewType() {
     return VIEW_TYPE_NEURAL_GARDEN_WEEKLY_RECAP;
@@ -8811,7 +8912,7 @@ var NeuralGardenWeeklyRecapView = class extends import_obsidian7.ItemView {
     wrap.createDiv({ cls: "ng-empty", text });
   }
   async renderRecap(frontmatter, animateIn) {
-    var _a, _b;
+    var _a;
     const { contentEl } = this;
     contentEl.empty();
     contentEl.addClass("neural-garden-root");
@@ -8895,6 +8996,42 @@ var NeuralGardenWeeklyRecapView = class extends import_obsidian7.ItemView {
         row.style.animationDelay = `${Math.random() * 1.4}s`;
       }
     }
+    const critical = wrap.createDiv({ cls: "ng-weekly-section ng-weekly-critical-section" });
+    critical.createEl("h4", { text: "Critical Days", cls: "ng-weekly-section-heading" });
+    const criticalDays = groupCriticalDays(frontmatter.criticalDays);
+    const criticalFragments = [];
+    if (criticalDays.length === 0) {
+      const empty = critical.createDiv({ cls: "ng-empty ng-weekly-fragment-hidden", text: "No critical days this week." });
+      criticalFragments.push(empty);
+    } else {
+      for (const day of criticalDays) {
+        const dayBlock = critical.createDiv({ cls: "ng-weekly-critical-day ng-weekly-fragment-hidden" });
+        dayBlock.createDiv({ cls: "ng-weekly-critical-date", text: formatWeekday(day.date) });
+        const symptoms2 = dayBlock.createDiv({ cls: "ng-weekly-critical-symptoms" });
+        for (const symptom of day.symptoms) {
+          symptoms2.createDiv({ cls: "ng-weekly-critical-symptom", text: symptom });
+        }
+        criticalFragments.push(dayBlock);
+      }
+    }
+    const highlights = wrap.createDiv({ cls: "ng-weekly-section ng-weekly-highlights-section" });
+    highlights.createEl("h4", { text: "This week's highlights", cls: "ng-weekly-section-heading" });
+    highlights.createDiv({
+      cls: "ng-weekly-inline-copy ng-weekly-highlights-subtext",
+      text: "These were your highlights of this week."
+    });
+    const highlightFragments = [];
+    if (frontmatter.highlights.length === 0) {
+      const empty = highlights.createDiv({ cls: "ng-empty ng-weekly-fragment-hidden", text: "No highlights were recorded this week." });
+      highlightFragments.push(empty);
+    } else {
+      for (const highlight of frontmatter.highlights) {
+        const item = highlights.createDiv({ cls: "ng-weekly-highlight ng-weekly-fragment-hidden" });
+        item.createDiv({ cls: "ng-weekly-highlight-day", text: formatWeekday(highlight.date) });
+        item.createDiv({ cls: "ng-weekly-highlight-text", text: highlight.text });
+        highlightFragments.push(item);
+      }
+    }
     const support = wrap.createDiv({ cls: "ng-weekly-section" });
     support.dataset.weeklySection = "support";
     const supportHeading = support.createEl("h4", { text: "Support Notes", cls: "ng-weekly-section-heading" });
@@ -8944,63 +9081,19 @@ var NeuralGardenWeeklyRecapView = class extends import_obsidian7.ItemView {
       }
       for (const symptom of frontmatter.missingSupportSymptoms) {
         const row = support.createDiv({ cls: "ng-weekly-support-row ng-weekly-fragment-hidden" });
-        const item = row.createDiv({ cls: "ng-weekly-inline-copy ng-weekly-fragment-hidden", text: `${symptom}: consider creating a support note for this.` });
+        const item = row.createDiv({ cls: "ng-weekly-inline-copy ng-weekly-fragment-hidden", text: `${symptom}: consider creating a support note` });
         supportRemainderRows.push({ row, elements: [item] });
-      }
-      const criticalEntries = Object.entries(frontmatter.criticalDays).filter(([, days]) => days.length > 0);
-      if (criticalEntries.length > 0) {
-        const criticalBlock = support.createDiv({ cls: "ng-weekly-support-row ng-weekly-fragment-hidden" });
-        const fragments = [];
-        const title = criticalBlock.createDiv({ cls: "ng-weekly-inline-copy ng-weekly-critical-title ng-weekly-fragment-hidden", text: "Critical days:" });
-        fragments.push(title);
-        for (const [symptom, days] of criticalEntries) {
-          const line = criticalBlock.createDiv({ cls: "ng-weekly-inline-copy ng-weekly-critical-line ng-weekly-fragment-hidden", text: `${symptom}: ${days.join(", ")}` });
-          fragments.push(line);
-        }
-        supportRemainderRows.push({ row: criticalBlock, elements: fragments });
       }
     }
     const tasks = wrap.createDiv({ cls: "ng-weekly-section" });
-    tasks.createEl("h4", { text: "Tasks", cls: "ng-weekly-section-heading" });
+    tasks.createEl("h4", { text: "Adjustments", cls: "ng-weekly-section-heading" });
     renderTaskDeltaLine(tasks, "Weekly energy capacity", frontmatter.taskAdjustments.maxEnergy.from, frontmatter.taskAdjustments.maxEnergy.to, 200);
     renderTaskDeltaLine(tasks, "Break frequency", frontmatter.taskAdjustments.forcedBreakThreshold.from, frontmatter.taskAdjustments.forcedBreakThreshold.to, 100);
     renderTaskDeltaLine(tasks, "Break length", frontmatter.taskAdjustments.forcedBreakLength.from, frontmatter.taskAdjustments.forcedBreakLength.to, 60);
-    const seeds = wrap.createDiv({ cls: "ng-weekly-section" });
-    seeds.createEl("h4", { text: "Next Month's Topics", cls: "ng-weekly-section-heading" });
-    seeds.createDiv({
-      cls: "ng-weekly-inline-copy",
-      text: "These two short topics seed your next Monthly Reflection so you can revisit what mattered across the month."
-    });
-    if (((_b = frontmatter.seeds) != null ? _b : []).length >= 2) {
-      for (const seed of frontmatter.seeds) {
-        seeds.createDiv({ cls: "ng-weekly-support-chip", text: seed });
-      }
-    } else {
-      const row = seeds.createDiv({ cls: "ng-weekly-seed-form" });
-      const one = row.createEl("input", { type: "text", placeholder: "Topic 1" });
-      const two = row.createEl("input", { type: "text", placeholder: "Topic 2" });
-      one.maxLength = 15;
-      two.maxLength = 15;
-      one.addClass("ng-task-input");
-      two.addClass("ng-task-input");
-      const submit = row.createEl("button", { text: "Save Topics", cls: "ng-weekly-seed-submit" });
-      submit.addEventListener("click", async () => {
-        const seedOne = one.value.slice(0, 15);
-        const seedTwo = two.value.slice(0, 15);
-        if (!seedOne || !seedTwo || !this.currentFilePath || !this.currentFrontmatter) {
-          new import_obsidian7.Notice("Please fill both topics.");
-          return;
-        }
-        this.currentFrontmatter.seeds = [seedOne, seedTwo];
-        const file = this.app.vault.getAbstractFileByPath(this.currentFilePath);
-        if (!(file instanceof import_obsidian7.TFile)) {
-          return;
-        }
-        await this.journalingStorage.saveWeeklyRecap(file, this.currentFrontmatter, this.currentBody);
-        await this.renderRecap(this.currentFrontmatter, false);
-      });
-    }
-    const sections = [symptoms, emotions, trackers, support, tasks, seeds];
+    const nextWeekTasks = wrap.createDiv({ cls: "ng-weekly-section" });
+    nextWeekTasks.createEl("h4", { text: "Next week's tasks", cls: "ng-weekly-section-heading" });
+    this.renderNextWeekTaskPlanner(nextWeekTasks, frontmatter.nextWeekTasks);
+    const sections = [symptoms, emotions, trackers, critical, highlights, support, tasks, nextWeekTasks];
     if (animateIn) {
       this.supportRevealPlayed = false;
       this.revealTimeouts.forEach((id) => window.clearTimeout(id));
@@ -9008,13 +9101,17 @@ var NeuralGardenWeeklyRecapView = class extends import_obsidian7.ItemView {
       sections.slice(1).forEach((section) => section.addClass("ng-weekly-scroll-hidden"));
       await this.playSymptomBuildup(symptoms, symptomBlocks);
       await this.playSequentialSectionReveal(
-        [emotions, trackers, support, tasks, seeds],
+        [emotions, trackers, critical, highlights, support, tasks, nextWeekTasks],
         support,
         supportHeading,
         supportCopy,
         emotionTokens,
         supportNoteFragments,
-        supportRemainderRows
+        supportRemainderRows,
+        critical,
+        criticalFragments,
+        highlights,
+        highlightFragments
       );
       return;
     }
@@ -9026,6 +9123,107 @@ var NeuralGardenWeeklyRecapView = class extends import_obsidian7.ItemView {
       supportRemainderRows,
       sections.slice(1)
     );
+  }
+  renderNextWeekTaskPlanner(container, savedTasks) {
+    const list = container.createDiv({ cls: "ng-weekly-next-tasks" });
+    const rows = [];
+    let initializing = true;
+    const persistCompleteRows = () => {
+      const tasks = rows.flatMap(({ input, getEffort }) => {
+        const taskName = input.value.trim();
+        const effort = getEffort();
+        return taskName && effort ? [{ taskName, effort }] : [];
+      });
+      this.queueNextWeekTasksSave(tasks);
+    };
+    const addRow = (task) => {
+      var _a, _b;
+      if (rows.length >= 5) {
+        return;
+      }
+      const row = list.createDiv({ cls: "ng-weekly-next-task-row" });
+      const input = row.createEl("input", { type: "text", placeholder: "Task name", value: (_a = task == null ? void 0 : task.taskName) != null ? _a : "" });
+      input.addClass("ng-task-input", "ng-weekly-next-task-input");
+      input.maxLength = 120;
+      const efforts = row.createDiv({ cls: "ng-journal-task-efforts ng-weekly-task-efforts" });
+      let selectedEffort = (_b = task == null ? void 0 : task.effort) != null ? _b : null;
+      const deleteButton = row.createEl("button", { text: "X", cls: "ng-weekly-task-delete" });
+      deleteButton.setAttribute("aria-label", "Delete planted task");
+      deleteButton.setAttribute("title", "Delete planted task");
+      const updateRow = () => {
+        var _a2;
+        const isComplete = input.value.trim().length > 0 && selectedEffort !== null;
+        row.toggleClass("is-complete", isComplete);
+        deleteButton.hidden = !isComplete;
+        if (!initializing) {
+          if (isComplete && ((_a2 = rows[rows.length - 1]) == null ? void 0 : _a2.input) === input) {
+            initializing = true;
+            addRow();
+            initializing = false;
+          }
+          persistCompleteRows();
+        }
+      };
+      for (const effort of WEEKLY_TASK_EFFORTS) {
+        const button = efforts.createEl("button", { text: effort.label, cls: "ng-journal-task-effort ng-weekly-task-effort" });
+        button.style.setProperty("--ng-task-effort-color", effort.color);
+        button.toggleClass("is-active", selectedEffort === effort.key);
+        button.setAttribute("aria-label", `Set task effort to ${effort.label}`);
+        button.addEventListener("click", () => {
+          selectedEffort = effort.key;
+          efforts.querySelectorAll(".ng-weekly-task-effort").forEach((candidate) => {
+            candidate.toggleClass("is-active", candidate === button);
+          });
+          updateRow();
+        });
+      }
+      deleteButton.addEventListener("click", () => {
+        const rowIndex = rows.findIndex((candidate) => candidate.row === row);
+        if (rowIndex >= 0) {
+          rows.splice(rowIndex, 1);
+        }
+        row.remove();
+        persistCompleteRows();
+        if (rows.length === 0 || rows.length < 5 && rows.every(({ input: candidateInput, getEffort }) => candidateInput.value.trim() && getEffort())) {
+          initializing = true;
+          addRow();
+          initializing = false;
+        }
+      });
+      input.addEventListener("input", updateRow);
+      rows.push({ row, input, getEffort: () => selectedEffort });
+      updateRow();
+    };
+    for (const task of savedTasks.slice(0, 5)) {
+      addRow(task);
+    }
+    initializing = false;
+    if (rows.length === 0 || rows.length < 5 && rows.every(({ input, getEffort }) => input.value.trim() && getEffort())) {
+      initializing = true;
+      addRow();
+      initializing = false;
+    }
+  }
+  queueNextWeekTasksSave(tasks) {
+    if (!this.currentFrontmatter || !this.currentFilePath) {
+      return;
+    }
+    this.currentFrontmatter.nextWeekTasks = tasks;
+    const filePath = this.currentFilePath;
+    const body = this.currentBody;
+    const frontmatter = {
+      ...this.currentFrontmatter,
+      nextWeekTasks: tasks.map((task) => ({ ...task }))
+    };
+    this.weeklyTaskSaveChain = this.weeklyTaskSaveChain.catch(() => void 0).then(async () => {
+      const file = this.app.vault.getAbstractFileByPath(filePath);
+      if (!(file instanceof import_obsidian7.TFile)) {
+        return;
+      }
+      await this.journalingStorage.saveWeeklyRecap(file, frontmatter, body);
+    }).catch(() => {
+      new import_obsidian7.Notice("Could not save next week's tasks.");
+    });
   }
   async playSymptomBuildup(section, blocks) {
     var _a;
@@ -9068,7 +9266,7 @@ var NeuralGardenWeeklyRecapView = class extends import_obsidian7.ItemView {
       await wait(180);
     }
   }
-  async playSequentialSectionReveal(orderedSections, supportSection, supportHeading, supportCopy, emotionTokens, supportNoteFragments, supportRemainderRows) {
+  async playSequentialSectionReveal(orderedSections, supportSection, supportHeading, supportCopy, emotionTokens, supportNoteFragments, supportRemainderRows, criticalSection, criticalFragments, highlightsSection, highlightFragments) {
     var _a;
     (_a = this.sectionObserver) == null ? void 0 : _a.disconnect();
     for (let index = 0; index < orderedSections.length; index += 1) {
@@ -9082,6 +9280,12 @@ var NeuralGardenWeeklyRecapView = class extends import_obsidian7.ItemView {
       if (index === 1) {
         await this.revealTrackerBubbles(section);
       }
+      if (section === criticalSection) {
+        await this.revealListItems(criticalFragments);
+      }
+      if (section === highlightsSection) {
+        await this.revealListItems(highlightFragments);
+      }
       if (section === supportSection && !this.supportRevealPlayed) {
         this.supportRevealPlayed = true;
         await this.playSupportSequentialReveal(
@@ -9094,6 +9298,12 @@ var NeuralGardenWeeklyRecapView = class extends import_obsidian7.ItemView {
       if (index < orderedSections.length - 1) {
         await wait(260);
       }
+    }
+  }
+  async revealListItems(items) {
+    for (const item of items) {
+      item.removeClass("ng-weekly-fragment-hidden");
+      await wait(520);
     }
   }
   async revealEmotionTokens(tokens) {
@@ -9173,12 +9383,26 @@ var NeuralGardenWeeklyRecapView = class extends import_obsidian7.ItemView {
       section.classList.add("is-visible");
       section.classList.remove("ng-weekly-scroll-hidden");
       section.dataset.weeklyRevealed = "true";
-      section.querySelectorAll(".ng-weekly-emotion-token, .ng-weekly-tracker-pill").forEach((bubble) => {
-        bubble.removeClass("ng-weekly-fragment-hidden");
+      section.querySelectorAll(".ng-weekly-fragment-hidden").forEach((fragment) => {
+        fragment.removeClass("ng-weekly-fragment-hidden");
       });
     });
   }
 };
+function groupCriticalDays(criticalDays) {
+  var _a;
+  const grouped = /* @__PURE__ */ new Map();
+  for (const [symptom, dates] of Object.entries(criticalDays)) {
+    for (const date of dates) {
+      grouped.set(date, [...(_a = grouped.get(date)) != null ? _a : [], symptom]);
+    }
+  }
+  return [...grouped.entries()].sort(([left], [right]) => left.localeCompare(right)).map(([date, symptoms]) => ({ date, symptoms }));
+}
+function formatWeekday(dateKey) {
+  const date = /* @__PURE__ */ new Date(`${dateKey}T00:00:00Z`);
+  return Number.isNaN(date.getTime()) ? dateKey : date.toLocaleDateString("en-US", { weekday: "long", timeZone: "UTC" });
+}
 function renderMixedEmotionCloud(container, negative, positive) {
   const entries = [
     ...Object.entries(negative).map(([emotion, count]) => ({ emotion, count, positive: false })),
@@ -9502,7 +9726,8 @@ function defaultWeeklyFrontmatter(year, week) {
     missingSupportSymptoms: [],
     criticalDays: {},
     supportHints: [],
-    seeds: [],
+    highlights: [],
+    nextWeekTasks: [],
     averages: {
       mood: 0,
       sleep: 0,
@@ -9551,7 +9776,8 @@ function normalizeWeeklyFrontmatter(raw) {
     missingSupportSymptoms: stringArrayOr(raw.missingSupportSymptoms),
     criticalDays: normalizeStringArrayMap(raw.criticalDays),
     supportHints: stringArrayOr(raw.supportHints),
-    seeds: stringArrayOr(raw.seeds),
+    highlights: normalizeWeeklyHighlights(raw.highlights),
+    nextWeekTasks: normalizeWeeklyTasks(raw.nextWeekTasks),
     averages: {
       mood: numberOr2(averagesRaw.mood, defaults.averages.mood),
       sleep: numberOr2(averagesRaw.sleep, defaults.averages.sleep),
@@ -9618,6 +9844,35 @@ function normalizeStringArrayMap(value) {
     map[key] = stringArrayOr(raw);
   }
   return map;
+}
+function normalizeWeeklyHighlights(value) {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value.flatMap((item) => {
+    if (!item || typeof item !== "object") {
+      return [];
+    }
+    const record = item;
+    const date = stringOr(record.date, "");
+    const text = stringOr(record.text, "").trim();
+    return date && text ? [{ date, text }] : [];
+  });
+}
+function normalizeWeeklyTasks(value) {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  const validEfforts = /* @__PURE__ */ new Set(["light", "easy", "fair", "hard", "heavy"]);
+  return value.flatMap((item) => {
+    if (!item || typeof item !== "object") {
+      return [];
+    }
+    const record = item;
+    const taskName = stringOr(record.taskName, "").trim();
+    const effort = stringOr(record.effort, "");
+    return taskName && validEfforts.has(effort) ? [{ taskName, effort }] : [];
+  }).slice(0, 5);
 }
 function normalizeDelta(value, fallback) {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
@@ -11067,8 +11322,13 @@ var WeeklyRecapManager = class {
   async ensureWeeklyRecapData(year, week) {
     const file = await this.journalingStorage.ensureWeeklyRecapFile(year, week);
     const existing = await this.journalingStorage.readWeeklyRecap(file);
-    if (existing.body.trim().length > 0) {
-      return { file, frontmatter: existing.frontmatter, body: existing.body, generatedNow: false };
+    if (existing.frontmatter.generatedAt) {
+      const highlights = await this.collectHighlights(year, week);
+      if (existing.body.trim() || JSON.stringify(existing.frontmatter.highlights) !== JSON.stringify(highlights)) {
+        existing.frontmatter.highlights = highlights;
+        await this.journalingStorage.saveWeeklyRecap(file, existing.frontmatter, "");
+      }
+      return { file, frontmatter: existing.frontmatter, body: "", generatedNow: false };
     }
     const generated = await this.generateWeeklyRecap(file);
     if (!generated) {
@@ -11077,6 +11337,11 @@ var WeeklyRecapManager = class {
     }
     const latest = await this.journalingStorage.readWeeklyRecap(file);
     return { file, frontmatter: latest.frontmatter, body: latest.body, generatedNow: true };
+  }
+  async collectHighlights(year, week) {
+    const range = isoWeekRange(year, week);
+    const entries = await this.journalingStorage.listDailyEntries();
+    return highlightsFromEntries(entries.filter((entry) => entry.frontmatter.date >= range.start && entry.frontmatter.date <= range.end));
   }
   async generateWeeklyRecap(file) {
     var _a, _b, _c, _d, _e;
@@ -11169,7 +11434,8 @@ var WeeklyRecapManager = class {
       missingSupportSymptoms: supportSelection.missing,
       criticalDays,
       supportHints,
-      seeds: [],
+      highlights: highlightsFromEntries(entries),
+      nextWeekTasks: [],
       averages: {
         mood: round2(averages.mood),
         sleep: round2(averages.sleep),
@@ -11188,18 +11454,7 @@ var WeeklyRecapManager = class {
         forcedBreakLength: { from: round2(beforeBreakLength), to: round2(nextBreakLength) }
       }
     };
-    const body = buildWeeklyMarkdown({
-      range,
-      entries,
-      averages,
-      emotionCounts,
-      trackerCounts,
-      supportSelection,
-      supportHints,
-      taskAdjustments: frontmatter.taskAdjustments,
-      noteSignals: noteSupportSignals
-    });
-    await this.journalingStorage.saveWeeklyRecap(file, frontmatter, body);
+    await this.journalingStorage.saveWeeklyRecap(file, frontmatter, "");
     return true;
   }
   pickSupportNotes(signals) {
@@ -11321,76 +11576,11 @@ function pickSupportHints(symptoms) {
   }
   return hints;
 }
-function buildWeeklyMarkdown(args) {
-  const strongestTracker = Object.entries(args.trackerCounts).sort((a, b) => b[1] - a[1])[0];
-  const symptomRows = SYMPTOMS.map((symptom) => {
-    const value = round2(args.averages[symptom.key]);
-    return `- ${symptom.label}: ${value}`;
-  }).join("\n");
-  const pleasantRows = Object.entries(args.emotionCounts.pleasant).sort((a, b) => b[1] - a[1]).map(([emotion, count]) => `- ${emotion}: ${count}`).join("\n") || "- none";
-  const unpleasantRows = Object.entries(args.emotionCounts.unpleasant).sort((a, b) => b[1] - a[1]).map(([emotion, count]) => `- ${emotion}: ${count}`).join("\n") || "- none";
-  const trackerRows = Object.entries(args.trackerCounts).sort((a, b) => b[1] - a[1]).map(([name, count]) => `- ${name}: ${count}`).join("\n") || "- none";
-  const supportRows = args.supportSelection.notes.map((note) => `- ${note.name} (triggered by ${note.symptom})`).join("\n") || "- none";
-  const missingRows = args.supportSelection.missing.map((symptom) => `- ${symptom}: consider working on a supportive note for this.`).join("\n") || "- none";
-  const criticalRows = args.noteSignals.filter((signal) => signal.affectedDays.length > 0).map((signal) => `- ${signal.label}: ${signal.affectedDays.join(", ")}`).join("\n") || "- none";
-  const hintRows = args.supportHints.map((hint) => `- ${hint}`).join("\n") || "- none";
-  const taskFeedback = [
-    describeDelta("Weekly energy capacity", args.taskAdjustments.maxEnergy.from, args.taskAdjustments.maxEnergy.to),
-    describeDelta("Break frequency threshold", args.taskAdjustments.forcedBreakThreshold.from, args.taskAdjustments.forcedBreakThreshold.to),
-    describeDelta("Break length", args.taskAdjustments.forcedBreakLength.from, args.taskAdjustments.forcedBreakLength.to)
-  ].join("\n");
-  const winner = strongestTracker && strongestTracker[1] > 0 ? `Weekly winner: ${strongestTracker[0]} (${strongestTracker[1]})` : "Weekly winner: none";
-  return [
-    "# Weekly Recap",
-    "",
-    `Week Range: ${args.range.start} to ${args.range.end}`,
-    `Entries Used: ${args.entries.length}`,
-    "",
-    "## Symptom Recap",
-    symptomRows,
-    "",
-    "## Emotions",
-    `- Positive total: ${args.emotionCounts.pleasantTotal}`,
-    `- Negative total: ${args.emotionCounts.unpleasantTotal}`,
-    "",
-    "### Pleasant emotions",
-    pleasantRows,
-    "",
-    "### Unpleasant emotions",
-    unpleasantRows,
-    "",
-    "## Tracker",
-    winner,
-    trackerRows,
-    "",
-    "## Support System",
-    "### Suggested support notes",
-    supportRows,
-    "",
-    "### Missing support coverage",
-    missingRows,
-    "",
-    "### Critical days",
-    criticalRows,
-    "",
-    "### Support hints",
-    hintRows,
-    "",
-    "## Task Manager Feedback",
-    taskFeedback,
-    "",
-    "## Seeding",
-    "Seeds are added through the weekly overlay input."
-  ].join("\n");
-}
-function describeDelta(label, from, to) {
-  if (Math.abs(from - to) < 0.01) {
-    return `- ${label}: unchanged`;
-  }
-  if (to > from) {
-    return `- ${label}: increased (${round2(from)} -> ${round2(to)})`;
-  }
-  return `- ${label}: decreased (${round2(from)} -> ${round2(to)})`;
+function highlightsFromEntries(entries) {
+  return entries.flatMap((entry) => {
+    const text = entry.frontmatter.goodThing.trim();
+    return text ? [{ date: entry.frontmatter.date, text }] : [];
+  });
 }
 function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));

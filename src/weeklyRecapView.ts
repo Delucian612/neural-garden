@@ -4,10 +4,17 @@ import { NOTES_FOLDER } from "./constants";
 import { JournalingStorage } from "./journalingStorage";
 import { injectNeuralGardenStyles } from "./styles";
 import { WeeklyRecapManager } from "./weeklyRecapManager";
-import { WeeklyRecapFrontmatter } from "./types";
+import { WeeklyPlannedTask, WeeklyRecapFrontmatter, WeeklyTaskEffort } from "./types";
 
 type SymptomRow = { label: string; value: number; highIsBad: boolean };
 const WEEKLY_ANIMATION_SCALE = 2;
+const WEEKLY_TASK_EFFORTS: Array<{ key: WeeklyTaskEffort; label: string; color: string }> = [
+  { key: "light", label: "Light", color: "#3FD6FF" },
+  { key: "easy", label: "Easy", color: "#39E05A" },
+  { key: "fair", label: "Fair", color: "#F0A04C" },
+  { key: "hard", label: "Hard", color: "#E06E2C" },
+  { key: "heavy", label: "Heavy", color: "#FF6565" },
+];
 
 type SupportNoteFragment = {
   row: HTMLElement;
@@ -29,6 +36,7 @@ export class NeuralGardenWeeklyRecapView extends ItemView {
   private sectionObserver: IntersectionObserver | null = null;
   private supportRevealPlayed = false;
   private revealTimeouts: number[] = [];
+  private weeklyTaskSaveChain: Promise<void> = Promise.resolve();
 
   constructor(
     leaf: WorkspaceLeaf,
@@ -179,6 +187,44 @@ export class NeuralGardenWeeklyRecapView extends ItemView {
       }
     }
 
+    const critical = wrap.createDiv({ cls: "ng-weekly-section ng-weekly-critical-section" });
+    critical.createEl("h4", { text: "Critical Days", cls: "ng-weekly-section-heading" });
+    const criticalDays = groupCriticalDays(frontmatter.criticalDays);
+    const criticalFragments: HTMLElement[] = [];
+    if (criticalDays.length === 0) {
+      const empty = critical.createDiv({ cls: "ng-empty ng-weekly-fragment-hidden", text: "No critical days this week." });
+      criticalFragments.push(empty);
+    } else {
+      for (const day of criticalDays) {
+        const dayBlock = critical.createDiv({ cls: "ng-weekly-critical-day ng-weekly-fragment-hidden" });
+        dayBlock.createDiv({ cls: "ng-weekly-critical-date", text: formatWeekday(day.date) });
+        const symptoms = dayBlock.createDiv({ cls: "ng-weekly-critical-symptoms" });
+        for (const symptom of day.symptoms) {
+          symptoms.createDiv({ cls: "ng-weekly-critical-symptom", text: symptom });
+        }
+        criticalFragments.push(dayBlock);
+      }
+    }
+
+    const highlights = wrap.createDiv({ cls: "ng-weekly-section ng-weekly-highlights-section" });
+    highlights.createEl("h4", { text: "This week's highlights", cls: "ng-weekly-section-heading" });
+    highlights.createDiv({
+      cls: "ng-weekly-inline-copy ng-weekly-highlights-subtext",
+      text: "These were your highlights of this week.",
+    });
+    const highlightFragments: HTMLElement[] = [];
+    if (frontmatter.highlights.length === 0) {
+      const empty = highlights.createDiv({ cls: "ng-empty ng-weekly-fragment-hidden", text: "No highlights were recorded this week." });
+      highlightFragments.push(empty);
+    } else {
+      for (const highlight of frontmatter.highlights) {
+        const item = highlights.createDiv({ cls: "ng-weekly-highlight ng-weekly-fragment-hidden" });
+        item.createDiv({ cls: "ng-weekly-highlight-day", text: formatWeekday(highlight.date) });
+        item.createDiv({ cls: "ng-weekly-highlight-text", text: highlight.text });
+        highlightFragments.push(item);
+      }
+    }
+
     const support = wrap.createDiv({ cls: "ng-weekly-section" });
     support.dataset.weeklySection = "support";
     const supportHeading = support.createEl("h4", { text: "Support Notes", cls: "ng-weekly-section-heading" });
@@ -232,66 +278,22 @@ export class NeuralGardenWeeklyRecapView extends ItemView {
       }
       for (const symptom of frontmatter.missingSupportSymptoms) {
         const row = support.createDiv({ cls: "ng-weekly-support-row ng-weekly-fragment-hidden" });
-        const item = row.createDiv({ cls: "ng-weekly-inline-copy ng-weekly-fragment-hidden", text: `${symptom}: consider creating a support note for this.` });
+        const item = row.createDiv({ cls: "ng-weekly-inline-copy ng-weekly-fragment-hidden", text: `${symptom}: consider creating a support note` });
         supportRemainderRows.push({ row, elements: [item] });
-      }
-      const criticalEntries = Object.entries(frontmatter.criticalDays).filter(([, days]) => days.length > 0);
-      if (criticalEntries.length > 0) {
-        const criticalBlock = support.createDiv({ cls: "ng-weekly-support-row ng-weekly-fragment-hidden" });
-        const fragments: HTMLElement[] = [];
-        const title = criticalBlock.createDiv({ cls: "ng-weekly-inline-copy ng-weekly-critical-title ng-weekly-fragment-hidden", text: "Critical days:" });
-        fragments.push(title);
-        for (const [symptom, days] of criticalEntries) {
-          const line = criticalBlock.createDiv({ cls: "ng-weekly-inline-copy ng-weekly-critical-line ng-weekly-fragment-hidden", text: `${symptom}: ${days.join(", ")}` });
-          fragments.push(line);
-        }
-        supportRemainderRows.push({ row: criticalBlock, elements: fragments });
       }
     }
 
     const tasks = wrap.createDiv({ cls: "ng-weekly-section" });
-    tasks.createEl("h4", { text: "Tasks", cls: "ng-weekly-section-heading" });
+    tasks.createEl("h4", { text: "Adjustments", cls: "ng-weekly-section-heading" });
     renderTaskDeltaLine(tasks, "Weekly energy capacity", frontmatter.taskAdjustments.maxEnergy.from, frontmatter.taskAdjustments.maxEnergy.to, 200);
     renderTaskDeltaLine(tasks, "Break frequency", frontmatter.taskAdjustments.forcedBreakThreshold.from, frontmatter.taskAdjustments.forcedBreakThreshold.to, 100);
     renderTaskDeltaLine(tasks, "Break length", frontmatter.taskAdjustments.forcedBreakLength.from, frontmatter.taskAdjustments.forcedBreakLength.to, 60);
 
-    const seeds = wrap.createDiv({ cls: "ng-weekly-section" });
-    seeds.createEl("h4", { text: "Next Month's Topics", cls: "ng-weekly-section-heading" });
-    seeds.createDiv({
-      cls: "ng-weekly-inline-copy",
-      text: "These two short topics seed your next Monthly Reflection so you can revisit what mattered across the month.",
-    });
-    if ((frontmatter.seeds ?? []).length >= 2) {
-      for (const seed of frontmatter.seeds) {
-        seeds.createDiv({ cls: "ng-weekly-support-chip", text: seed });
-      }
-    } else {
-      const row = seeds.createDiv({ cls: "ng-weekly-seed-form" });
-      const one = row.createEl("input", { type: "text", placeholder: "Topic 1" });
-      const two = row.createEl("input", { type: "text", placeholder: "Topic 2" });
-      one.maxLength = 15;
-      two.maxLength = 15;
-      one.addClass("ng-task-input");
-      two.addClass("ng-task-input");
-      const submit = row.createEl("button", { text: "Save Topics", cls: "ng-weekly-seed-submit" });
-      submit.addEventListener("click", async () => {
-        const seedOne = one.value.slice(0, 15);
-        const seedTwo = two.value.slice(0, 15);
-        if (!seedOne || !seedTwo || !this.currentFilePath || !this.currentFrontmatter) {
-          new Notice("Please fill both topics.");
-          return;
-        }
-        this.currentFrontmatter.seeds = [seedOne, seedTwo];
-        const file = this.app.vault.getAbstractFileByPath(this.currentFilePath);
-        if (!(file instanceof TFile)) {
-          return;
-        }
-        await this.journalingStorage.saveWeeklyRecap(file, this.currentFrontmatter, this.currentBody);
-        await this.renderRecap(this.currentFrontmatter, false);
-      });
-    }
+    const nextWeekTasks = wrap.createDiv({ cls: "ng-weekly-section" });
+    nextWeekTasks.createEl("h4", { text: "Next week's tasks", cls: "ng-weekly-section-heading" });
+    this.renderNextWeekTaskPlanner(nextWeekTasks, frontmatter.nextWeekTasks);
 
-    const sections = [symptoms, emotions, trackers, support, tasks, seeds];
+    const sections = [symptoms, emotions, trackers, critical, highlights, support, tasks, nextWeekTasks];
     if (animateIn) {
       this.supportRevealPlayed = false;
       this.revealTimeouts.forEach((id) => window.clearTimeout(id));
@@ -299,13 +301,17 @@ export class NeuralGardenWeeklyRecapView extends ItemView {
       sections.slice(1).forEach((section) => section.addClass("ng-weekly-scroll-hidden"));
       await this.playSymptomBuildup(symptoms, symptomBlocks);
       await this.playSequentialSectionReveal(
-        [emotions, trackers, support, tasks, seeds],
+        [emotions, trackers, critical, highlights, support, tasks, nextWeekTasks],
         support,
         supportHeading,
         supportCopy,
         emotionTokens,
         supportNoteFragments,
         supportRemainderRows,
+        critical,
+        criticalFragments,
+        highlights,
+        highlightFragments,
       );
       return;
     }
@@ -318,6 +324,117 @@ export class NeuralGardenWeeklyRecapView extends ItemView {
       supportRemainderRows,
       sections.slice(1),
     );
+  }
+
+  private renderNextWeekTaskPlanner(container: HTMLElement, savedTasks: WeeklyPlannedTask[]): void {
+    const list = container.createDiv({ cls: "ng-weekly-next-tasks" });
+    const rows: Array<{ row: HTMLElement; input: HTMLInputElement; getEffort: () => WeeklyTaskEffort | null }> = [];
+    let initializing = true;
+
+    const persistCompleteRows = (): void => {
+      const tasks = rows.flatMap(({ input, getEffort }) => {
+        const taskName = input.value.trim();
+        const effort = getEffort();
+        return taskName && effort ? [{ taskName, effort }] : [];
+      });
+      this.queueNextWeekTasksSave(tasks);
+    };
+
+    const addRow = (task?: WeeklyPlannedTask): void => {
+      if (rows.length >= 5) {
+        return;
+      }
+      const row = list.createDiv({ cls: "ng-weekly-next-task-row" });
+      const input = row.createEl("input", { type: "text", placeholder: "Task name", value: task?.taskName ?? "" });
+      input.addClass("ng-task-input", "ng-weekly-next-task-input");
+      input.maxLength = 120;
+      const efforts = row.createDiv({ cls: "ng-journal-task-efforts ng-weekly-task-efforts" });
+      let selectedEffort: WeeklyTaskEffort | null = task?.effort ?? null;
+      const deleteButton = row.createEl("button", { text: "X", cls: "ng-weekly-task-delete" });
+      deleteButton.setAttribute("aria-label", "Delete planted task");
+      deleteButton.setAttribute("title", "Delete planted task");
+
+      const updateRow = (): void => {
+        const isComplete = input.value.trim().length > 0 && selectedEffort !== null;
+        row.toggleClass("is-complete", isComplete);
+        deleteButton.hidden = !isComplete;
+        if (!initializing) {
+          if (isComplete && rows[rows.length - 1]?.input === input) {
+            initializing = true;
+            addRow();
+            initializing = false;
+          }
+          persistCompleteRows();
+        }
+      };
+
+      for (const effort of WEEKLY_TASK_EFFORTS) {
+        const button = efforts.createEl("button", { text: effort.label, cls: "ng-journal-task-effort ng-weekly-task-effort" });
+        button.style.setProperty("--ng-task-effort-color", effort.color);
+        button.toggleClass("is-active", selectedEffort === effort.key);
+        button.setAttribute("aria-label", `Set task effort to ${effort.label}`);
+        button.addEventListener("click", () => {
+          selectedEffort = effort.key;
+          efforts.querySelectorAll<HTMLElement>(".ng-weekly-task-effort").forEach((candidate) => {
+            candidate.toggleClass("is-active", candidate === button);
+          });
+          updateRow();
+        });
+      }
+      deleteButton.addEventListener("click", () => {
+        const rowIndex = rows.findIndex((candidate) => candidate.row === row);
+        if (rowIndex >= 0) {
+          rows.splice(rowIndex, 1);
+        }
+        row.remove();
+        persistCompleteRows();
+        if (rows.length === 0 || (rows.length < 5 && rows.every(({ input: candidateInput, getEffort }) => (
+          candidateInput.value.trim() && getEffort()
+        )))) {
+          initializing = true;
+          addRow();
+          initializing = false;
+        }
+      });
+      input.addEventListener("input", updateRow);
+      rows.push({ row, input, getEffort: () => selectedEffort });
+      updateRow();
+    };
+
+    for (const task of savedTasks.slice(0, 5)) {
+      addRow(task);
+    }
+    initializing = false;
+    if (rows.length === 0 || (rows.length < 5 && rows.every(({ input, getEffort }) => input.value.trim() && getEffort()))) {
+      initializing = true;
+      addRow();
+      initializing = false;
+    }
+  }
+
+  private queueNextWeekTasksSave(tasks: WeeklyPlannedTask[]): void {
+    if (!this.currentFrontmatter || !this.currentFilePath) {
+      return;
+    }
+    this.currentFrontmatter.nextWeekTasks = tasks;
+    const filePath = this.currentFilePath;
+    const body = this.currentBody;
+    const frontmatter = {
+      ...this.currentFrontmatter,
+      nextWeekTasks: tasks.map((task) => ({ ...task })),
+    };
+    this.weeklyTaskSaveChain = this.weeklyTaskSaveChain
+      .catch(() => undefined)
+      .then(async () => {
+        const file = this.app.vault.getAbstractFileByPath(filePath);
+        if (!(file instanceof TFile)) {
+          return;
+        }
+        await this.journalingStorage.saveWeeklyRecap(file, frontmatter, body);
+      })
+      .catch(() => {
+        new Notice("Could not save next week's tasks.");
+      });
   }
 
   private async playSymptomBuildup(
@@ -383,6 +500,10 @@ export class NeuralGardenWeeklyRecapView extends ItemView {
     emotionTokens: HTMLElement[],
     supportNoteFragments: SupportNoteFragment[],
     supportRemainderRows: SupportLooseFragment[],
+    criticalSection: HTMLElement,
+    criticalFragments: HTMLElement[],
+    highlightsSection: HTMLElement,
+    highlightFragments: HTMLElement[],
   ): Promise<void> {
     this.sectionObserver?.disconnect();
 
@@ -400,6 +521,14 @@ export class NeuralGardenWeeklyRecapView extends ItemView {
         await this.revealTrackerBubbles(section);
       }
 
+      if (section === criticalSection) {
+        await this.revealListItems(criticalFragments);
+      }
+
+      if (section === highlightsSection) {
+        await this.revealListItems(highlightFragments);
+      }
+
       if (section === supportSection && !this.supportRevealPlayed) {
         this.supportRevealPlayed = true;
         await this.playSupportSequentialReveal(
@@ -413,6 +542,13 @@ export class NeuralGardenWeeklyRecapView extends ItemView {
       if (index < orderedSections.length - 1) {
         await wait(260);
       }
+    }
+  }
+
+  private async revealListItems(items: HTMLElement[]): Promise<void> {
+    for (const item of items) {
+      item.removeClass("ng-weekly-fragment-hidden");
+      await wait(520);
     }
   }
 
@@ -505,11 +641,34 @@ export class NeuralGardenWeeklyRecapView extends ItemView {
       section.classList.add("is-visible");
       section.classList.remove("ng-weekly-scroll-hidden");
       section.dataset.weeklyRevealed = "true";
-      section.querySelectorAll<HTMLElement>(".ng-weekly-emotion-token, .ng-weekly-tracker-pill").forEach((bubble) => {
-        bubble.removeClass("ng-weekly-fragment-hidden");
+      section.querySelectorAll<HTMLElement>(".ng-weekly-fragment-hidden").forEach((fragment) => {
+        fragment.removeClass("ng-weekly-fragment-hidden");
       });
     });
   }
+}
+
+function groupCriticalDays(criticalDays: Record<string, string[]>): Array<{ date: string; symptoms: string[] }> {
+  const grouped = new Map<string, string[]>();
+  for (const [symptom, dates] of Object.entries(criticalDays)) {
+    for (const date of dates) {
+      grouped.set(date, [...(grouped.get(date) ?? []), symptom]);
+    }
+  }
+  return [...grouped.entries()]
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([date, symptoms]) => ({ date, symptoms }));
+}
+
+function formatWeekday(dateKey: string): string {
+  const date = new Date(`${dateKey}T00:00:00Z`);
+  return Number.isNaN(date.getTime())
+    ? dateKey
+    : date.toLocaleDateString("en-US", { weekday: "long", timeZone: "UTC" });
+}
+
+function isWeeklyTaskEffort(value: string): value is WeeklyTaskEffort {
+  return WEEKLY_TASK_EFFORTS.some((effort) => effort.key === value);
 }
 
 function renderMixedEmotionCloud(

@@ -426,7 +426,7 @@ export class NeuralGardenJournalingView extends ItemView {
       key,
       year: weekYear,
       week: weekNumber,
-      generated: recap.body.trim().length > 0,
+      generated: Boolean(recap.frontmatter.generatedAt),
       frontmatter: recap.frontmatter,
     };
     this.render();
@@ -440,7 +440,7 @@ export class NeuralGardenJournalingView extends ItemView {
 
     for (const file of files) {
       const recap = await this.journalingStorage.readWeeklyRecap(file);
-      if (recap.body.trim().length > 0) {
+      if (recap.frontmatter.generatedAt) {
         keys.add(`${recap.frontmatter.year}-W${String(recap.frontmatter.week).padStart(2, "0")}`);
       }
     }

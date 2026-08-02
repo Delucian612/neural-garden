@@ -2,7 +2,7 @@ import { App, Notice, TFile } from "obsidian";
 import { JournalingStorage } from "./journalingStorage";
 import { MyNotesStorage } from "./myNotesStorage";
 import { TaskManagerStorage } from "./storage";
-import { JournalEntryRecord, WeeklyRecapFrontmatter } from "./types";
+import { JournalEntryRecord, WeeklyHighlight, WeeklyRecapFrontmatter } from "./types";
 
 const POSITIVE_EMOTIONS = new Set([
   "Happy",
@@ -128,8 +128,13 @@ export class WeeklyRecapManager {
   }> {
     const file = await this.journalingStorage.ensureWeeklyRecapFile(year, week);
     const existing = await this.journalingStorage.readWeeklyRecap(file);
-    if (existing.body.trim().length > 0) {
-      return { file, frontmatter: existing.frontmatter, body: existing.body, generatedNow: false };
+    if (existing.frontmatter.generatedAt) {
+      const highlights = await this.collectHighlights(year, week);
+      if (existing.body.trim() || JSON.stringify(existing.frontmatter.highlights) !== JSON.stringify(highlights)) {
+        existing.frontmatter.highlights = highlights;
+        await this.journalingStorage.saveWeeklyRecap(file, existing.frontmatter, "");
+      }
+      return { file, frontmatter: existing.frontmatter, body: "", generatedNow: false };
     }
 
     const generated = await this.generateWeeklyRecap(file);
@@ -140,6 +145,14 @@ export class WeeklyRecapManager {
 
     const latest = await this.journalingStorage.readWeeklyRecap(file);
     return { file, frontmatter: latest.frontmatter, body: latest.body, generatedNow: true };
+  }
+
+  private async collectHighlights(year: number, week: number): Promise<WeeklyHighlight[]> {
+    const range = isoWeekRange(year, week);
+    const entries = await this.journalingStorage.listDailyEntries();
+    return highlightsFromEntries(entries.filter((entry) => (
+      entry.frontmatter.date >= range.start && entry.frontmatter.date <= range.end
+    )));
   }
 
   private async generateWeeklyRecap(file: TFile): Promise<boolean> {
@@ -244,7 +257,8 @@ export class WeeklyRecapManager {
       missingSupportSymptoms: supportSelection.missing,
       criticalDays,
       supportHints,
-      seeds: [],
+      highlights: highlightsFromEntries(entries),
+      nextWeekTasks: [],
       averages: {
         mood: round2(averages.mood),
         sleep: round2(averages.sleep),
@@ -264,19 +278,7 @@ export class WeeklyRecapManager {
       },
     };
 
-    const body = buildWeeklyMarkdown({
-      range,
-      entries,
-      averages,
-      emotionCounts,
-      trackerCounts,
-      supportSelection,
-      supportHints,
-      taskAdjustments: frontmatter.taskAdjustments,
-      noteSignals: noteSupportSignals,
-    });
-
-    await this.journalingStorage.saveWeeklyRecap(file, frontmatter, body);
+    await this.journalingStorage.saveWeeklyRecap(file, frontmatter, "");
     return true;
   }
 
@@ -433,117 +435,11 @@ function pickSupportHints(symptoms: string[]): string[] {
   return hints;
 }
 
-function buildWeeklyMarkdown(args: {
-  range: { start: string; end: string };
-  entries: JournalEntryRecord[];
-  averages: Record<SymptomKey, number>;
-  emotionCounts: WeeklyRecapFrontmatter["emotionCounts"];
-  trackerCounts: Record<string, number>;
-  supportSelection: { notes: Array<{ name: string; symptom: string }>; missing: string[] };
-  supportHints: string[];
-  taskAdjustments: WeeklyRecapFrontmatter["taskAdjustments"];
-  noteSignals: Array<{ label: string; severity: number; affectedDays: string[] }>;
-}): string {
-  const strongestTracker = Object.entries(args.trackerCounts)
-    .sort((a, b) => b[1] - a[1])[0];
-
-  const symptomRows = SYMPTOMS.map((symptom) => {
-    const value = round2(args.averages[symptom.key]);
-    return `- ${symptom.label}: ${value}`;
-  }).join("\n");
-
-  const pleasantRows = Object.entries(args.emotionCounts.pleasant)
-    .sort((a, b) => b[1] - a[1])
-    .map(([emotion, count]) => `- ${emotion}: ${count}`)
-    .join("\n") || "- none";
-
-  const unpleasantRows = Object.entries(args.emotionCounts.unpleasant)
-    .sort((a, b) => b[1] - a[1])
-    .map(([emotion, count]) => `- ${emotion}: ${count}`)
-    .join("\n") || "- none";
-
-  const trackerRows = Object.entries(args.trackerCounts)
-    .sort((a, b) => b[1] - a[1])
-    .map(([name, count]) => `- ${name}: ${count}`)
-    .join("\n") || "- none";
-
-  const supportRows = args.supportSelection.notes
-    .map((note) => `- ${note.name} (triggered by ${note.symptom})`)
-    .join("\n") || "- none";
-
-  const missingRows = args.supportSelection.missing
-    .map((symptom) => `- ${symptom}: consider working on a supportive note for this.`)
-    .join("\n") || "- none";
-
-  const criticalRows = args.noteSignals
-    .filter((signal) => signal.affectedDays.length > 0)
-    .map((signal) => `- ${signal.label}: ${signal.affectedDays.join(", ")}`)
-    .join("\n") || "- none";
-
-  const hintRows = args.supportHints.map((hint) => `- ${hint}`).join("\n") || "- none";
-
-  const taskFeedback = [
-    describeDelta("Weekly energy capacity", args.taskAdjustments.maxEnergy.from, args.taskAdjustments.maxEnergy.to),
-    describeDelta("Break frequency threshold", args.taskAdjustments.forcedBreakThreshold.from, args.taskAdjustments.forcedBreakThreshold.to),
-    describeDelta("Break length", args.taskAdjustments.forcedBreakLength.from, args.taskAdjustments.forcedBreakLength.to),
-  ].join("\n");
-
-  const winner = strongestTracker && strongestTracker[1] > 0
-    ? `Weekly winner: ${strongestTracker[0]} (${strongestTracker[1]})`
-    : "Weekly winner: none";
-
-  return [
-    "# Weekly Recap",
-    "",
-    `Week Range: ${args.range.start} to ${args.range.end}`,
-    `Entries Used: ${args.entries.length}`,
-    "",
-    "## Symptom Recap",
-    symptomRows,
-    "",
-    "## Emotions",
-    `- Positive total: ${args.emotionCounts.pleasantTotal}`,
-    `- Negative total: ${args.emotionCounts.unpleasantTotal}`,
-    "",
-    "### Pleasant emotions",
-    pleasantRows,
-    "",
-    "### Unpleasant emotions",
-    unpleasantRows,
-    "",
-    "## Tracker",
-    winner,
-    trackerRows,
-    "",
-    "## Support System",
-    "### Suggested support notes",
-    supportRows,
-    "",
-    "### Missing support coverage",
-    missingRows,
-    "",
-    "### Critical days",
-    criticalRows,
-    "",
-    "### Support hints",
-    hintRows,
-    "",
-    "## Task Manager Feedback",
-    taskFeedback,
-    "",
-    "## Seeding",
-    "Seeds are added through the weekly overlay input.",
-  ].join("\n");
-}
-
-function describeDelta(label: string, from: number, to: number): string {
-  if (Math.abs(from - to) < 0.01) {
-    return `- ${label}: unchanged`;
-  }
-  if (to > from) {
-    return `- ${label}: increased (${round2(from)} -> ${round2(to)})`;
-  }
-  return `- ${label}: decreased (${round2(from)} -> ${round2(to)})`;
+function highlightsFromEntries(entries: JournalEntryRecord[]): WeeklyHighlight[] {
+  return entries.flatMap((entry) => {
+    const text = entry.frontmatter.goodThing.trim();
+    return text ? [{ date: entry.frontmatter.date, text }] : [];
+  });
 }
 
 function clamp(value: number, min: number, max: number): number {

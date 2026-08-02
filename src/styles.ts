@@ -168,24 +168,6 @@ export function injectNeuralGardenStyles(): void {
     .ng-weekly-breath-count.is-fading {
       opacity: 0;
     }
-    .ng-weekly-seed-form {
-      width: 100%;
-      display: grid;
-      grid-template-columns: 1fr 1fr auto;
-      gap: 6px;
-      align-items: center;
-    }
-    .ng-weekly-seed-submit {
-      border: 1px solid #ec9a63;
-      border-radius: 8px;
-      background: transparent;
-      cursor: pointer;
-      padding: 7px 11px;
-      color: var(--text-normal);
-    }
-    .ng-weekly-seed-form.is-locked {
-      opacity: 0.45;
-    }
     .ng-weekly-view {
       max-width: 720px;
       margin: 0 auto;
@@ -418,9 +400,120 @@ export function injectNeuralGardenStyles(): void {
     .ng-weekly-support-reason {
       color: #FF6565;
     }
-    .ng-weekly-critical-title,
-    .ng-weekly-critical-line {
-      color: #FF6565;
+    .ng-weekly-critical-section,
+    .ng-weekly-highlights-section {
+      gap: 10px;
+    }
+    .ng-weekly-critical-day,
+    .ng-weekly-highlight {
+      display: grid;
+      justify-items: center;
+      gap: 4px;
+      padding: 8px 4px;
+      transition: opacity 900ms ease, transform 900ms ease;
+    }
+    .ng-weekly-critical-date,
+    .ng-weekly-highlight-day {
+      color: var(--text-normal);
+      font-size: 1.2em;
+      font-weight: 600;
+      text-align: center;
+    }
+    .ng-weekly-critical-symptom {
+      color: color-mix(in srgb, #ff6565 82%, var(--text-normal));
+    }
+    .ng-weekly-highlight-text {
+      color: color-mix(in srgb, #39e05a 78%, var(--text-normal));
+    }
+    .ng-weekly-critical-symptoms {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 5px;
+    }
+    .ng-weekly-critical-symptom {
+      font-size: 0.85rem;
+    }
+    .ng-weekly-critical-symptom + .ng-weekly-critical-symptom::before {
+      content: "·";
+      margin-right: 5px;
+    }
+    .ng-weekly-highlights-subtext {
+      font-style: italic;
+    }
+    .ng-weekly-highlight-text {
+      text-align: center;
+      line-height: 1.45;
+      overflow-wrap: anywhere;
+    }
+    .ng-weekly-next-tasks {
+      display: grid;
+      gap: 7px;
+    }
+    .ng-weekly-next-task-row {
+      display: grid;
+      grid-template-columns: minmax(140px, 0.8fr) minmax(260px, 1.2fr) 24px;
+      align-items: center;
+      gap: 8px;
+    }
+    .ng-weekly-next-task-input {
+      min-width: 0;
+      width: 100%;
+      padding: 7px 9px;
+      border: 1px solid var(--background-modifier-border);
+      border-radius: 8px;
+      background: transparent !important;
+      box-shadow: none !important;
+    }
+    .ng-weekly-task-efforts {
+      flex-wrap: nowrap;
+      min-width: 0;
+      gap: 3px;
+    }
+    .ng-weekly-task-effort {
+      flex: 1 1 0;
+      min-width: 0;
+      padding: 4px 5px;
+      white-space: nowrap;
+    }
+    .ng-weekly-task-effort.is-active {
+      border-color: var(--ng-task-effort-color);
+      background: color-mix(in srgb, var(--ng-task-effort-color) 16%, transparent);
+      color: var(--ng-task-effort-color);
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--ng-task-effort-color) 24%, transparent);
+    }
+    .ng-weekly-task-delete {
+      display: grid;
+      width: 24px;
+      height: 24px;
+      padding: 0;
+      border: 0 !important;
+      background: transparent !important;
+      box-shadow: none !important;
+      color: color-mix(in srgb, #ff6565 72%, var(--text-normal));
+      cursor: pointer;
+      place-items: center;
+      font-size: 0.72rem;
+      font-weight: 700;
+    }
+    .ng-weekly-task-delete:hover,
+    .ng-weekly-task-delete:focus-visible {
+      color: #ff6565;
+      outline: none;
+    }
+    .ng-weekly-next-task-input:focus,
+    .ng-weekly-next-task-input:focus-visible {
+      border-color: color-mix(in srgb, var(--background-modifier-border) 65%, var(--text-normal) 35%) !important;
+      box-shadow: none !important;
+      outline: none;
+    }
+    @media (max-width: 520px) {
+      .ng-weekly-next-task-row {
+        grid-template-columns: 1fr;
+      }
+      .ng-weekly-next-task-input {
+        width: 100%;
+      }
     }
     .ng-weekly-task-status {
       display: flex;
