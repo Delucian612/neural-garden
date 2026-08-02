@@ -6,6 +6,7 @@ import {
 } from "./constants";
 import { MyNotesStorage } from "./myNotesStorage";
 import { openOverlay } from "./overlay";
+import { createHelpButton } from "./onboarding";
 import { searchNotesInFolder } from "./search";
 
 const FAVOURITE_CATEGORY = "__favourite__";
@@ -49,6 +50,7 @@ export class NeuralGardenMyNotesView extends ItemView {
     leaf: WorkspaceLeaf,
     private readonly myNotesStorage: MyNotesStorage,
     private readonly openHomeView: (makeActive: boolean, targetLeaf?: WorkspaceLeaf) => Promise<void>,
+    private readonly openHelp: () => void,
   ) {
     super(leaf);
   }
@@ -89,6 +91,7 @@ export class NeuralGardenMyNotesView extends ItemView {
     homeButton.addEventListener("click", async () => {
       await this.openHomeView(true, this.leaf);
     });
+    createHelpButton(topBar, this.openHelp);
 
     wrapper.createEl("h2", { text: "MyNotes", cls: "ng-mynotes-heading" });
     this.searchHintEl = wrapper.createDiv({ cls: "ng-mynotes-heading-hint" });
@@ -236,6 +239,13 @@ export class NeuralGardenMyNotesView extends ItemView {
 
   private async selectCategory(name: string): Promise<void> {
     this.selectedCategory = this.selectedCategory === name ? null : name;
+    this.syncCategorySelectionState();
+    await this.updateNotesList();
+  }
+
+  async showCategory(name: string | null): Promise<void> {
+    this.selectedCategory = name;
+    this.searchQuery = "";
     this.syncCategorySelectionState();
     await this.updateNotesList();
   }

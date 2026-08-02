@@ -25,10 +25,10 @@ __export(main_exports, {
 module.exports = __toCommonJS(main_exports);
 
 // src/plugin.ts
-var import_obsidian14 = require("obsidian");
+var import_obsidian16 = require("obsidian");
 
 // src/homeView.ts
-var import_obsidian = require("obsidian");
+var import_obsidian2 = require("obsidian");
 
 // src/constants.ts
 var VIEW_TYPE_NEURAL_GARDEN_HOME = "neural-garden-home";
@@ -166,6 +166,7 @@ function injectNeuralGardenStyles() {
     .neural-garden-home {
       max-width: 720px;
       margin: 0 auto;
+      position: relative;
       display: flex;
       flex-direction: column;
       gap: 14px;
@@ -1376,6 +1377,7 @@ function injectNeuralGardenStyles() {
     .ng-journal-calendar-grid {
       display: grid;
       grid-template-columns: minmax(54px, 62px) repeat(7, minmax(0, 1fr));
+      position: relative;
       gap: 4px 6px;
     }
     .ng-journal-calendar-weekday {
@@ -1797,19 +1799,27 @@ function injectNeuralGardenStyles() {
       text-align: center;
     }
     .ng-journal-tracker-add-toggle {
-      all: unset;
       grid-column: 3;
       justify-self: end;
+      appearance: none;
+      padding: 6px 10px;
+      border: 1px solid #ec9a63 !important;
+      border-radius: 6px;
+      background: #172124 !important;
+      box-shadow: none !important;
       cursor: pointer;
       font-size: 0.88rem;
       font-weight: 600;
-      color: color-mix(in srgb, var(--ng-primary-accent) 55%, white);
-      transition: color 140ms ease;
+      line-height: 1.2;
+      color: #f4f7f6 !important;
+      transition: border-color 140ms ease, color 140ms ease, box-shadow 140ms ease;
       -webkit-tap-highlight-color: transparent;
     }
     .ng-journal-tracker-add-toggle:hover,
     .ng-journal-tracker-add-toggle:focus-visible {
-      color: var(--ng-primary-accent);
+      border-color: #00f0ff !important;
+      color: #bdfaff !important;
+      box-shadow: 0 0 0 2px rgba(0, 240, 255, 0.2) !important;
     }
     .ng-journal-tracker-add-row {
       margin-bottom: 14px;
@@ -3937,10 +3947,574 @@ function injectNeuralGardenStyles() {
         height: 14px;
       }
     }
+    .ng-help-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      min-width: 40px;
+      height: 40px;
+      padding: 0;
+      border: none !important;
+      background: transparent !important;
+      box-shadow: none !important;
+      color: color-mix(in srgb, var(--text-muted) 76%, var(--ng-color-general));
+      cursor: pointer;
+      font-size: 26px;
+      font-weight: 700;
+      line-height: 1;
+    }
+    .ng-help-button:hover,
+    .ng-help-button:focus-visible {
+      color: var(--ng-color-hover);
+    }
+    .ng-help-button svg {
+      width: 28px;
+      height: 28px;
+      stroke-width: 2.25;
+    }
+    .neural-garden-home > .ng-help-button {
+      position: absolute;
+      top: 8px;
+      right: 0;
+    }
+    .ng-mynotes-topbar > .ng-help-button,
+    .ng-mylearning-topbar > .ng-help-button,
+    .ng-journaling .ng-journal-topbar > .ng-help-button {
+      margin-left: auto;
+    }
+    .ng-tour {
+      position: fixed;
+      inset: 0;
+      z-index: 10000;
+      pointer-events: none;
+    }
+    .ng-tour-blocker {
+      position: fixed;
+      background: color-mix(in srgb, #000 84%, transparent);
+      pointer-events: auto;
+    }
+    .ng-tour-spotlight {
+      position: fixed;
+      border: 2px solid var(--ng-color-highlight);
+      border-radius: 7px;
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--ng-color-highlight) 35%, transparent), 0 0 22px color-mix(in srgb, var(--ng-color-highlight) 34%, transparent);
+      pointer-events: auto;
+      transition: left 180ms ease, top 180ms ease, width 180ms ease, height 180ms ease;
+    }
+    .ng-tour.is-resolving .ng-tour-spotlight {
+      visibility: hidden;
+      transition: none;
+    }
+    .ng-tour.is-resolving .ng-tour-blocker:first-of-type {
+      inset: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+    }
+    .ng-tour.is-resolving .ng-tour-blocker:not(:first-of-type) {
+      visibility: hidden;
+    }
+    .ng-tour.is-message-highlight .ng-tour-blocker:first-of-type {
+      inset: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+    }
+    .ng-tour.is-message-highlight .ng-tour-blocker:not(:first-of-type),
+    .ng-tour.is-message-highlight .ng-tour-spotlight {
+      display: none;
+    }
+    .ng-tour.is-interactive .ng-tour-spotlight {
+      pointer-events: none;
+    }
+    .ng-tour-target {
+      position: relative;
+      z-index: 10001 !important;
+    }
+    .ng-tour-panel {
+      position: fixed;
+      width: min(420px, calc(100vw - 24px));
+      min-height: 190px;
+      padding: 16px;
+      border: 1px solid color-mix(in srgb, var(--ng-color-general) 68%, var(--background-modifier-border));
+      border-radius: 7px;
+      background: color-mix(in srgb, var(--background-primary) 62%, #080c0d);
+      color: #f4f7f6;
+      box-shadow: 0 16px 44px rgba(0, 0, 0, 0.42);
+      box-sizing: border-box;
+      pointer-events: auto;
+    }
+    .ng-tour.is-message-highlight .ng-tour-panel {
+      left: 50% !important;
+      top: 50% !important;
+      transform: translate(-50%, -50%);
+      border-color: #00f0ff;
+      box-shadow: 0 0 0 2px rgba(0, 240, 255, 0.22), 0 18px 52px rgba(0, 0, 0, 0.55);
+    }
+    .ng-tour-header,
+    .ng-tour-actions,
+    .ng-tour-navigation {
+      display: flex;
+      align-items: center;
+    }
+    .ng-tour-header,
+    .ng-tour-actions {
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .ng-tour-progress {
+      color: var(--text-muted);
+      font-size: 0.76rem;
+      font-weight: 600;
+    }
+    .ng-tour-title {
+      margin: 10px 0 7px;
+      color: #f4f7f6;
+      font-size: 1.12rem;
+      letter-spacing: 0;
+    }
+    .ng-tour-description {
+      min-height: 72px;
+      color: #c4cecc;
+      font-size: 0.9rem;
+      line-height: 1.55;
+    }
+    .ng-tour-actions {
+      margin-top: 15px;
+    }
+    .ng-tour-choices {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .ng-tour-choice {
+      flex: 1 1 170px;
+      border-color: #ec9a63 !important;
+      background: #172124 !important;
+      color: #f4f7f6 !important;
+    }
+    .ng-tour-choice:hover,
+    .ng-tour-choice:focus-visible {
+      border-color: #00f0ff !important;
+      box-shadow: 0 0 0 2px rgba(0, 240, 255, 0.2) !important;
+    }
+    .ng-tour-navigation {
+      gap: 8px;
+    }
+    .ng-tour-panel button {
+      min-height: 32px;
+      border-radius: 5px;
+    }
+    .ng-tour-skip,
+    .ng-tour-back {
+      border-color: var(--background-modifier-border) !important;
+      background: transparent !important;
+      color: var(--text-muted) !important;
+    }
+    .ng-tour-next {
+      border-color: color-mix(in srgb, var(--ng-color-general) 72%, black) !important;
+      background: #253033 !important;
+      color: #f4f7f6 !important;
+    }
+    .ng-tour-next:disabled {
+      opacity: 0.42;
+    }
+    @media (max-width: 600px) {
+      .ng-tour-panel {
+        min-height: 205px;
+      }
+      .ng-tour-description {
+        min-height: 88px;
+      }
+    }
   `;
   if (!style.isConnected) {
     document.head.appendChild(style);
   }
+}
+
+// src/onboarding.ts
+var import_obsidian = require("obsidian");
+var TARGET_PADDING = 7;
+var TYPE_INTERVAL_MS = 28;
+var ACTION_ADVANCE_DELAY_MS = 250;
+var NeuralGardenTour = class {
+  constructor() {
+    this.root = null;
+    this.spotlight = null;
+    this.blockers = [];
+    this.panel = null;
+    this.titleEl = null;
+    this.descriptionEl = null;
+    this.choicesEl = null;
+    this.progressEl = null;
+    this.backButton = null;
+    this.nextButton = null;
+    this.steps = [];
+    this.options = null;
+    this.currentIndex = 0;
+    this.activeTarget = null;
+    this.interactionCleanup = null;
+    this.actionAdvanceTimer = null;
+    this.typeTimer = null;
+    this.renderVersion = 0;
+    this.goBack = async () => {
+      if (this.currentIndex === 0) {
+        return;
+      }
+      const previousIndex = this.findPreviousVisibleStep();
+      if (previousIndex < 0) {
+        return;
+      }
+      this.currentIndex = previousIndex;
+      await this.showCurrentStep();
+    };
+    this.goNext = async () => {
+      var _a, _b;
+      if ((_a = this.nextButton) == null ? void 0 : _a.disabled) {
+        return;
+      }
+      if (this.currentIndex >= this.steps.length - 1) {
+        const options = this.options;
+        await this.close(false);
+        await ((_b = options == null ? void 0 : options.onComplete) == null ? void 0 : _b.call(options));
+        return;
+      }
+      this.currentIndex += 1;
+      await this.showCurrentStep();
+    };
+    this.onKeyDown = (event) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        void this.close(true);
+        return;
+      }
+      if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        void this.goBack();
+        return;
+      }
+      if (event.key === "ArrowRight" || event.key === "Enter") {
+        event.preventDefault();
+        void this.goNext();
+      }
+    };
+    this.updateGeometry = () => {
+      var _a, _b, _c, _d;
+      if (!this.activeTarget || !this.spotlight || !this.panel || this.blockers.length !== 4) {
+        return;
+      }
+      const rect = this.activeTarget.getBoundingClientRect();
+      const left = Math.max(4, rect.left - TARGET_PADDING);
+      const top = Math.max(4, rect.top - TARGET_PADDING);
+      const right = Math.min(window.innerWidth - 4, rect.right + TARGET_PADDING);
+      const bottom = Math.min(window.innerHeight - 4, rect.bottom + TARGET_PADDING);
+      const width = Math.max(0, right - left);
+      const height = Math.max(0, bottom - top);
+      Object.assign(this.spotlight.style, {
+        left: `${left}px`,
+        top: `${top}px`,
+        width: `${width}px`,
+        height: `${height}px`
+      });
+      const [topBlocker, rightBlocker, bottomBlocker, leftBlocker] = this.blockers;
+      Object.assign((_a = topBlocker == null ? void 0 : topBlocker.style) != null ? _a : {}, { left: "0", top: "0", width: "100vw", height: `${top}px` });
+      Object.assign((_b = rightBlocker == null ? void 0 : rightBlocker.style) != null ? _b : {}, { left: `${right}px`, top: `${top}px`, width: `${Math.max(0, window.innerWidth - right)}px`, height: `${height}px` });
+      Object.assign((_c = bottomBlocker == null ? void 0 : bottomBlocker.style) != null ? _c : {}, { left: "0", top: `${bottom}px`, width: "100vw", height: `${Math.max(0, window.innerHeight - bottom)}px` });
+      Object.assign((_d = leftBlocker == null ? void 0 : leftBlocker.style) != null ? _d : {}, { left: "0", top: `${top}px`, width: `${left}px`, height: `${height}px` });
+      const panelRect = this.panel.getBoundingClientRect();
+      const availableBelow = window.innerHeight - bottom;
+      const panelTop = availableBelow >= panelRect.height + 18 ? bottom + 12 : Math.max(12, top - panelRect.height - 12);
+      const panelLeft = Math.max(12, Math.min(left, window.innerWidth - panelRect.width - 12));
+      Object.assign(this.panel.style, { left: `${panelLeft}px`, top: `${panelTop}px` });
+    };
+  }
+  get isActive() {
+    var _a, _b;
+    return (_b = (_a = this.root) == null ? void 0 : _a.isConnected) != null ? _b : false;
+  }
+  async start(steps, options) {
+    await this.close(false);
+    if (steps.length === 0) {
+      return;
+    }
+    this.steps = steps;
+    this.options = options;
+    this.currentIndex = 0;
+    this.mount();
+    await this.showCurrentStep();
+  }
+  async close(skipped = true) {
+    var _a;
+    if (!this.root) {
+      return;
+    }
+    const options = this.options;
+    this.clearStepState();
+    this.root.remove();
+    this.root = null;
+    this.spotlight = null;
+    this.blockers = [];
+    this.panel = null;
+    this.titleEl = null;
+    this.descriptionEl = null;
+    this.choicesEl = null;
+    this.progressEl = null;
+    this.backButton = null;
+    this.nextButton = null;
+    this.steps = [];
+    this.options = null;
+    window.removeEventListener("resize", this.updateGeometry);
+    document.removeEventListener("scroll", this.updateGeometry, true);
+    document.removeEventListener("keydown", this.onKeyDown);
+    if (skipped) {
+      await ((_a = options == null ? void 0 : options.onSkip) == null ? void 0 : _a.call(options));
+    }
+  }
+  mount() {
+    var _a, _b;
+    const root = document.body.createDiv({ cls: "ng-tour" });
+    root.setAttribute("role", "dialog");
+    root.setAttribute("aria-modal", "true");
+    root.setAttribute("aria-label", (_b = (_a = this.options) == null ? void 0 : _a.label) != null ? _b : "Neural Garden walkthrough");
+    this.root = root;
+    for (let index = 0; index < 4; index += 1) {
+      this.blockers.push(root.createDiv({ cls: "ng-tour-blocker" }));
+    }
+    this.spotlight = root.createDiv({ cls: "ng-tour-spotlight" });
+    const panel = root.createDiv({ cls: "ng-tour-panel" });
+    this.panel = panel;
+    const header = panel.createDiv({ cls: "ng-tour-header" });
+    this.progressEl = header.createDiv({ cls: "ng-tour-progress" });
+    this.titleEl = panel.createEl("h3", { cls: "ng-tour-title" });
+    this.descriptionEl = panel.createDiv({ cls: "ng-tour-description" });
+    this.choicesEl = panel.createDiv({ cls: "ng-tour-choices" });
+    const actions = panel.createDiv({ cls: "ng-tour-actions" });
+    const skipButton = actions.createEl("button", { text: "Skip", cls: "ng-tour-skip" });
+    skipButton.addEventListener("click", () => void this.close(true));
+    const navigation = actions.createDiv({ cls: "ng-tour-navigation" });
+    this.backButton = navigation.createEl("button", { text: "Back", cls: "ng-tour-back" });
+    this.backButton.addEventListener("click", () => void this.goBack());
+    this.nextButton = navigation.createEl("button", { text: "Next", cls: "ng-tour-next" });
+    this.nextButton.addEventListener("click", () => void this.goNext());
+    window.addEventListener("resize", this.updateGeometry);
+    document.addEventListener("scroll", this.updateGeometry, true);
+    document.addEventListener("keydown", this.onKeyDown);
+  }
+  async showCurrentStep() {
+    var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m, _n;
+    const version = ++this.renderVersion;
+    this.clearStepState();
+    (_a = this.root) == null ? void 0 : _a.addClass("is-resolving");
+    const step = this.steps[this.currentIndex];
+    if (!step || !this.root) {
+      return;
+    }
+    await ((_b = step.before) == null ? void 0 : _b.call(step));
+    await nextPaint();
+    if (version !== this.renderVersion || !this.root) {
+      return;
+    }
+    if (step.highlightMessage) {
+      (_c = this.titleEl) == null ? void 0 : _c.setText(step.title);
+      (_e = this.progressEl) == null ? void 0 : _e.setText((_d = step.progressText) != null ? _d : "Welcome");
+      this.renderChoices((_f = step.choices) != null ? _f : []);
+      this.root.removeClass("is-resolving");
+      this.root.addClass("is-message-highlight");
+      if (this.backButton) {
+        this.backButton.disabled = this.findPreviousVisibleStep() < 0;
+      }
+      if (this.nextButton) {
+        this.nextButton.setText("Begin tour");
+        this.nextButton.disabled = false;
+      }
+      this.startTyping(step.description);
+      return;
+    }
+    const target = await this.resolveTarget(step.target);
+    if (!target) {
+      await this.goNext();
+      return;
+    }
+    this.activeTarget = target;
+    target.scrollIntoView({ block: "center", inline: "nearest", behavior: "auto" });
+    await nextPaint();
+    (_g = this.titleEl) == null ? void 0 : _g.setText(step.title);
+    const interfaceName = (_j = (_i = step.interfaceName) != null ? _i : (_h = this.options) == null ? void 0 : _h.label) != null ? _j : "Walkthrough";
+    const interfaceStep = this.steps.slice(0, this.currentIndex + 1).filter((candidate) => {
+      var _a2, _b2;
+      return ((_b2 = candidate.interfaceName) != null ? _b2 : (_a2 = this.options) == null ? void 0 : _a2.label) === interfaceName && candidate.countInProgress !== false;
+    }).length;
+    const interfaceTotal = this.steps.filter((candidate) => {
+      var _a2, _b2;
+      return ((_b2 = candidate.interfaceName) != null ? _b2 : (_a2 = this.options) == null ? void 0 : _a2.label) === interfaceName && candidate.countInProgress !== false;
+    }).length;
+    (_l = this.progressEl) == null ? void 0 : _l.setText((_k = step.progressText) != null ? _k : `${interfaceName} - Introduction ${interfaceStep}/${interfaceTotal}`);
+    if (this.backButton) {
+      this.backButton.disabled = this.findPreviousVisibleStep() < 0;
+    }
+    if (this.nextButton) {
+      this.nextButton.setText(this.currentIndex === this.steps.length - 1 ? "Finish" : "Next");
+      this.nextButton.disabled = !!step.interaction || !!((_m = step.choices) == null ? void 0 : _m.length);
+    }
+    this.renderChoices((_n = step.choices) != null ? _n : []);
+    this.setInteractiveTarget(!!step.interaction);
+    this.updateGeometry();
+    this.root.removeClass("is-resolving");
+    this.startTyping(step.description);
+    if (step.interaction) {
+      this.bindInteraction(step.interaction);
+    }
+  }
+  async resolveTarget(target) {
+    for (let attempt = 0; attempt < 80; attempt += 1) {
+      const element = typeof target === "string" ? document.querySelector(target) : target();
+      if ((element == null ? void 0 : element.isConnected) && element.getClientRects().length > 0) {
+        return element;
+      }
+      await new Promise((resolve) => window.setTimeout(resolve, 50));
+    }
+    return null;
+  }
+  bindInteraction(interaction) {
+    const interactionTarget = interaction.target ? typeof interaction.target === "string" ? document.querySelector(interaction.target) : interaction.target() : this.activeTarget;
+    if (!interactionTarget) {
+      return;
+    }
+    let handled = false;
+    const onAction = async (event) => {
+      var _a, _b, _c;
+      if (handled) {
+        return;
+      }
+      if (interaction.completeWhen && !interaction.completeWhen(event)) {
+        return;
+      }
+      handled = true;
+      await ((_a = interaction.onAction) == null ? void 0 : _a.call(interaction));
+      this.setInteractiveTarget(false);
+      (_b = this.interactionCleanup) == null ? void 0 : _b.call(this);
+      this.interactionCleanup = null;
+      const autoAdvance = (_c = interaction.autoAdvance) != null ? _c : interaction.event !== "input";
+      if (autoAdvance) {
+        this.actionAdvanceTimer = window.setTimeout(() => {
+          this.actionAdvanceTimer = null;
+          if (this.nextButton) {
+            this.nextButton.disabled = false;
+          }
+          void this.goNext();
+        }, ACTION_ADVANCE_DELAY_MS);
+      } else if (this.nextButton) {
+        this.nextButton.disabled = false;
+      }
+    };
+    interactionTarget.addEventListener(interaction.event, onAction);
+    this.interactionCleanup = () => interactionTarget.removeEventListener(interaction.event, onAction);
+  }
+  renderChoices(choices) {
+    if (!this.choicesEl) {
+      return;
+    }
+    this.choicesEl.empty();
+    this.choicesEl.toggle(choices.length > 0);
+    for (const choice of choices) {
+      const button = this.choicesEl.createEl("button", { text: choice.label, cls: "ng-tour-choice" });
+      button.addEventListener("click", async () => {
+        var _a, _b;
+        for (const candidate of (_b = (_a = this.choicesEl) == null ? void 0 : _a.querySelectorAll("button")) != null ? _b : []) {
+          candidate.disabled = true;
+        }
+        await choice.onSelect();
+        this.actionAdvanceTimer = window.setTimeout(() => {
+          this.actionAdvanceTimer = null;
+          if (this.nextButton) {
+            this.nextButton.disabled = false;
+          }
+          void this.goNext();
+        }, 250);
+      });
+    }
+  }
+  setInteractiveTarget(interactive) {
+    var _a, _b;
+    (_a = this.root) == null ? void 0 : _a.toggleClass("is-interactive", interactive);
+    (_b = this.activeTarget) == null ? void 0 : _b.toggleClass("ng-tour-target", true);
+  }
+  startTyping(text) {
+    if (!this.descriptionEl) {
+      return;
+    }
+    this.descriptionEl.empty();
+    let characterIndex = 0;
+    this.typeTimer = window.setInterval(() => {
+      if (!this.descriptionEl) {
+        return;
+      }
+      characterIndex += 1;
+      this.descriptionEl.setText(text.slice(0, characterIndex));
+      if (characterIndex >= text.length) {
+        this.stopTyping();
+      }
+    }, TYPE_INTERVAL_MS);
+  }
+  stopTyping() {
+    if (this.typeTimer !== null) {
+      window.clearInterval(this.typeTimer);
+      this.typeTimer = null;
+    }
+  }
+  clearStepState() {
+    var _a, _b, _c;
+    this.stopTyping();
+    (_a = this.root) == null ? void 0 : _a.removeClass("is-message-highlight");
+    if (this.actionAdvanceTimer !== null) {
+      window.clearTimeout(this.actionAdvanceTimer);
+      this.actionAdvanceTimer = null;
+    }
+    (_b = this.interactionCleanup) == null ? void 0 : _b.call(this);
+    this.interactionCleanup = null;
+    (_c = this.activeTarget) == null ? void 0 : _c.removeClass("ng-tour-target");
+    this.activeTarget = null;
+  }
+  findPreviousVisibleStep() {
+    var _a, _b, _c, _d, _e, _f;
+    const currentStep = this.steps[this.currentIndex];
+    const currentInterface = (_b = currentStep == null ? void 0 : currentStep.interfaceName) != null ? _b : (_a = this.options) == null ? void 0 : _a.label;
+    for (let index = this.currentIndex - 1; index >= 0; index -= 1) {
+      const step = this.steps[index];
+      if (((_d = step == null ? void 0 : step.interfaceName) != null ? _d : (_c = this.options) == null ? void 0 : _c.label) !== currentInterface) {
+        continue;
+      }
+      const target = (_f = (_e = step == null ? void 0 : step.interaction) == null ? void 0 : _e.target) != null ? _f : step == null ? void 0 : step.target;
+      if (!target) {
+        continue;
+      }
+      const element = typeof target === "string" ? document.querySelector(target) : target();
+      if ((element == null ? void 0 : element.isConnected) && element.getClientRects().length > 0) {
+        return index;
+      }
+    }
+    return -1;
+  }
+};
+function createHelpButton(parent, onClick) {
+  const button = parent.createEl("button", { cls: "ng-help-button" });
+  button.setAttribute("aria-label", "Open walkthrough");
+  button.setAttribute("title", "Open walkthrough");
+  for (const iconName of ["circle-help", "help-circle", "circle-question-mark"]) {
+    (0, import_obsidian.setIcon)(button, iconName);
+    if (button.querySelector("svg")) {
+      break;
+    }
+  }
+  if (!button.querySelector("svg")) {
+    button.setText("?");
+  }
+  button.addEventListener("click", onClick);
+  return button;
+}
+function nextPaint() {
+  return new Promise((resolve) => window.requestAnimationFrame(() => window.requestAnimationFrame(() => resolve())));
 }
 
 // src/taskState.ts
@@ -4037,8 +4611,8 @@ function normalizeWeeklySource(value) {
 }
 
 // src/homeView.ts
-var NeuralGardenHomeView = class extends import_obsidian.ItemView {
-  constructor(leaf, storage, journalingStorage, myNotesStorage, breakModeEnabled, openJournalingView, openMyNotesView, openMyLearningView, openWeeklyRecap) {
+var NeuralGardenHomeView = class extends import_obsidian2.ItemView {
+  constructor(leaf, storage, journalingStorage, myNotesStorage, breakModeEnabled, openJournalingView, openMyNotesView, openMyLearningView, openWeeklyRecap, openHelp) {
     super(leaf);
     this.storage = storage;
     this.journalingStorage = journalingStorage;
@@ -4048,6 +4622,7 @@ var NeuralGardenHomeView = class extends import_obsidian.ItemView {
     this.openMyNotesView = openMyNotesView;
     this.openMyLearningView = openMyLearningView;
     this.openWeeklyRecap = openWeeklyRecap;
+    this.openHelp = openHelp;
     this.state = { ...DEFAULT_STATE };
     this.breakTickTimer = null;
     this.breakMessageTimer = null;
@@ -4113,6 +4688,10 @@ var NeuralGardenHomeView = class extends import_obsidian.ItemView {
     }
     await this.persistAndRender();
   }
+  async refresh() {
+    this.state = await this.storage.loadTaskManagerState();
+    this.render();
+  }
   async persistAndRender() {
     recalculateTotals(this.state);
     this.applyBreakRecovery();
@@ -4124,6 +4703,7 @@ var NeuralGardenHomeView = class extends import_obsidian.ItemView {
     contentEl.empty();
     contentEl.addClass("neural-garden-root");
     const wrapper = contentEl.createDiv({ cls: "neural-garden-home" });
+    createHelpButton(wrapper, this.openHelp);
     wrapper.createEl("h2", { text: "Home" });
     const hintStrip = wrapper.createDiv({ cls: "ng-home-hints-strip" });
     hintStrip.style.display = "none";
@@ -4199,7 +4779,7 @@ var NeuralGardenHomeView = class extends import_obsidian.ItemView {
       }
       const file = await this.myNotesStorage.createNote(name);
       if (!file) {
-        new import_obsidian.Notice("Could not create the note. Try a different name.");
+        new import_obsidian2.Notice("Could not create the note. Try a different name.");
         return;
       }
       await this.myNotesStorage.toggleNoteCategory(file, QUICK_NOTES_CATEGORY);
@@ -4248,7 +4828,7 @@ var NeuralGardenHomeView = class extends import_obsidian.ItemView {
       row.addEventListener("click", async () => {
         const target = this.app.vault.getMarkdownFiles().find((file) => file.basename === name && file.path.startsWith(`${NOTES_FOLDER}/`));
         if (!target) {
-          new import_obsidian.Notice(`Support note not found: ${name}`);
+          new import_obsidian2.Notice(`Support note not found: ${name}`);
           return;
         }
         await this.leaf.openFile(target);
@@ -4386,12 +4966,12 @@ var NeuralGardenHomeView = class extends import_obsidian.ItemView {
         if (this.state.forcedBreak || this.state.resting) {
           button.addClass("is-shaking");
           window.setTimeout(() => button.removeClass("is-shaking"), 300);
-          new import_obsidian.Notice("Task manager is in break mode");
+          new import_obsidian2.Notice("Task manager is in break mode");
           return;
         }
         const taskName = taskInput.value.trim();
         if (!taskName) {
-          new import_obsidian.Notice("Please type a task first");
+          new import_obsidian2.Notice("Please type a task first");
           return;
         }
         button.addClass("is-pulsing");
@@ -4487,7 +5067,7 @@ var NeuralGardenHomeView = class extends import_obsidian.ItemView {
           return;
         }
         if (this.state.forcedBreak || this.state.resting) {
-          new import_obsidian.Notice("Task manager is in break mode");
+          new import_obsidian2.Notice("Task manager is in break mode");
           return;
         }
         activating = true;
@@ -4589,7 +5169,7 @@ var NeuralGardenHomeView = class extends import_obsidian.ItemView {
       return;
     }
     const recapFile = this.app.vault.getAbstractFileByPath(source.recapPath);
-    if (!(recapFile instanceof import_obsidian.TFile)) {
+    if (!(recapFile instanceof import_obsidian2.TFile)) {
       return;
     }
     try {
@@ -4601,7 +5181,7 @@ var NeuralGardenHomeView = class extends import_obsidian.ItemView {
       recap.frontmatter.nextWeekTasks.splice(taskIndex, 1);
       await this.journalingStorage.saveWeeklyRecap(recapFile, recap.frontmatter, recap.body);
     } catch (e) {
-      new import_obsidian.Notice("Task completed, but its Weekly Recap entry could not be removed.");
+      new import_obsidian2.Notice("Task completed, but its Weekly Recap entry could not be removed.");
     }
   }
   renderForcedBreakPanel(container) {
@@ -5008,7 +5588,7 @@ function hslToRgb(h, s, l) {
 }
 
 // src/journalingEntryView.ts
-var import_obsidian2 = require("obsidian");
+var import_obsidian3 = require("obsidian");
 var METRICS = [
   { key: "mood", label: "Mood", explanation: "How have you been feeling?" },
   { key: "sleep", label: "Sleep", explanation: "How rested did you feel after sleeping?" },
@@ -5048,7 +5628,7 @@ var UNPLEASANT_EMOTIONS = [
   "Tense"
 ];
 var MAX_EMOTIONS = 7;
-var NeuralGardenJournalEntryView = class extends import_obsidian2.ItemView {
+var NeuralGardenJournalEntryView = class extends import_obsidian3.ItemView {
   constructor(leaf, taskStorage, journalingStorage, openHomeView, openJournalingView) {
     super(leaf);
     this.taskStorage = taskStorage;
@@ -5152,7 +5732,7 @@ var NeuralGardenJournalEntryView = class extends import_obsidian2.ItemView {
       } catch (e) {
         continueButton.disabled = false;
         cancelButton.disabled = false;
-        new import_obsidian2.Notice("Could not create the journal entry.");
+        new import_obsidian3.Notice("Could not create the journal entry.");
       }
     });
   }
@@ -5232,10 +5812,11 @@ var NeuralGardenJournalEntryView = class extends import_obsidian2.ItemView {
     this.renderCompactSummary(stickyHeader);
     const fullCheckIn = wrapper.createDiv({ cls: "ng-journal-full-check-in" });
     this.renderMetrics(fullCheckIn);
-    this.renderEmotions(fullCheckIn);
-    this.renderTrackerSection(fullCheckIn);
-    this.renderGoodThing(fullCheckIn);
-    this.renderTasks(fullCheckIn);
+    const secondaryCheckIn = fullCheckIn.createDiv({ cls: "ng-journal-secondary-check-in" });
+    this.renderEmotions(secondaryCheckIn);
+    this.renderTrackerSection(secondaryCheckIn);
+    this.renderGoodThing(secondaryCheckIn);
+    this.renderTasks(secondaryCheckIn);
     this.renderEntryBody(wrapper);
     this.syncCollapseHeights(wrapper);
   }
@@ -5322,9 +5903,16 @@ var NeuralGardenJournalEntryView = class extends import_obsidian2.ItemView {
     const block = parent.createDiv({ cls: "ng-journal-good-thing" });
     block.createEl("h4", { text: "One Good Thing About Today" });
     if (!this.editable) {
+      const input2 = block.createEl("input", {
+        type: "text",
+        cls: "ng-task-input ng-journal-good-thing-input",
+        placeholder: "Name one good thing from today"
+      });
+      input2.readOnly = true;
+      input2.value = this.entry.frontmatter.goodThing || "";
       block.createDiv({
-        cls: this.entry.frontmatter.goodThing ? "ng-journal-good-thing-value" : "ng-empty",
-        text: this.entry.frontmatter.goodThing || "No reflection was recorded."
+        cls: "ng-journal-good-thing-value",
+        text: "This entry is read-only in the introduction preview."
       });
       return;
     }
@@ -5485,7 +6073,7 @@ var NeuralGardenJournalEntryView = class extends import_obsidian2.ItemView {
             selected.delete(emotion);
           } else {
             if (selected.size >= MAX_EMOTIONS) {
-              new import_obsidian2.Notice(`You can choose up to ${MAX_EMOTIONS} emotions.`);
+              new import_obsidian3.Notice(`You can choose up to ${MAX_EMOTIONS} emotions.`);
               return;
             }
             selected.add(emotion);
@@ -5525,7 +6113,7 @@ var NeuralGardenJournalEntryView = class extends import_obsidian2.ItemView {
       const editButton = header.createEl("button", { cls: "ng-journal-task-edit-button" });
       editButton.setAttribute("aria-label", this.taskEditMode ? "Finish editing tasks" : "Edit tasks");
       editButton.setAttribute("title", this.taskEditMode ? "Finish editing tasks" : "Edit tasks");
-      (0, import_obsidian2.setIcon)(editButton, this.taskEditMode ? "check" : "pencil");
+      (0, import_obsidian3.setIcon)(editButton, this.taskEditMode ? "check" : "pencil");
       editButton.addEventListener("click", () => {
         this.taskEditMode = !this.taskEditMode;
         this.render();
@@ -5584,7 +6172,7 @@ var NeuralGardenJournalEntryView = class extends import_obsidian2.ItemView {
       if (this.taskEditMode) {
         const deleteButton = row.createEl("button", { cls: "ng-journal-task-delete" });
         deleteButton.setAttribute("aria-label", `Delete ${task.taskName}`);
-        (0, import_obsidian2.setIcon)(deleteButton, "x");
+        (0, import_obsidian3.setIcon)(deleteButton, "x");
         deleteButton.addEventListener("click", async () => {
           if (!this.entry) {
             return;
@@ -5786,7 +6374,7 @@ function getEmotionToneClass(emotion) {
 }
 
 // src/journalingView.ts
-var import_obsidian3 = require("obsidian");
+var import_obsidian4 = require("obsidian");
 var METRICS2 = [
   { key: "mood", label: "Mood", explanation: "How have you been feeling?" },
   { key: "sleep", label: "Sleep", explanation: "How rested did you feel after sleeping?" },
@@ -5820,14 +6408,15 @@ var TRACKER_COLORS = [
   { name: "Orange", value: "#EC9A63" },
   { name: "Red", value: "#FF6565" }
 ];
-var NeuralGardenJournalingView = class extends import_obsidian3.ItemView {
-  constructor(leaf, taskStorage, journalingStorage, openHomeView, openJournalEntryView, openWeeklyRecap) {
+var NeuralGardenJournalingView = class extends import_obsidian4.ItemView {
+  constructor(leaf, taskStorage, journalingStorage, openHomeView, openJournalEntryView, openWeeklyRecap, openHelp) {
     super(leaf);
     this.taskStorage = taskStorage;
     this.journalingStorage = journalingStorage;
     this.openHomeView = openHomeView;
     this.openJournalEntryView = openJournalEntryView;
     this.openWeeklyRecap = openWeeklyRecap;
+    this.openHelp = openHelp;
     this.calendarMonth = startOfMonth(/* @__PURE__ */ new Date());
     this.selectedDateKey = null;
     this.dailyEntries = [];
@@ -5836,6 +6425,7 @@ var NeuralGardenJournalingView = class extends import_obsidian3.ItemView {
     this.selectedWeekKey = null;
     this.weeklyPreview = null;
     this.generatedWeeklyRecaps = /* @__PURE__ */ new Set();
+    this.demoDateKey = null;
   }
   getViewType() {
     return VIEW_TYPE_NEURAL_GARDEN_JOURNALING;
@@ -5856,6 +6446,21 @@ var NeuralGardenJournalingView = class extends import_obsidian3.ItemView {
     this.selectedDateKey = null;
     this.selectedWeekKey = null;
     this.weeklyPreview = null;
+    this.demoDateKey = null;
+  }
+  async showDate(dateKey) {
+    var _a, _b;
+    this.calendarMonth = startOfMonth((_a = parseDateKey(dateKey)) != null ? _a : /* @__PURE__ */ new Date());
+    this.selectedDateKey = dateKey;
+    this.selectedWeekKey = null;
+    this.weeklyPreview = null;
+    await this.reloadState();
+    this.selectedEntry = (_b = this.dailyEntries.find((entry) => entry.frontmatter.date === dateKey)) != null ? _b : null;
+    this.render();
+  }
+  async showDemoDate(dateKey) {
+    this.demoDateKey = dateKey;
+    await this.showDate(dateKey);
   }
   async reloadState() {
     var _a, _b;
@@ -5864,7 +6469,8 @@ var NeuralGardenJournalingView = class extends import_obsidian3.ItemView {
     this.trackers = (await this.journalingStorage.listTrackers()).slice(0, 18);
     this.generatedWeeklyRecaps = await this.loadGeneratedWeeklyRecapKeys();
     if (this.selectedDateKey) {
-      if (!this.dailyEntries.some((entry) => entry.frontmatter.date === this.selectedDateKey)) {
+      const isPendingDemoDate = this.selectedDateKey === this.demoDateKey;
+      if (!isPendingDemoDate && !this.dailyEntries.some((entry) => entry.frontmatter.date === this.selectedDateKey)) {
         const latest = this.dailyEntries[this.dailyEntries.length - 1];
         if (latest) {
           this.selectedDateKey = latest.frontmatter.date;
@@ -5882,16 +6488,18 @@ var NeuralGardenJournalingView = class extends import_obsidian3.ItemView {
     contentEl.addClass("neural-garden-root");
     const wrapper = contentEl.createDiv({ cls: "ng-journaling" });
     const topBar = wrapper.createDiv({ cls: "ng-journal-topbar" });
-    const homeButton = topBar.createEl("button", { text: "Home" });
-    homeButton.addClass("ng-journal-nav-button");
-    homeButton.addEventListener("click", async () => {
+    const homeButton2 = topBar.createEl("button", { text: "Home" });
+    homeButton2.addClass("ng-journal-nav-button");
+    homeButton2.addEventListener("click", async () => {
       await this.openHomeView(true, this.leaf);
     });
     const titleWrap = topBar.createDiv({ cls: "ng-journal-title-wrap" });
     titleWrap.createEl("h2", { text: "Journal Hub" });
+    createHelpButton(topBar, this.openHelp);
     this.renderDailySection(wrapper);
   }
   renderDailySection(parent) {
+    var _a;
     const section = parent.createDiv({ cls: "ng-journal-daily" });
     const calendar = section.createDiv({ cls: "ng-journal-calendar-panel" });
     const calendarHeader = calendar.createDiv({ cls: "ng-journal-calendar-header" });
@@ -5928,14 +6536,15 @@ var NeuralGardenJournalingView = class extends import_obsidian3.ItemView {
       this.shiftCalendarMonth(1);
     });
     const today = todayKey();
-    const hasTodayEntry = this.dailyEntries.some((entry) => entry.frontmatter.date === today);
+    const newEntryDate = (_a = this.demoDateKey) != null ? _a : today;
+    const hasTodayEntry = this.dailyEntries.some((entry) => entry.frontmatter.date === newEntryDate);
     const createButton = calendarHeader.createEl("button", { text: "New Entry" });
     createButton.addClass("ng-journal-create-button");
     createButton.disabled = hasTodayEntry;
     if (!createButton.disabled) {
       createButton.addClass("is-highlighted");
       createButton.addEventListener("click", async () => {
-        await this.openJournalEntryView(today, true, this.leaf);
+        await this.openJournalEntryView(newEntryDate, true, this.leaf);
       });
     }
     this.renderCalendar(calendar);
@@ -6108,7 +6717,7 @@ var NeuralGardenJournalingView = class extends import_obsidian3.ItemView {
     this.selectedEntry = null;
     const path = this.journalingStorage.weeklyRecapPath(weekYear, weekNumber);
     const file = this.app.vault.getAbstractFileByPath(path);
-    if (!(file instanceof import_obsidian3.TFile)) {
+    if (!(file instanceof import_obsidian4.TFile)) {
       this.weeklyPreview = {
         key,
         year: weekYear,
@@ -6597,7 +7206,7 @@ function getEmotionToneClass2(emotion) {
 }
 
 // src/myLearningView.ts
-var import_obsidian4 = require("obsidian");
+var import_obsidian5 = require("obsidian");
 
 // src/nameValidation.ts
 var RESTRICTED_NAME_PATTERN = /[\\/:*?"<>|#^[\]]/;
@@ -6619,7 +7228,7 @@ function formatLocalDate(date) {
 }
 function setOpenToRightIcon(el) {
   for (const iconName of OPEN_RIGHT_ICON_CANDIDATES) {
-    (0, import_obsidian4.setIcon)(el, iconName);
+    (0, import_obsidian5.setIcon)(el, iconName);
     if (el.querySelector("svg")) {
       return;
     }
@@ -6628,20 +7237,21 @@ function setOpenToRightIcon(el) {
 }
 function setEditIcon(el) {
   for (const iconName of EDIT_ICON_CANDIDATES) {
-    (0, import_obsidian4.setIcon)(el, iconName);
+    (0, import_obsidian5.setIcon)(el, iconName);
     if (el.querySelector("svg")) {
       return;
     }
   }
   el.setText("E");
 }
-var NeuralGardenMyLearningView = class extends import_obsidian4.ItemView {
-  constructor(leaf, learningStorage, openHomeView, initialSelection, onSelectionChange) {
+var NeuralGardenMyLearningView = class extends import_obsidian5.ItemView {
+  constructor(leaf, learningStorage, openHomeView, initialSelection, onSelectionChange, openHelp = () => void 0) {
     var _a, _b;
     super(leaf);
     this.learningStorage = learningStorage;
     this.openHomeView = openHomeView;
     this.onSelectionChange = onSelectionChange;
+    this.openHelp = openHelp;
     this.selectedCategory = null;
     this.selectedTopic = null;
     this.editMode = null;
@@ -6690,10 +7300,11 @@ var NeuralGardenMyLearningView = class extends import_obsidian4.ItemView {
     contentEl.addClass("neural-garden-root");
     const wrapper = contentEl.createDiv({ cls: "ng-mylearning" });
     const topBar = wrapper.createDiv({ cls: "ng-mylearning-topbar" });
-    const homeButton = topBar.createEl("button", { text: "Home", cls: "ng-journal-nav-button" });
-    homeButton.addEventListener("click", async () => {
+    const homeButton2 = topBar.createEl("button", { text: "Home", cls: "ng-journal-nav-button" });
+    homeButton2.addEventListener("click", async () => {
       await this.openHomeView(true, this.leaf);
     });
+    createHelpButton(topBar, this.openHelp);
     const headingRow = wrapper.createDiv({ cls: "ng-mylearning-heading-row" });
     headingRow.createEl("h2", { text: "MyLearning", cls: "ng-mynotes-heading" });
     await this.renderSearchSection(wrapper);
@@ -6707,12 +7318,12 @@ var NeuralGardenMyLearningView = class extends import_obsidian4.ItemView {
     const section = parent.createDiv({ cls: "ng-mylearning-daily-calendar" });
     const leftArrow = section.createEl("button", { cls: "ng-mylearning-daily-arrow is-left" });
     leftArrow.setAttribute("aria-label", "Scroll to earlier days");
-    (0, import_obsidian4.setIcon)(leftArrow, "chevron-left");
+    (0, import_obsidian5.setIcon)(leftArrow, "chevron-left");
     const viewport = section.createDiv({ cls: "ng-mylearning-daily-viewport" });
     const row = viewport.createDiv({ cls: "ng-mylearning-daily-row" });
     const rightArrow = section.createEl("button", { cls: "ng-mylearning-daily-arrow is-right" });
     rightArrow.setAttribute("aria-label", "Scroll to later days");
-    (0, import_obsidian4.setIcon)(rightArrow, "chevron-right");
+    (0, import_obsidian5.setIcon)(rightArrow, "chevron-right");
     const notesByDate = /* @__PURE__ */ new Map();
     for (const file of this.learningStorage.listNotes()) {
       const match = file.basename.match(DAILY_NOTE_DATE_PATTERN);
@@ -6742,7 +7353,7 @@ var NeuralGardenMyLearningView = class extends import_obsidian4.ItemView {
       numberWrap.createSpan({ cls: "ng-mylearning-daily-number", text: String(date.getDate()) });
       if (processed) {
         const check = numberWrap.createSpan({ cls: "ng-mylearning-daily-check" });
-        (0, import_obsidian4.setIcon)(check, "check");
+        (0, import_obsidian5.setIcon)(check, "check");
       } else if (file) {
         day.createSpan({ cls: "ng-mylearning-daily-marker" });
       }
@@ -6818,7 +7429,7 @@ var NeuralGardenMyLearningView = class extends import_obsidian4.ItemView {
   async createTodayDailyNote(dateKey) {
     const file = await this.learningStorage.createDailyNote(dateKey);
     if (!file) {
-      new import_obsidian4.Notice("Could not create today's daily note.");
+      new import_obsidian5.Notice("Could not create today's daily note.");
       return;
     }
     await this.leaf.openFile(file);
@@ -6929,7 +7540,7 @@ var NeuralGardenMyLearningView = class extends import_obsidian4.ItemView {
     });
     const addNoteButton = header.createEl("button", { cls: "ng-mynotes-new-button ng-mylearning-heading-add-note" });
     const addNoteIcon = addNoteButton.createSpan({ cls: "ng-mynotes-button-icon" });
-    (0, import_obsidian4.setIcon)(addNoteIcon, "file-plus");
+    (0, import_obsidian5.setIcon)(addNoteIcon, "file-plus");
     addNoteButton.createSpan({ text: "Add Note" });
     addNoteButton.addEventListener("click", () => {
       this.openNewNoteOverlay(this.selectedCategory, this.selectedTopic);
@@ -7089,7 +7700,7 @@ var NeuralGardenMyLearningView = class extends import_obsidian4.ItemView {
     });
     const deleteButton = actions.createEl("button", { cls: "ng-mynotes-note-delete" });
     deleteButton.setAttribute("aria-label", `Delete ${file.basename}`);
-    (0, import_obsidian4.setIcon)(deleteButton, "x");
+    (0, import_obsidian5.setIcon)(deleteButton, "x");
     deleteButton.addEventListener("click", (event) => {
       event.stopPropagation();
       this.openDeleteOverlay(file);
@@ -7184,7 +7795,7 @@ var NeuralGardenMyLearningView = class extends import_obsidian4.ItemView {
       const file = fileType === "canvas" ? await this.learningStorage.createCanvas(name, category, topic) : await this.learningStorage.createNote(name, category != null ? category : null, topics);
       close();
       if (!file) {
-        new import_obsidian4.Notice("Could not create the note. Try a different name.");
+        new import_obsidian5.Notice("Could not create the note. Try a different name.");
         return;
       }
       await this.leaf.openFile(file);
@@ -7391,7 +8002,7 @@ var NeuralGardenMyLearningView = class extends import_obsidian4.ItemView {
     const submit = async () => {
       const success = await this.learningStorage.setTopicColor(category, topic, colorInput.value);
       if (!success) {
-        new import_obsidian4.Notice("Could not update topic color.");
+        new import_obsidian5.Notice("Could not update topic color.");
         return;
       }
       close();
@@ -7413,7 +8024,7 @@ var NeuralGardenMyLearningView = class extends import_obsidian4.ItemView {
       const nextCategory = input.value.trim();
       const success = await this.learningStorage.renameCategory(previousCategory, nextCategory);
       if (!success) {
-        new import_obsidian4.Notice("Could not rename category. Check the new name and try again.");
+        new import_obsidian5.Notice("Could not rename category. Check the new name and try again.");
         return;
       }
       if (this.selectedCategory === previousCategory) {
@@ -7443,7 +8054,7 @@ var NeuralGardenMyLearningView = class extends import_obsidian4.ItemView {
     const submit = async () => {
       const success = await this.learningStorage.deleteCategory(category);
       if (!success) {
-        new import_obsidian4.Notice("Could not delete category.");
+        new import_obsidian5.Notice("Could not delete category.");
         return;
       }
       if (this.selectedCategory === category) {
@@ -7471,7 +8082,7 @@ var NeuralGardenMyLearningView = class extends import_obsidian4.ItemView {
       const nextTopic = input.value.trim();
       const success = await this.learningStorage.renameTopic(category, previousTopic, nextTopic);
       if (!success) {
-        new import_obsidian4.Notice("Could not rename topic. Check the new name and try again.");
+        new import_obsidian5.Notice("Could not rename topic. Check the new name and try again.");
         return;
       }
       if (this.selectedTopic === previousTopic) {
@@ -7500,7 +8111,7 @@ var NeuralGardenMyLearningView = class extends import_obsidian4.ItemView {
     const submit = async () => {
       const success = await this.learningStorage.deleteTopic(category, topic);
       if (!success) {
-        new import_obsidian4.Notice("Could not delete topic.");
+        new import_obsidian5.Notice("Could not delete topic.");
         return;
       }
       if (this.selectedTopic === topic) {
@@ -7517,7 +8128,7 @@ var NeuralGardenMyLearningView = class extends import_obsidian4.ItemView {
 };
 
 // src/myLearningStorage.ts
-var import_obsidian5 = require("obsidian");
+var import_obsidian6 = require("obsidian");
 var LEGACY_NOTES_CATEGORIES_FOLDER = "Notes/Categories";
 var LEGACY_HELP_TOPIC = "help";
 var DAILY_NOTES_CATEGORY = "Daily Notes";
@@ -7578,7 +8189,7 @@ var MyLearningStorage = class {
   }
   async ensureConfigFile() {
     const existing = this.app.vault.getAbstractFileByPath(MY_LEARNING_CONFIG_FILE_PATH);
-    if (existing instanceof import_obsidian5.TFile) {
+    if (existing instanceof import_obsidian6.TFile) {
       return existing;
     }
     await this.ensureFolderExists(MY_LEARNING_MAINTENANCE_FOLDER);
@@ -7586,7 +8197,7 @@ var MyLearningStorage = class {
       return await this.app.vault.create(MY_LEARNING_CONFIG_FILE_PATH, "---\ncategories: {}\ntopicColors: {}\ncanvases: {}\n---\n# MyLearning\n");
     } catch (e) {
       const createdByOtherCall = this.app.vault.getAbstractFileByPath(MY_LEARNING_CONFIG_FILE_PATH);
-      if (createdByOtherCall instanceof import_obsidian5.TFile) {
+      if (createdByOtherCall instanceof import_obsidian6.TFile) {
         return createdByOtherCall;
       }
       throw new Error(`Failed to create MyLearning config at ${MY_LEARNING_CONFIG_FILE_PATH}`);
@@ -7910,7 +8521,7 @@ var MyLearningStorage = class {
     if (!trimmed) {
       return false;
     }
-    return ["md", "canvas"].some((extension) => this.app.vault.getAbstractFileByPath(`${LEARNING_FOLDER}/${trimmed}.${extension}`) instanceof import_obsidian5.TFile);
+    return ["md", "canvas"].some((extension) => this.app.vault.getAbstractFileByPath(`${LEARNING_FOLDER}/${trimmed}.${extension}`) instanceof import_obsidian6.TFile);
   }
   async createNote(name, category, topics) {
     const trimmed = this.sanitizeNoteName(name);
@@ -7919,7 +8530,7 @@ var MyLearningStorage = class {
     }
     const path = `${LEARNING_FOLDER}/${trimmed}.md`;
     const existing = this.app.vault.getAbstractFileByPath(path);
-    if (existing instanceof import_obsidian5.TFile) {
+    if (existing instanceof import_obsidian6.TFile) {
       return existing;
     }
     await this.ensureProvisioned();
@@ -7943,7 +8554,7 @@ var MyLearningStorage = class {
     }
     const name = `Daily Note ${dateKey}`;
     const existing = this.app.vault.getAbstractFileByPath(`${LEARNING_FOLDER}/${name}.md`);
-    if (existing instanceof import_obsidian5.TFile) {
+    if (existing instanceof import_obsidian6.TFile) {
       return existing;
     }
     await this.addCategory(DAILY_NOTES_CATEGORY);
@@ -7962,7 +8573,7 @@ var MyLearningStorage = class {
     }
     const path = `${LEARNING_FOLDER}/${trimmed}.canvas`;
     const existing = this.app.vault.getAbstractFileByPath(path);
-    if (existing instanceof import_obsidian5.TFile) {
+    if (existing instanceof import_obsidian6.TFile) {
       return existing;
     }
     await this.ensureProvisioned();
@@ -8118,7 +8729,7 @@ var MyLearningStorage = class {
     await this.ensureFolderExists(NOTES_CATEGORIES_FOLDER);
     const path = this.buildCategoryLinkingNotePath(category);
     const existing = this.app.vault.getAbstractFileByPath(path);
-    if (existing instanceof import_obsidian5.TFile) {
+    if (existing instanceof import_obsidian6.TFile) {
       await this.app.fileManager.processFrontMatter(existing, (fm) => {
         fm.category = this.toFrontmatterScalar(category);
         const current = normalizeTopicList(fm.topics);
@@ -8153,7 +8764,7 @@ topics:${topicsYaml}
     }
     const path = this.buildCategoryLinkingNotePath(category);
     const note = this.app.vault.getAbstractFileByPath(path);
-    if (!(note instanceof import_obsidian5.TFile)) {
+    if (!(note instanceof import_obsidian6.TFile)) {
       return;
     }
     await this.app.fileManager.processFrontMatter(note, (fm) => {
@@ -8173,17 +8784,17 @@ topics:${topicsYaml}
     }
     const sourcePath = this.buildCategoryLinkingNotePath(previous);
     const source = this.app.vault.getAbstractFileByPath(sourcePath);
-    if (!(source instanceof import_obsidian5.TFile)) {
+    if (!(source instanceof import_obsidian6.TFile)) {
       return;
     }
     const targetPath = this.buildCategoryLinkingNotePath(next);
     const target = this.app.vault.getAbstractFileByPath(targetPath);
-    if (target instanceof import_obsidian5.TFile && target.path !== source.path) {
+    if (target instanceof import_obsidian6.TFile && target.path !== source.path) {
       await this.app.vault.delete(target);
     }
     await this.app.vault.rename(source, targetPath);
     const renamed = this.app.vault.getAbstractFileByPath(targetPath);
-    if (!(renamed instanceof import_obsidian5.TFile)) {
+    if (!(renamed instanceof import_obsidian6.TFile)) {
       return;
     }
     const content = await this.app.vault.cachedRead(renamed);
@@ -8205,7 +8816,7 @@ topics:${topicsYaml}
     }
     const path = this.buildCategoryLinkingNotePath(category);
     const note = this.app.vault.getAbstractFileByPath(path);
-    if (!(note instanceof import_obsidian5.TFile)) {
+    if (!(note instanceof import_obsidian6.TFile)) {
       return;
     }
     let shouldDelete = false;
@@ -8231,7 +8842,7 @@ topics:${topicsYaml}
     }
     const path = this.buildCategoryLinkingNotePath(category);
     const note = this.app.vault.getAbstractFileByPath(path);
-    if (note instanceof import_obsidian5.TFile) {
+    if (note instanceof import_obsidian6.TFile) {
       await this.app.vault.trash(note, true);
     }
   }
@@ -8255,7 +8866,7 @@ topics:${topicsYaml}
       const topics = [...existingTopics, ...legacyTopics, legacyTopic].filter((topic, index, values) => topic && topic !== LEGACY_HELP_TOPIC && values.indexOf(topic) === index);
       const targetPath = this.buildCategoryLinkingNotePath(category);
       const target = this.app.vault.getAbstractFileByPath(targetPath);
-      if (target instanceof import_obsidian5.TFile && target.path !== note.path) {
+      if (target instanceof import_obsidian6.TFile && target.path !== note.path) {
         await this.app.fileManager.processFrontMatter(target, (fm) => {
           const merged = [...normalizeTopicList(fm.topics), ...topics].filter((topic, index, values) => topic && topic !== LEGACY_HELP_TOPIC && values.indexOf(topic) === index);
           fm.category = this.toFrontmatterScalar(category);
@@ -8272,7 +8883,7 @@ topics:${topicsYaml}
         await this.app.vault.rename(note, targetPath);
       }
       const migrated = this.app.vault.getAbstractFileByPath(targetPath);
-      if (!(migrated instanceof import_obsidian5.TFile)) {
+      if (!(migrated instanceof import_obsidian6.TFile)) {
         continue;
       }
       await this.app.fileManager.processFrontMatter(migrated, (fm) => {
@@ -8368,7 +8979,7 @@ topics:${topicsYaml}
   getCanvasMetadata(file) {
     var _a, _b, _c;
     const configFile = this.app.vault.getAbstractFileByPath(MY_LEARNING_CONFIG_FILE_PATH);
-    if (!(configFile instanceof import_obsidian5.TFile)) {
+    if (!(configFile instanceof import_obsidian6.TFile)) {
       return null;
     }
     const canvases = this.getCanvasMapFromFrontmatter(
@@ -8392,7 +9003,7 @@ Do not touch this.\\
   async ensureCanvasTopicLinks() {
     var _a, _b, _c;
     const configFile = this.app.vault.getAbstractFileByPath(MY_LEARNING_CONFIG_FILE_PATH);
-    if (!(configFile instanceof import_obsidian5.TFile)) {
+    if (!(configFile instanceof import_obsidian6.TFile)) {
       return;
     }
     const canvases = this.getCanvasMapFromFrontmatter(
@@ -8400,7 +9011,7 @@ Do not touch this.\\
     );
     for (const [path, metadata] of Object.entries(canvases)) {
       const file = this.app.vault.getAbstractFileByPath(path);
-      if (!(file instanceof import_obsidian5.TFile) || file.extension !== "canvas") {
+      if (!(file instanceof import_obsidian6.TFile) || file.extension !== "canvas") {
         continue;
       }
       try {
@@ -8583,7 +9194,7 @@ Do not touch this.\\
 };
 
 // src/myNotesView.ts
-var import_obsidian6 = require("obsidian");
+var import_obsidian7 = require("obsidian");
 
 // src/search.ts
 async function searchNotesInFolder(app, query, maxResults = 20) {
@@ -8627,7 +9238,7 @@ var OPEN_RIGHT_ICON_CANDIDATES2 = ["separator-vertical", "panel-right-open", "sp
 var EDIT_ICON_CANDIDATES2 = ["pencil", "pencil-line", "edit-3"];
 function setOpenToRightIcon2(el) {
   for (const iconName of OPEN_RIGHT_ICON_CANDIDATES2) {
-    (0, import_obsidian6.setIcon)(el, iconName);
+    (0, import_obsidian7.setIcon)(el, iconName);
     if (el.querySelector("svg")) {
       return;
     }
@@ -8636,18 +9247,19 @@ function setOpenToRightIcon2(el) {
 }
 function setEditIcon2(el) {
   for (const iconName of EDIT_ICON_CANDIDATES2) {
-    (0, import_obsidian6.setIcon)(el, iconName);
+    (0, import_obsidian7.setIcon)(el, iconName);
     if (el.querySelector("svg")) {
       return;
     }
   }
   el.setText("E");
 }
-var NeuralGardenMyNotesView = class extends import_obsidian6.ItemView {
-  constructor(leaf, myNotesStorage, openHomeView) {
+var NeuralGardenMyNotesView = class extends import_obsidian7.ItemView {
+  constructor(leaf, myNotesStorage, openHomeView, openHelp) {
     super(leaf);
     this.myNotesStorage = myNotesStorage;
     this.openHomeView = openHomeView;
+    this.openHelp = openHelp;
     this.selectedCategory = null;
     this.editMode = null;
     this.searchQuery = "";
@@ -8683,10 +9295,11 @@ var NeuralGardenMyNotesView = class extends import_obsidian6.ItemView {
     contentEl.addClass("neural-garden-root");
     const wrapper = contentEl.createDiv({ cls: "ng-mynotes" });
     const topBar = wrapper.createDiv({ cls: "ng-mynotes-topbar" });
-    const homeButton = topBar.createEl("button", { text: "Home", cls: "ng-journal-nav-button" });
-    homeButton.addEventListener("click", async () => {
+    const homeButton2 = topBar.createEl("button", { text: "Home", cls: "ng-journal-nav-button" });
+    homeButton2.addEventListener("click", async () => {
       await this.openHomeView(true, this.leaf);
     });
+    createHelpButton(topBar, this.openHelp);
     wrapper.createEl("h2", { text: "MyNotes", cls: "ng-mynotes-heading" });
     this.searchHintEl = wrapper.createDiv({ cls: "ng-mynotes-heading-hint" });
     this.renderSearchSection(wrapper);
@@ -8719,7 +9332,7 @@ var NeuralGardenMyNotesView = class extends import_obsidian6.ItemView {
     });
     const newButton = headerRow.createEl("button", { cls: "ng-mynotes-new-button" });
     const newIcon = newButton.createSpan({ cls: "ng-mynotes-button-icon" });
-    (0, import_obsidian6.setIcon)(newIcon, "file-plus-2");
+    (0, import_obsidian7.setIcon)(newIcon, "file-plus-2");
     newButton.createSpan({ text: "New" });
     newButton.addEventListener("click", () => {
       this.openNewNoteOverlay();
@@ -8729,7 +9342,7 @@ var NeuralGardenMyNotesView = class extends import_obsidian6.ItemView {
     const favouritePill = pillRow.createEl("button", { cls: "ng-mynotes-pill ng-mynotes-pill-favourite" });
     favouritePill.dataset.categoryKey = FAVOURITE_CATEGORY;
     const heartIcon = favouritePill.createSpan({ cls: "ng-mynotes-button-icon" });
-    (0, import_obsidian6.setIcon)(heartIcon, "heart");
+    (0, import_obsidian7.setIcon)(heartIcon, "heart");
     favouritePill.createSpan({ text: "Favourites" });
     if (this.selectedCategory === FAVOURITE_CATEGORY) {
       favouritePill.addClass("is-active");
@@ -8818,6 +9431,12 @@ var NeuralGardenMyNotesView = class extends import_obsidian6.ItemView {
     this.syncCategorySelectionState();
     await this.updateNotesList();
   }
+  async showCategory(name) {
+    this.selectedCategory = name;
+    this.searchQuery = "";
+    this.syncCategorySelectionState();
+    await this.updateNotesList();
+  }
   syncCategorySelectionState() {
     var _a;
     for (const button of this.contentEl.querySelectorAll(".ng-mynotes-pill[data-category-key]")) {
@@ -8894,7 +9513,7 @@ var NeuralGardenMyNotesView = class extends import_obsidian6.ItemView {
   renderNoteRow(container, file) {
     const row = container.createDiv({ cls: "ng-mynotes-note-row" });
     const favouriteButton = row.createEl("button", { cls: "ng-mynotes-note-heart" });
-    (0, import_obsidian6.setIcon)(favouriteButton, "heart");
+    (0, import_obsidian7.setIcon)(favouriteButton, "heart");
     if (this.myNotesStorage.isFavourite(file)) {
       favouriteButton.addClass("is-favourite");
     }
@@ -8920,7 +9539,7 @@ var NeuralGardenMyNotesView = class extends import_obsidian6.ItemView {
       await rightLeaf.openFile(file);
     });
     const deleteButton = row.createEl("button", { cls: "ng-mynotes-note-delete" });
-    (0, import_obsidian6.setIcon)(deleteButton, "x");
+    (0, import_obsidian7.setIcon)(deleteButton, "x");
     deleteButton.addEventListener("click", (event) => {
       event.stopPropagation();
       this.openDeleteOverlay(file, row);
@@ -8957,7 +9576,7 @@ var NeuralGardenMyNotesView = class extends import_obsidian6.ItemView {
       const file = await this.myNotesStorage.createNote(name);
       close();
       if (!file) {
-        new import_obsidian6.Notice("Could not create the note. Try a different name.");
+        new import_obsidian7.Notice("Could not create the note. Try a different name.");
         return;
       }
       if (this.selectedCategory && this.selectedCategory !== FAVOURITE_CATEGORY) {
@@ -9035,7 +9654,7 @@ var NeuralGardenMyNotesView = class extends import_obsidian6.ItemView {
       const nextCategory = input.value.trim();
       const success = await this.myNotesStorage.renameCategory(previousCategory, nextCategory);
       if (!success) {
-        new import_obsidian6.Notice("Could not rename category. Check the new name and try again.");
+        new import_obsidian7.Notice("Could not rename category. Check the new name and try again.");
         return;
       }
       if (this.selectedCategory === previousCategory) {
@@ -9065,7 +9684,7 @@ var NeuralGardenMyNotesView = class extends import_obsidian6.ItemView {
     const submit = async () => {
       const success = await this.myNotesStorage.deleteCategory(category);
       if (!success) {
-        new import_obsidian6.Notice("Could not delete category.");
+        new import_obsidian7.Notice("Could not delete category.");
         return;
       }
       if (this.selectedCategory === category) {
@@ -9100,7 +9719,7 @@ var NeuralGardenMyNotesView = class extends import_obsidian6.ItemView {
 };
 
 // src/weeklyRecapView.ts
-var import_obsidian7 = require("obsidian");
+var import_obsidian8 = require("obsidian");
 var WEEKLY_ANIMATION_SCALE = 2;
 var WEEKLY_TASK_EFFORTS = [
   { key: "light", label: "Light", color: "#3FD6FF" },
@@ -9109,7 +9728,7 @@ var WEEKLY_TASK_EFFORTS = [
   { key: "hard", label: "Hard", color: "#E06E2C" },
   { key: "heavy", label: "Heavy", color: "#FF6565" }
 ];
-var NeuralGardenWeeklyRecapView = class extends import_obsidian7.ItemView {
+var NeuralGardenWeeklyRecapView = class extends import_obsidian8.ItemView {
   constructor(leaf, journalingStorage, weeklyRecapManager, openHomeView, openJournalingView) {
     super(leaf);
     this.journalingStorage = journalingStorage;
@@ -9173,8 +9792,8 @@ var NeuralGardenWeeklyRecapView = class extends import_obsidian7.ItemView {
     const top = wrap.createDiv({ cls: "ng-journal-topbar" });
     const leftNav = top.createDiv({ cls: "ng-journal-topbar-left" });
     const rightNav = top.createDiv({ cls: "ng-journal-topbar-right" });
-    const homeButton = rightNav.createEl("button", { text: "Home", cls: "ng-journal-nav-button" });
-    homeButton.addEventListener("click", async () => {
+    const homeButton2 = rightNav.createEl("button", { text: "Home", cls: "ng-journal-nav-button" });
+    homeButton2.addEventListener("click", async () => {
       await this.openHomeView(true, this.leaf);
     });
     const journalingButton = leftNav.createEl("button", { text: "<- Journaling", cls: "ng-journal-nav-button" });
@@ -9182,6 +9801,7 @@ var NeuralGardenWeeklyRecapView = class extends import_obsidian7.ItemView {
       await this.openJournalingView(true, this.leaf);
     });
     const intro = wrap.createDiv({ cls: "ng-weekly-intro" });
+    intro.dataset.weeklySection = "intro";
     intro.createEl("h3", { text: "This is your Weekly Recap" });
     const start = frontmatter.processedDateRange.start;
     const end = frontmatter.processedDateRange.end;
@@ -9189,6 +9809,7 @@ var NeuralGardenWeeklyRecapView = class extends import_obsidian7.ItemView {
       intro.createDiv({ cls: "ng-weekly-intro-subtitle", text: `${start} to ${end}` });
     }
     const symptoms = wrap.createDiv({ cls: "ng-weekly-section" });
+    symptoms.dataset.weeklySection = "symptoms";
     symptoms.createEl("h4", { text: "Symptom Recap", cls: "ng-weekly-section-heading" });
     const symptomRows = [
       { label: "Mood", value: frontmatter.averages.mood, highIsBad: false },
@@ -9216,6 +9837,7 @@ var NeuralGardenWeeklyRecapView = class extends import_obsidian7.ItemView {
       symptomBlocks.push({ block, name, bar, copy });
     }
     const emotions = wrap.createDiv({ cls: "ng-weekly-section" });
+    emotions.dataset.weeklySection = "emotions";
     emotions.createEl("h4", { text: "Emotions", cls: "ng-weekly-section-heading" });
     const emotionalBalance = frontmatter.emotionCounts.pleasantTotal - frontmatter.emotionCounts.unpleasantTotal;
     const polarity = Math.max(-100, Math.min(100, emotionalBalance * 12));
@@ -9230,6 +9852,7 @@ var NeuralGardenWeeklyRecapView = class extends import_obsidian7.ItemView {
     const emotionTokens = renderMixedEmotionCloud(emotionCloud, frontmatter.emotionCounts.unpleasant, frontmatter.emotionCounts.pleasant);
     emotionTokens.forEach((token) => token.addClass("ng-weekly-fragment-hidden"));
     const trackers = wrap.createDiv({ cls: "ng-weekly-section" });
+    trackers.dataset.weeklySection = "trackers";
     trackers.createEl("h4", { text: "Tracker", cls: "ng-weekly-section-heading" });
     const trackerRows = Object.entries(frontmatter.trackerCounts).sort((a, b) => b[1] - a[1]).filter(([, count]) => count > 0);
     if (trackerRows.length === 0) {
@@ -9250,6 +9873,7 @@ var NeuralGardenWeeklyRecapView = class extends import_obsidian7.ItemView {
       }
     }
     const critical = wrap.createDiv({ cls: "ng-weekly-section ng-weekly-critical-section" });
+    critical.dataset.weeklySection = "critical";
     critical.createEl("h4", { text: "Critical Days", cls: "ng-weekly-section-heading" });
     const criticalDays = groupCriticalDays(frontmatter.criticalDays);
     const criticalFragments = [];
@@ -9268,6 +9892,7 @@ var NeuralGardenWeeklyRecapView = class extends import_obsidian7.ItemView {
       }
     }
     const highlights = wrap.createDiv({ cls: "ng-weekly-section ng-weekly-highlights-section" });
+    highlights.dataset.weeklySection = "highlights";
     highlights.createEl("h4", { text: "This week's highlights", cls: "ng-weekly-section-heading" });
     highlights.createDiv({
       cls: "ng-weekly-inline-copy ng-weekly-highlights-subtext",
@@ -9312,7 +9937,7 @@ var NeuralGardenWeeklyRecapView = class extends import_obsidian7.ItemView {
         link.addEventListener("click", async () => {
           const target = this.app.vault.getMarkdownFiles().find((file) => file.basename === note && file.path.startsWith(`${NOTES_FOLDER}/`));
           if (!target) {
-            new import_obsidian7.Notice(`Support note not found: ${note}`);
+            new import_obsidian8.Notice(`Support note not found: ${note}`);
             return;
           }
           await this.app.workspace.getLeaf(true).openFile(target);
@@ -9324,7 +9949,7 @@ var NeuralGardenWeeklyRecapView = class extends import_obsidian7.ItemView {
           event.preventDefault();
           const target = this.app.vault.getMarkdownFiles().find((file) => file.basename === note && file.path.startsWith(`${NOTES_FOLDER}/`));
           if (!target) {
-            new import_obsidian7.Notice(`Support note not found: ${note}`);
+            new import_obsidian8.Notice(`Support note not found: ${note}`);
             return;
           }
           await this.app.workspace.getLeaf(true).openFile(target);
@@ -9339,11 +9964,13 @@ var NeuralGardenWeeklyRecapView = class extends import_obsidian7.ItemView {
       }
     }
     const tasks = wrap.createDiv({ cls: "ng-weekly-section" });
+    tasks.dataset.weeklySection = "adjustments";
     tasks.createEl("h4", { text: "Adjustments", cls: "ng-weekly-section-heading" });
     renderTaskDeltaLine(tasks, "Weekly energy capacity", frontmatter.taskAdjustments.maxEnergy.from, frontmatter.taskAdjustments.maxEnergy.to, 200);
     renderTaskDeltaLine(tasks, "Break frequency", frontmatter.taskAdjustments.forcedBreakThreshold.from, frontmatter.taskAdjustments.forcedBreakThreshold.to, 100);
     renderTaskDeltaLine(tasks, "Break length", frontmatter.taskAdjustments.forcedBreakLength.from, frontmatter.taskAdjustments.forcedBreakLength.to, 60);
     const nextWeekTasks = wrap.createDiv({ cls: "ng-weekly-section" });
+    nextWeekTasks.dataset.weeklySection = "next-tasks";
     nextWeekTasks.createEl("h4", { text: "Next week's tasks", cls: "ng-weekly-section-heading" });
     this.renderNextWeekTaskPlanner(nextWeekTasks, frontmatter.nextWeekTasks);
     const sections = [symptoms, emotions, trackers, critical, highlights, support, tasks, nextWeekTasks];
@@ -9470,12 +10097,12 @@ var NeuralGardenWeeklyRecapView = class extends import_obsidian7.ItemView {
     };
     this.weeklyTaskSaveChain = this.weeklyTaskSaveChain.catch(() => void 0).then(async () => {
       const file = this.app.vault.getAbstractFileByPath(filePath);
-      if (!(file instanceof import_obsidian7.TFile)) {
+      if (!(file instanceof import_obsidian8.TFile)) {
         return;
       }
       await this.journalingStorage.saveWeeklyRecap(file, frontmatter, body);
     }).catch(() => {
-      new import_obsidian7.Notice("Could not save next week's tasks.");
+      new import_obsidian8.Notice("Could not save next week's tasks.");
     });
   }
   async playSymptomBuildup(section, blocks) {
@@ -9735,7 +10362,7 @@ function shuffle(items) {
 }
 
 // src/journalingStorage.ts
-var import_obsidian8 = require("obsidian");
+var import_obsidian9 = require("obsidian");
 var FRONTMATTER_REGEX = /^---\n[\s\S]*?\n---\n?/;
 var ENTRY_HEADING_REGEX = /^# Entry\s*(?:\n|\r\n)+/i;
 var JournalingStorage = class {
@@ -9755,7 +10382,7 @@ var JournalingStorage = class {
   }
   async readDailyEntryByDate(dateKey) {
     const file = this.app.vault.getAbstractFileByPath(`${JOURNAL_DAILY_FOLDER}/${dateKey}.md`);
-    if (!(file instanceof import_obsidian8.TFile)) {
+    if (!(file instanceof import_obsidian9.TFile)) {
       return null;
     }
     return this.readDailyEntry(file);
@@ -9771,7 +10398,7 @@ var JournalingStorage = class {
   async ensureWeeklyRecapFile(year, week) {
     const path = this.weeklyRecapPath(year, week);
     const existing = this.app.vault.getAbstractFileByPath(path);
-    if (existing instanceof import_obsidian8.TFile) {
+    if (existing instanceof import_obsidian9.TFile) {
       return existing;
     }
     await this.ensureFolderExists(JOURNAL_WEEKLY_FOLDER);
@@ -9781,7 +10408,7 @@ var JournalingStorage = class {
 `);
     } catch (e) {
       const createdByOtherCall = this.app.vault.getAbstractFileByPath(path);
-      if (createdByOtherCall instanceof import_obsidian8.TFile) {
+      if (createdByOtherCall instanceof import_obsidian9.TFile) {
         return createdByOtherCall;
       }
       throw new Error(`Failed to create weekly recap at ${path}`);
@@ -9810,8 +10437,8 @@ ${body.replace(/^\s+/, "")}`;
     const fileName = sanitizeFileName(name);
     const path = `${TRACKER_FOLDER}/${fileName}.md`;
     const existing = this.app.vault.getAbstractFileByPath(path);
-    const dates = existing instanceof import_obsidian8.TFile ? (await this.readTracker(existing)).dates : [];
-    const file = existing instanceof import_obsidian8.TFile ? existing : await this.createTrackerFile(path, name, color, dates);
+    const dates = existing instanceof import_obsidian9.TFile ? (await this.readTracker(existing)).dates : [];
+    const file = existing instanceof import_obsidian9.TFile ? existing : await this.createTrackerFile(path, name, color, dates);
     const frontmatter = { Date: dates, color };
     await this.writeTrackerFile(file, name, frontmatter, dates);
     return { file, name, frontmatter, dates, color };
@@ -9825,7 +10452,7 @@ ${body.replace(/^\s+/, "")}`;
   }
   async ensureDailyFile(dateKey) {
     const existing = this.app.vault.getAbstractFileByPath(`${JOURNAL_DAILY_FOLDER}/${dateKey}.md`);
-    if (existing instanceof import_obsidian8.TFile) {
+    if (existing instanceof import_obsidian9.TFile) {
       return existing;
     }
     await this.ensureFolderExists(JOURNAL_DAILY_FOLDER);
@@ -9833,7 +10460,7 @@ ${body.replace(/^\s+/, "")}`;
       return await this.app.vault.create(`${JOURNAL_DAILY_FOLDER}/${dateKey}.md`, this.buildDailyContent(defaultDailyFrontmatter(dateKey), ""));
     } catch (e) {
       const createdByOtherCall = this.app.vault.getAbstractFileByPath(`${JOURNAL_DAILY_FOLDER}/${dateKey}.md`);
-      if (createdByOtherCall instanceof import_obsidian8.TFile) {
+      if (createdByOtherCall instanceof import_obsidian9.TFile) {
         return createdByOtherCall;
       }
       throw new Error(`Failed to create daily journal file for ${dateKey}`);
@@ -9864,7 +10491,7 @@ ${body.replace(/^\s+/, "")}`;
       return await this.app.vault.create(path, content);
     } catch (e) {
       const createdByOtherCall = this.app.vault.getAbstractFileByPath(path);
-      if (createdByOtherCall instanceof import_obsidian8.TFile) {
+      if (createdByOtherCall instanceof import_obsidian9.TFile) {
         return createdByOtherCall;
       }
       throw new Error(`Failed to create tracker note at ${path}`);
@@ -9895,7 +10522,7 @@ ${content}`;
     if (!match) {
       return {};
     }
-    const parsed = (0, import_obsidian8.parseYaml)(match[0].replace(/^---\n|\n---\n?$/g, ""));
+    const parsed = (0, import_obsidian9.parseYaml)(match[0].replace(/^---\n|\n---\n?$/g, ""));
     return parsed != null ? parsed : {};
   }
   extractEntryBody(content) {
@@ -9904,7 +10531,7 @@ ${content}`;
   }
   serializeFrontmatter(frontmatter) {
     return `---
-${(0, import_obsidian8.stringifyYaml)(frontmatter).replace(/\s+$/, "")}
+${(0, import_obsidian9.stringifyYaml)(frontmatter).replace(/\s+$/, "")}
 ---`;
   }
   normalizeDailyFrontmatter(raw, fallbackDate) {
@@ -10174,7 +10801,7 @@ function snapshotArray(value) {
 }
 
 // src/myNotesStorage.ts
-var import_obsidian9 = require("obsidian");
+var import_obsidian10 = require("obsidian");
 function stripLink(value) {
   if (typeof value !== "string") {
     return "";
@@ -10339,7 +10966,7 @@ var MyNotesStorage = class {
   }
   async ensureCategoriesFile() {
     const existing = this.app.vault.getAbstractFileByPath(MY_NOTES_CATEGORIES_FILE_PATH);
-    if (existing instanceof import_obsidian9.TFile) {
+    if (existing instanceof import_obsidian10.TFile) {
       return existing;
     }
     await this.ensureFolderExists(MY_NOTES_MAINTENANCE_FOLDER);
@@ -10347,7 +10974,7 @@ var MyNotesStorage = class {
       return await this.app.vault.create(MY_NOTES_CATEGORIES_FILE_PATH, "---\ncategories: {}\n---\n# Categories\n");
     } catch (e) {
       const createdByOtherCall = this.app.vault.getAbstractFileByPath(MY_NOTES_CATEGORIES_FILE_PATH);
-      if (createdByOtherCall instanceof import_obsidian9.TFile) {
+      if (createdByOtherCall instanceof import_obsidian10.TFile) {
         return createdByOtherCall;
       }
       throw new Error(`Failed to create categories file at ${MY_NOTES_CATEGORIES_FILE_PATH}`);
@@ -10468,7 +11095,7 @@ var MyNotesStorage = class {
     if (!trimmed) {
       return false;
     }
-    return this.app.vault.getAbstractFileByPath(`${NOTES_FOLDER}/${trimmed}.md`) instanceof import_obsidian9.TFile;
+    return this.app.vault.getAbstractFileByPath(`${NOTES_FOLDER}/${trimmed}.md`) instanceof import_obsidian10.TFile;
   }
   async createNote(name) {
     const trimmed = this.sanitizeNoteName(name);
@@ -10477,7 +11104,7 @@ var MyNotesStorage = class {
     }
     const path = `${NOTES_FOLDER}/${trimmed}.md`;
     const existing = this.app.vault.getAbstractFileByPath(path);
-    if (existing instanceof import_obsidian9.TFile) {
+    if (existing instanceof import_obsidian10.TFile) {
       return existing;
     }
     await this.ensureFolderExists(NOTES_FOLDER);
@@ -10628,7 +11255,7 @@ var MyNotesStorage = class {
 };
 
 // src/noteHeader.ts
-var import_obsidian10 = require("obsidian");
+var import_obsidian11 = require("obsidian");
 var NoteHeaderManager = class {
   constructor(app, myNotesStorage, myLearningStorage, openHomeView, openMyNotesView, openMyLearningView) {
     this.app = app;
@@ -10642,7 +11269,7 @@ var NoteHeaderManager = class {
   sync() {
     for (const leaf of this.app.workspace.getLeavesOfType("markdown")) {
       const view = leaf.view;
-      if (!(view instanceof import_obsidian10.MarkdownView)) {
+      if (!(view instanceof import_obsidian11.MarkdownView)) {
         continue;
       }
       const content = view.containerEl.querySelector(".view-content");
@@ -10696,7 +11323,7 @@ var NoteHeaderManager = class {
       const state = leaf.getViewState().state;
       const path = typeof (state == null ? void 0 : state.file) === "string" ? state.file : "";
       const file = path ? this.app.vault.getAbstractFileByPath(path) : null;
-      const selection = file instanceof import_obsidian10.TFile ? this.myLearningStorage.getCanvasSelection(file) : null;
+      const selection = file instanceof import_obsidian11.TFile ? this.myLearningStorage.getCanvasSelection(file) : null;
       const existing = container.querySelector(":scope > .ng-learning-canvas-controls");
       if (!selection) {
         existing == null ? void 0 : existing.remove();
@@ -10928,8 +11555,8 @@ var NoteHeaderManager = class {
     myNotesButton.addEventListener("click", async () => {
       await this.openMyNotesView(true, leaf);
     });
-    const homeButton = navRight.createEl("button", { text: "Home", cls: "ng-journal-nav-button" });
-    homeButton.addEventListener("click", async () => {
+    const homeButton2 = navRight.createEl("button", { text: "Home", cls: "ng-journal-nav-button" });
+    homeButton2.addEventListener("click", async () => {
       await this.openHomeView(true, leaf);
     });
     const stage = header.createDiv({ cls: "ng-note-header-stage" });
@@ -10974,11 +11601,11 @@ var NoteHeaderManager = class {
     addButton.setAttribute("title", "Add Category");
     const supportButton = categoriesActions.createEl("button", { cls: "ng-note-header-support-toggle" });
     supportButton.setAttribute("aria-label", "Toggle Support Note");
-    (0, import_obsidian10.setIcon)(supportButton, "shield-plus");
+    (0, import_obsidian11.setIcon)(supportButton, "shield-plus");
     const favouriteButton = categoriesActions.createEl("button", { cls: "ng-note-header-fav" });
     favouriteButton.setAttribute("aria-label", "Favourite");
     favouriteButton.setAttribute("title", "Favourite");
-    (0, import_obsidian10.setIcon)(favouriteButton, "heart");
+    (0, import_obsidian11.setIcon)(favouriteButton, "heart");
     const syncFavouriteButtons = (isFavourite) => {
       favouriteButton.toggleClass("is-favourite", isFavourite);
     };
@@ -11114,8 +11741,8 @@ var NoteHeaderManager = class {
       const selectedTopic = this.myLearningStorage.getNoteTopics(file)[0];
       await this.openMyLearningView(true, leaf, selectedCategory, selectedTopic);
     });
-    const homeButton = rightNav.createEl("button", { text: "Home", cls: "ng-journal-nav-button" });
-    homeButton.addEventListener("click", async () => {
+    const homeButton2 = rightNav.createEl("button", { text: "Home", cls: "ng-journal-nav-button" });
+    homeButton2.addEventListener("click", async () => {
       await this.openHomeView(true, leaf);
     });
     const stage = header.createDiv({ cls: "ng-note-header-stage" });
@@ -11378,12 +12005,14 @@ var NoteHeaderManager = class {
 };
 
 // src/settings.ts
-var import_obsidian11 = require("obsidian");
+var import_obsidian12 = require("obsidian");
 var DEFAULT_SETTINGS = {
   breakModeEnabled: true,
   generalColor: "#ec9a63",
   hoverColor: "#ffd2b0",
-  highlightColor: "#00f0ff"
+  highlightColor: "#00f0ff",
+  onboardingCompleted: false,
+  onboardingDemo: null
 };
 var APPEARANCE_SETTING_KEYS = [
   "generalColor",
@@ -11395,7 +12024,7 @@ var APPEARANCE_CSS_VARIABLES = {
   hoverColor: "--ng-color-hover",
   highlightColor: "--ng-color-highlight"
 };
-var NeuralGardenSettingTab = class extends import_obsidian11.PluginSettingTab {
+var NeuralGardenSettingTab = class extends import_obsidian12.PluginSettingTab {
   constructor(plugin) {
     super(plugin.app, plugin);
     this.plugin = plugin;
@@ -11420,17 +12049,27 @@ var NeuralGardenSettingTab = class extends import_obsidian11.PluginSettingTab {
       "Available actions, current dates, and selected calendar days.",
       "highlightColor"
     );
-    new import_obsidian11.Setting(containerEl).setName("Restore all original colors").setDesc("Return every color group to the original Neural Garden palette.").addButton((button) => button.setButtonText("Restore all").onClick(async () => {
+    new import_obsidian12.Setting(containerEl).setName("Restore all original colors").setDesc("Return every color group to the original Neural Garden palette.").addButton((button) => button.setButtonText("Restore all").onClick(async () => {
       await this.plugin.resetAllAppearanceColors();
       this.display();
     }));
     containerEl.createEl("h3", { text: "Breaks" });
-    new import_obsidian11.Setting(containerEl).setName("Break mode").setDesc("Enable energy-based breaks, including the Task Manager lock and break timer.").addToggle((toggle) => toggle.setValue(this.plugin.settings.breakModeEnabled).onChange(async (value) => {
+    new import_obsidian12.Setting(containerEl).setName("Break mode").setDesc("Enable energy-based breaks, including the Task Manager lock and break timer.").addToggle((toggle) => toggle.setValue(this.plugin.settings.breakModeEnabled).onChange(async (value) => {
       await this.plugin.setBreakModeEnabled(value);
+    }));
+    containerEl.createEl("h3", { text: "Help and onboarding" });
+    new import_obsidian12.Setting(containerEl).setName("Full introduction").setDesc("Replay the complete explanation without creating temporary demo data.").addButton((button) => button.setButtonText("Replay").onClick(async () => {
+      await this.plugin.replayFullWalkthrough();
+    }));
+    let selectedSection = "home";
+    new import_obsidian12.Setting(containerEl).setName("Section walkthrough").setDesc("Choose the part of Neural Garden you want explained.").addDropdown((dropdown) => dropdown.addOption("home", "Home and Task Manager").addOption("mynotes", "MyNotes").addOption("mylearning", "MyLearning").addOption("journaling", "Journaling").setValue(selectedSection).onChange((value) => {
+      selectedSection = value;
+    })).addButton((button) => button.setButtonText("Replay").onClick(async () => {
+      await this.plugin.openWalkthrough(selectedSection);
     }));
   }
   addColorGroup(name, description, key) {
-    new import_obsidian11.Setting(this.containerEl).setName(name).setDesc(description).addColorPicker((picker) => picker.setValue(this.plugin.settings[key]).onChange(async (value) => {
+    new import_obsidian12.Setting(this.containerEl).setName(name).setDesc(description).addColorPicker((picker) => picker.setValue(this.plugin.settings[key]).onChange(async (value) => {
       await this.plugin.setAppearanceColor(key, value);
     })).addButton((button) => button.setButtonText("Reset").onClick(async () => {
       await this.plugin.resetAppearanceColor(key);
@@ -11440,14 +12079,14 @@ var NeuralGardenSettingTab = class extends import_obsidian11.PluginSettingTab {
 };
 
 // src/storage.ts
-var import_obsidian12 = require("obsidian");
+var import_obsidian13 = require("obsidian");
 var TaskManagerStorage = class {
   constructor(app) {
     this.app = app;
   }
   async ensureTaskManagerFile() {
     const existing = this.app.vault.getAbstractFileByPath(TASK_MANAGER_FILE_PATH);
-    if (existing instanceof import_obsidian12.TFile) {
+    if (existing instanceof import_obsidian13.TFile) {
       return existing;
     }
     const folderPath = TASK_MANAGER_FILE_PATH.split("/").slice(0, -1).join("/");
@@ -11461,7 +12100,7 @@ var TaskManagerStorage = class {
       return await this.app.vault.create(TASK_MANAGER_FILE_PATH, fileContent);
     } catch (e) {
       const createdByOtherCall = this.app.vault.getAbstractFileByPath(TASK_MANAGER_FILE_PATH);
-      if (createdByOtherCall instanceof import_obsidian12.TFile) {
+      if (createdByOtherCall instanceof import_obsidian13.TFile) {
         return createdByOtherCall;
       }
       throw new Error(`Failed to create task manager file at ${TASK_MANAGER_FILE_PATH}`);
@@ -11519,10 +12158,10 @@ ${content}`;
     if (!match) {
       return {};
     }
-    return (_a = (0, import_obsidian12.parseYaml)(match[1])) != null ? _a : {};
+    return (_a = (0, import_obsidian13.parseYaml)(match[1])) != null ? _a : {};
   }
   serializeFrontmatter(state) {
-    const yaml = (0, import_obsidian12.stringifyYaml)(state).replace(/\s+$/, "");
+    const yaml = (0, import_obsidian13.stringifyYaml)(state).replace(/\s+$/, "");
     return `---
 ${yaml}
 ---`;
@@ -11530,7 +12169,7 @@ ${yaml}
 };
 
 // src/weeklyRecapManager.ts
-var import_obsidian13 = require("obsidian");
+var import_obsidian14 = require("obsidian");
 var POSITIVE_EMOTIONS = /* @__PURE__ */ new Set([
   "Happy",
   "Relaxed",
@@ -11662,14 +12301,14 @@ var WeeklyRecapManager = class {
     var _a, _b, _c, _d, _e;
     const parsed = parseWeekFile(file.basename);
     if (!parsed) {
-      new import_obsidian13.Notice("Invalid weekly recap name.");
+      new import_obsidian14.Notice("Invalid weekly recap name.");
       return false;
     }
     const range = isoWeekRange(parsed.year, parsed.week);
     const allEntries = await this.journalingStorage.listDailyEntries();
     const entries = allEntries.filter((entry) => entry.frontmatter.date >= range.start && entry.frontmatter.date <= range.end);
     if (entries.length < 4) {
-      new import_obsidian13.Notice("This week needs at least 4 entries.");
+      new import_obsidian14.Notice("This week needs at least 4 entries.");
       return false;
     }
     const averages = {
@@ -11915,8 +12554,1064 @@ function unique(items) {
   return [...new Set(items)];
 }
 
+// src/walkthroughs.ts
+var WalkthroughManager = class {
+  constructor(navigation, callbacks, demo) {
+    this.navigation = navigation;
+    this.callbacks = callbacks;
+    this.demo = demo;
+    this.tour = new NeuralGardenTour();
+  }
+  get isActive() {
+    return this.tour.isActive;
+  }
+  async startFirstRun() {
+    await this.demo.begin();
+    await this.tour.start(this.allSteps(true), {
+      label: "Introduction",
+      onComplete: async () => {
+        try {
+          await this.navigation.closeAllTourWindows();
+          await this.navigation.openHome();
+          await this.callbacks.onFirstRunComplete();
+        } finally {
+          await this.demo.cleanup();
+        }
+      },
+      onSkip: async () => {
+        try {
+          await this.navigation.closeAllTourWindows();
+          await this.navigation.openHome();
+          await this.callbacks.onFirstRunSkip();
+        } finally {
+          await this.demo.cleanup();
+        }
+      }
+    });
+  }
+  async startFullReplay() {
+    await this.tour.start(this.allSteps(false), { label: "Full walkthrough" });
+  }
+  async startSection(section) {
+    await this.tour.start(this.stepsFor(section), {
+      label: sectionLabel(section)
+    });
+  }
+  async close() {
+    await this.tour.close(false);
+  }
+  allSteps(interactive) {
+    return [
+      ...interactive ? withInterface("Home", [this.welcomeStep()]) : [],
+      ...withInterface("Home", this.homeSteps(interactive)),
+      ...withInterface("MyNotes", this.myNotesSteps(interactive)),
+      ...interactive ? withInterface("MyNotes", this.myNotesExercise()) : [],
+      ...withInterface("MyLearning", this.myLearningSteps(interactive)),
+      ...interactive ? withInterface("MyLearning", this.myLearningExercise()) : [],
+      ...withInterface("Journaling", this.journalingSteps(interactive)),
+      ...interactive ? this.journalingExercise() : []
+    ];
+  }
+  welcomeStep() {
+    return {
+      title: "Welcome to Neural Garden",
+      description: "Hello, welcome to Neural Garden. I will give you a short tour of how things work around here, explain the main areas, and let you try some of them yourself.",
+      target: activeTarget(".neural-garden-home"),
+      before: this.navigation.openHome,
+      progressText: "Welcome",
+      countInProgress: false,
+      highlightMessage: true
+    };
+  }
+  stepsFor(section) {
+    if (section === "home") {
+      return withInterface("Home", this.homeSteps(false));
+    }
+    if (section === "mynotes") {
+      return withInterface("MyNotes", this.myNotesSteps(false));
+    }
+    if (section === "mylearning") {
+      return withInterface("MyLearning", this.myLearningSteps(false));
+    }
+    return withInterface("Journaling", this.journalingSteps(false));
+  }
+  homeSteps(interactive) {
+    const open = this.navigation.openHome;
+    const steps = [
+      {
+        title: "Home",
+        description: "Home brings the main Neural Garden workflows together. The highlighted sections are live views of your notes, learning, journal, and current workload.",
+        target: activeTarget(".neural-garden-home"),
+        before: open
+      },
+      {
+        title: "Main sections",
+        description: "These buttons take you to Journaling, MyNotes, or MyLearning. QuickNote creates a note directly in the Quick Notes category.",
+        target: activeTarget(".ng-category-grid")
+      },
+      {
+        title: "Task energy",
+        description: "Enter a task and choose the effort it will cost. The energy bar totals all created tasks, so effort stays visible before you commit to more work.",
+        target: activeTarget(".ng-task-form")
+      },
+      {
+        title: "Current tasks",
+        description: "Clicking a task completes it and records its energy for journaling. Edit changes its name, while the remove control deletes it without completing it.",
+        target: activeTarget(".ng-task-list"),
+        before: interactive ? async () => {
+          await this.demo.seedHomeTask();
+          await this.navigation.refreshHome();
+        } : void 0
+      },
+      {
+        title: "Break Mode",
+        description: "When Break mode is enabled in Settings, completed tasks build toward a forced break. During that break the Task Manager locks until its recovery timer finishes.",
+        target: activeTarget(".ng-task-manager")
+      }
+    ];
+    if (interactive) {
+      steps.push(
+        {
+          title: "Choose Break mode",
+          description: "Would you like to use forced breaks? They work best when Neural Garden is used across a phone and a tablet or computer, and are not advised for computer-only use.",
+          target: activeTarget(".ng-task-manager"),
+          choices: [
+            { label: "Use forced breaks", onSelect: () => this.navigation.setBreakMode(true) },
+            { label: "Do not use forced breaks", onSelect: () => this.navigation.setBreakMode(false) }
+          ]
+        },
+        {
+          title: "Go to MyNotes",
+          description: "Select MyNotes to continue. This is where you can create, organize, and find your personal notes.",
+          target: homeButton("MyNotes"),
+          interaction: { event: "click" }
+        }
+      );
+    }
+    return steps;
+  }
+  myNotesSteps(interactive) {
+    const open = this.navigation.openMyNotes;
+    const steps = [
+      {
+        title: "MyNotes",
+        description: "MyNotes keeps your notes organized so they remain easy to find and revisit.",
+        target: activeTarget(".ng-mynotes"),
+        before: open
+      },
+      {
+        title: "Find notes",
+        description: "Search checks note names and content. Combining search with a selected category narrows only that category's notes.",
+        target: activeTarget(".ng-mynotes-search")
+      },
+      {
+        title: "Categories, Favourites and Quick Notes",
+        description: "Category buttons filter the list. Use the plus and pencil beside Categories to create or edit categories, and use the New button to create a note.",
+        target: activeTarget(".ng-mynotes-categories .ng-mynotes-section-header")
+      },
+      {
+        title: "Support-note filters",
+        description: "These symptom pills show notes assigned to Mood, Sleep, Regulation, Stress, Anxiety, Exhaustion, Sensory Load, or Social Load support.",
+        target: activeTarget(".ng-mynotes-support")
+      },
+      {
+        title: "How support notes work",
+        description: "Open a note, enable its shield control, and assign the symptoms it can help with. Weekly Recap compares those assignments with journal patterns, then suggests matching notes and hints on Home.",
+        target: activeTarget(".ng-mynotes-support")
+      },
+      {
+        title: "Uncategorized notes",
+        description: "Notes with no category remain available here. Expand the section to find and organize files that have not been assigned yet.",
+        target: activeTarget(".ng-mynotes-subheading-toggle")
+      }
+    ];
+    if (interactive) {
+      const categoryName = `Main Category ${this.demo.nameSuffix}`;
+      steps.splice(
+        3,
+        0,
+        {
+          title: "Create a main category",
+          description: "Use the plus in the main Categories section to create a category for organizing your notes.",
+          target: activeTarget(".ng-mynotes-categories .ng-mylearning-inline-plus"),
+          interaction: { event: "click" }
+        },
+        {
+          title: "Name the category",
+          description: "Give the category a name. Creating it also selects it, so the next note you create is assigned there automatically.",
+          target: overlayTarget('input[placeholder="Category name..."]'),
+          before: () => setOverlayInput('input[placeholder="Category name..."]', categoryName)
+        },
+        {
+          title: "Create the category",
+          description: "Select Create to add the category to the main category list.",
+          target: overlayTarget(".ng-overlay-confirm"),
+          interaction: { event: "click" }
+        },
+        {
+          title: "Favourites and Quick Notes",
+          description: "Favourites collects notes marked with a heart. Quick Notes contains notes created through Home's QuickNote button, while your custom categories appear beside them.",
+          target: activeTarget(".ng-mynotes-categories .ng-mynotes-pill-row")
+        }
+      );
+    }
+    return steps;
+  }
+  myLearningSteps(interactive) {
+    const steps = [];
+    if (interactive) {
+      steps.push({
+        title: "Go to MyLearning",
+        description: "Select MyLearning to continue and explore the tools that support your learning.",
+        target: homeButton("MyLearning"),
+        interaction: { event: "click" }
+      });
+    }
+    steps.push(
+      {
+        title: "MyLearning",
+        description: "MyLearning helps you learn, whether you are exploring something new, need support with school, or want a place to work through any other subject.",
+        target: activeTarget(".ng-mylearning"),
+        before: interactive ? void 0 : this.navigation.openMyLearning
+      },
+      {
+        title: "Learning search",
+        description: "Search looks through note names, categories, topics, and the written content of your learning notes. Select a result to open it.",
+        target: activeTarget(".ng-mylearning-search input")
+      },
+      {
+        title: "Daily learning",
+        description: "Today's date is always highlighted. Selecting it creates today's learning note when none exists. Selecting a day with a note being present opens a pop-up where you can open the note or mark it as finished.",
+        target: activeTarget(".ng-mylearning-daily-calendar")
+      },
+      {
+        title: "Categories",
+        description: "Categories are the top level of the learning hierarchy. Their progress summaries combine comprehension from the entries assigned beneath them.",
+        target: activeTarget(".ng-mylearning-topics")
+      },
+      {
+        title: "Topics",
+        description: "Selecting a category reveals its topics. Topics narrow the visible entries and can carry their own colour and progress summary.",
+        target: activeTarget(".ng-mylearning-categories", ".ng-mylearning-topics")
+      },
+      {
+        title: "Notes and canvases",
+        description: "New notes and canvases are placed under the category and topic you selected. Open one to read or work on it and update your learning progress.",
+        target: activeTarget(".ng-mylearning-notes", ".ng-mylearning")
+      }
+    );
+    return steps;
+  }
+  journalingSteps(interactive) {
+    const steps = [];
+    if (interactive) {
+      steps.push({
+        title: "Go to Journaling",
+        description: "Return to Home and select Journaling to continue with daily entries, trackers, and Weekly Recaps.",
+        target: homeButton("Journaling"),
+        interaction: { event: "click" }
+      });
+    }
+    steps.push(
+      {
+        title: "Journal Hub",
+        description: "The Journal Hub combines daily check-ins, weekly recaps, and trackers. Its calendar is the entry point for both individual days and completed weeks.",
+        target: activeTarget(".ng-journaling"),
+        before: interactive ? void 0 : this.navigation.openJournaling
+      },
+      {
+        title: "Daily entries",
+        description: "New Entry opens today's check-in. A date with a dot has saved journal data; select it once for a preview and again to open the complete entry.",
+        target: activeTarget(".ng-journal-calendar-panel")
+      },
+      {
+        title: "Weekly recaps",
+        description: "The weekday headings organize daily entries, while the Week column opens Weekly Recaps. A week becomes available after enough daily entries; select it once for a preview and again to generate or open its recap.",
+        target: activeTarget(".ng-journal-calendar-grid")
+      },
+      {
+        title: "Trackers",
+        description: "Trackers record whether a habit or event occurred on each date. Add Tracker creates a named color row; journal entries let you toggle that tracker for their date.",
+        target: activeTarget(".ng-journal-trackers")
+      }
+    );
+    return steps;
+  }
+  myNotesExercise() {
+    const noteName = `NG Demo Support ${this.demo.nameSuffix}`;
+    const categoryName = `Helpful ${this.demo.nameSuffix}`;
+    const mainCategoryName = `Main Category ${this.demo.nameSuffix}`;
+    return [
+      {
+        title: "Try it: create a note",
+        description: "Use the New button to open the note creator.",
+        target: activeTarget(".ng-mynotes-new-button"),
+        before: () => this.navigation.openMyNotesCategory(null),
+        interaction: { event: "click" }
+      },
+      {
+        title: "Name the demo note",
+        description: "This temporary name is unique to the current introduction. The created file is tracked and permanently removed when the introduction ends.",
+        target: overlayTarget('input[placeholder="Note name..."]'),
+        before: () => setOverlayInput('input[placeholder="Note name..."]', noteName)
+      },
+      {
+        title: "Create the note",
+        description: "Create opens the Markdown note with Neural Garden's note header attached above the editor.",
+        target: overlayTarget(".ng-overlay-confirm"),
+        before: () => this.demo.expectCreatedFiles(["Notes/"]),
+        interaction: { event: "click" }
+      },
+      {
+        title: "Add a category",
+        description: "Use the plus beside Categories to create a category directly from this note.",
+        target: activeTarget(".ng-note-header-box .ng-note-header-add-category-icon"),
+        interaction: { event: "click" }
+      },
+      {
+        title: "Name the category",
+        description: "Give the category a name. Categories help you group notes that belong together.",
+        target: activeTarget('.ng-note-header-add-row input[placeholder="Category name..."]'),
+        before: () => setActiveInput('.ng-note-header-add-row input[placeholder="Category name..."]', categoryName)
+      },
+      {
+        title: "Create and assign it",
+        description: "Select the checkmark to create the category and assign it to this note at the same time.",
+        target: activeTarget(".ng-note-header-box .ng-note-header-add-category-icon.has-input"),
+        interaction: { event: "click" }
+      },
+      {
+        title: "Assigned category",
+        description: "Both existing categories are shown here. Helpful is already selected; select the unselected Main Category to assign this note to both.",
+        target: activeTarget(".ng-note-header-box .ng-mynotes-pill-row"),
+        interaction: {
+          event: "click",
+          target: activeTextTarget(".ng-note-header-category-pill:not(.is-active)", mainCategoryName)
+        }
+      },
+      {
+        title: "Favourite this note",
+        description: "Select the heart in the note heading to mark this note as a favourite. Favourite notes are collected in MyNotes' Favourites category.",
+        target: activeTarget(".ng-note-header-fav"),
+        interaction: { event: "click" }
+      },
+      {
+        title: "Enable support",
+        description: "The shield marks this file as a support note. This reveals symptom assignments without changing the note's ordinary Markdown body.",
+        target: activeTarget(".ng-note-header-support-toggle"),
+        interaction: { event: "click" }
+      },
+      {
+        title: "Assign a symptom",
+        description: "Choose a symptom this note could support. Weekly Recap uses these assignments when matching difficult journal patterns to useful notes.",
+        target: activeTextTarget(".ng-note-header-support .ng-mynotes-support-pill", "Stress"),
+        interaction: {
+          event: "click",
+          target: activeTextTarget(".ng-note-header-support .ng-mynotes-support-pill", "Stress")
+        }
+      },
+      {
+        title: "Return to MyNotes",
+        description: "Use the MyNotes navigation button to return to your note list.",
+        target: activeButton("\u2190 MyNotes"),
+        interaction: { event: "click" }
+      },
+      {
+        title: "Open a listed note",
+        description: "Select the note's name or row to open it normally in the current view.",
+        target: activeTextTarget(".ng-mynotes-note-row", noteName),
+        before: () => this.navigation.openMyNotesCategory(mainCategoryName)
+      },
+      {
+        title: "Open beside MyNotes",
+        description: "This side-opening button opens the note to the right, keeping the MyNotes list visible beside it.",
+        target: activeDescendantTarget(".ng-mynotes-note-row", noteName, ".ng-mynotes-note-open-right")
+      },
+      {
+        title: "Favourite from the list",
+        description: "The heart on a listed note shows whether it is a favourite. Select the heart whenever you want to either mark or unmark it.",
+        target: activeDescendantTarget(".ng-mynotes-note-row", noteName, ".ng-mynotes-note-heart")
+      },
+      {
+        title: "Return Home",
+        description: "Use the Home navigation button to return to Neural Garden's main interface and continue to MyLearning.",
+        target: activeButton("Home"),
+        interaction: { event: "click" }
+      }
+    ];
+  }
+  myLearningExercise() {
+    const categoryName = `Demo Category ${this.demo.nameSuffix}`;
+    const topicName = `Demo Topic ${this.demo.nameSuffix}`;
+    const noteName = `NG Demo Learning ${this.demo.nameSuffix}`;
+    return [
+      {
+        title: "Try it: create a category",
+        description: "Use the plus beside Categories to add the top level of your learning hierarchy.",
+        target: activeTarget(".ng-mylearning-topics .ng-mylearning-inline-plus"),
+        interaction: { event: "click" }
+      },
+      {
+        title: "Name the category",
+        description: "Categories group related topics and summarize progress across their learning notes.",
+        target: overlayTarget('input[placeholder="Category name..."]'),
+        before: () => setOverlayInput('input[placeholder="Category name..."]', categoryName)
+      },
+      {
+        title: "Create the category",
+        description: "Creating it selects the new category and reveals its Topics section.",
+        target: overlayTarget(".ng-overlay-confirm"),
+        before: () => this.demo.expectCreatedFiles(["Learning/Categories/"]),
+        interaction: { event: "click" }
+      },
+      {
+        title: "Create a topic",
+        description: "Topics divide a category into focused areas and carry the color used by their entry indicators.",
+        target: activeTarget(".ng-mylearning-categories .ng-mylearning-inline-plus"),
+        interaction: { event: "click" }
+      },
+      {
+        title: "Name and color the topic",
+        description: "Give the topic a name and choose its color. The color indicator helps you recognize this topic throughout MyLearning.",
+        target: overlayTarget(".ng-mylearning-category-color-row"),
+        before: () => setOverlayInput('input[placeholder="Topic name..."]', topicName)
+      },
+      {
+        title: "Create the topic",
+        description: "Creating the topic selects it, so the next learning note is automatically placed under both this category and topic.",
+        target: overlayTarget(".ng-overlay-confirm"),
+        interaction: { event: "click" }
+      },
+      {
+        title: "Add a learning note",
+        description: "Use Add Note to create learning material inside the selected category and topic.",
+        target: activeTarget(".ng-mylearning-heading-add-note"),
+        interaction: { event: "click" }
+      },
+      {
+        title: "Name the learning note",
+        description: "Give the learning note a name, then it will open inside the category and topic you selected.",
+        target: overlayTarget('input[placeholder="Note name..."]'),
+        before: () => setOverlayInput('input[placeholder="Note name..."]', noteName)
+      },
+      {
+        title: "Choose Markdown or Canvas",
+        description: "Choose Markdown for a written note, or Canvas for a visual workspace where ideas can be arranged and connected.",
+        target: overlayTarget(".ng-mylearning-type-control")
+      },
+      {
+        title: "Create the learning note",
+        description: "Create opens the note. Its MyLearning heading lets you return to the selected category and topic and update your learning progress.",
+        target: overlayTarget(".ng-overlay-confirm"),
+        before: () => this.demo.expectCreatedFiles(["Learning/"]),
+        interaction: { event: "click" }
+      },
+      {
+        title: "Learning progress",
+        description: "The progress bar records how well you understand this learning note. Update it as your comprehension develops; category and topic summaries combine this progress across their entries.",
+        target: activeTarget(".ng-learning-note-box .ng-learning-progress-wrap")
+      },
+      {
+        title: "Return Home",
+        description: "Use the Home navigation button to return to Neural Garden's main interface.",
+        target: activeButton("Home"),
+        interaction: { event: "click" }
+      }
+    ];
+  }
+  journalingExercise() {
+    var _a;
+    const trackerName = `NG Demo Tracker ${this.demo.nameSuffix}`;
+    const userDate = (_a = this.demo.journalDates[3]) != null ? _a : "";
+    const supportNoteName = `NG Demo Support ${this.demo.nameSuffix}`;
+    const nextWeekTaskName = `NG Weekly Task ${this.demo.nameSuffix}`;
+    const journalSteps = [
+      {
+        title: "Try it: add a tracker",
+        description: "Open the tracker creator. The tracker you make here will also be available inside the journal entry you create next.",
+        target: activeTarget(".ng-journal-tracker-add-toggle"),
+        before: async () => {
+          await this.demo.seedJournalEntries();
+          await this.navigation.openJournalingDemoDate(userDate);
+        },
+        interaction: { event: "click" }
+      },
+      {
+        title: "Name the tracker",
+        description: "Choose a name for any habit, symptom, or recurring event that you want to follow over time.",
+        target: activeTarget('.ng-journal-tracker-add-row input[placeholder="Tracker name..."]'),
+        before: () => setActiveInput('.ng-journal-tracker-add-row input[placeholder="Tracker name..."]', trackerName)
+      },
+      {
+        title: "Choose its color",
+        description: "Selecting a color creates the tracker. Its dates will use the same color throughout Journaling.",
+        target: activeTarget(".ng-journal-tracker-color-option"),
+        before: () => this.demo.expectCreatedFiles(["Maintenance/Tracker/"]),
+        interaction: { event: "click" }
+      },
+      {
+        title: "Create a new entry",
+        description: "Select New Entry to begin the fourth daily check-in for this week.",
+        target: activeTarget(".ng-journal-create-button"),
+        interaction: { event: "click" }
+      },
+      {
+        title: "Check your tasks first",
+        description: "This warning appears because a journal entry stores a snapshot of the Task Manager at the moment it is created. Return Home if completed or unfinished tasks need correcting; otherwise continue and the current task state will be preserved in today's entry.",
+        target: () => document.querySelector(".ng-overlay-card")
+      },
+      {
+        title: "Continue to the entry",
+        description: "Continue creates the entry with the current task snapshot and opens the complete Daily Check In.",
+        target: overlayTarget(".ng-overlay-confirm"),
+        before: () => this.demo.expectCreatedFiles(["Journal/Daily/"]),
+        interaction: { event: "click" }
+      },
+      {
+        title: "Daily measurements",
+        description: "These eight measurements describe different parts of the day. Each progress bar stores a value from low to high, while its color and message help explain what the selected value means.",
+        target: activeTarget(".ng-journal-metrics"),
+        before: async () => {
+          await this.demo.seedJournalEntryMeasurements(userDate);
+          await this.navigation.openJournalEntry(userDate);
+        }
+      },
+      {
+        title: "Other daily sections",
+        description: "Below the measurements, Daily Check In also includes emotions, tracker updates, one good thing, and task snapshots. Together they complete the daily context used later in Weekly Recap.",
+        target: activeTarget(".ng-journal-secondary-check-in")
+      },
+      {
+        title: "One good thing",
+        description: "Use this input to type one good thing from your day. This text is saved in the journal entry and appears later in Weekly Highlights.",
+        target: activeTarget(".ng-journal-good-thing-input")
+      },
+      {
+        title: "Write your journal entry",
+        description: "Finish with a reflection in the Entry area. This example text has been prepared for the introduction; your own journal text is saved when you leave the editor.",
+        target: activeTarget(".ng-journal-body-content"),
+        before: () => setActiveEditable(".ng-journal-body-content", "Today I took time to notice what supported me and what used my energy.")
+      },
+      {
+        title: "Return to the Journal Hub",
+        description: "Use the Journaling button to return to the calendar and create the Weekly Recap.",
+        target: activeButton("<- Journaling"),
+        interaction: { event: "click" }
+      },
+      {
+        title: "Entry preview",
+        description: "Back in the Journal Hub, the selected daily entry can be reviewed without reopening it. The preview includes measurements, emotions, trackers, task snapshots, and journal text.",
+        target: activeTarget(".ng-journal-detail-panel"),
+        before: () => this.navigation.openJournalingDate(userDate)
+      },
+      {
+        title: "Select the available week",
+        description: "Four entries make this week available. The first click selects it and loads a weekly preview in the Journal Hub.",
+        target: activeTarget(".ng-journal-week-cell.is-available"),
+        interaction: { event: "click" }
+      },
+      {
+        title: "Generate the Weekly Recap",
+        description: "Select the week again to generate its recap from the daily entries, emotions, trackers, tasks, and support-note assignments.",
+        target: activeTarget(".ng-journal-week-cell.is-selected"),
+        before: () => this.demo.expectCreatedFiles(["Journal/Weekly/"]),
+        interaction: { event: "click" }
+      }
+    ];
+    const recapSteps = withInterface("Weekly Recap", [
+      {
+        title: "Your Weekly Recap",
+        description: "The Weekly Recap brings the completed week's information together. We will move through it from top to bottom.",
+        target: activeTarget('[data-weekly-section="intro"]')
+      },
+      {
+        title: "Symptom recap",
+        description: "These measurements summarize the week's daily check-ins and explain how each area has been developing.",
+        target: activeTarget('[data-weekly-section="symptoms"]')
+      },
+      {
+        title: "Emotions",
+        description: "The emotion balance and cloud show which feelings appeared during the week and how often they were selected.",
+        target: activeTarget('[data-weekly-section="emotions"]')
+      },
+      {
+        title: "Tracker recap",
+        description: "Tracker results show how often each tracked habit or event occurred during this week.",
+        target: activeTarget('[data-weekly-section="trackers"]')
+      },
+      {
+        title: "Support notes",
+        description: "The created support note from the beginning is now shown here with its trigger reason. Weekly Recap compares journal patterns with support categories to suggest matching notes.",
+        target: activeTarget('[data-weekly-section="support"]'),
+        before: async () => {
+          await this.demo.ensureWeeklyRecapSupportOutputs(this.demo.year, this.demo.week, supportNoteName);
+          await this.navigation.openWeeklyRecapWeek(this.demo.year, this.demo.week);
+        }
+      },
+      {
+        title: "Critical days",
+        description: "Critical days point out dates where one or more measurements showed that extra care may have been needed.",
+        target: activeTarget('[data-weekly-section="critical"]')
+      },
+      {
+        title: "Weekly highlights",
+        description: "The good things recorded in daily entries are collected here as highlights from the week.",
+        target: activeTarget('[data-weekly-section="highlights"]')
+      },
+      {
+        title: "Task Manager adjustments",
+        description: "These adjustments show how the week's entries changed energy capacity, break frequency, and break length for future planning.",
+        target: activeTarget('[data-weekly-section="adjustments"]')
+      },
+      {
+        title: "Plan next week's task",
+        description: "Add one task for next week. After naming it and choosing effort, it will appear on Home in This Week's Tasks.",
+        target: activeTarget('[data-weekly-section="next-tasks"]')
+      },
+      {
+        title: "Name the next-week task",
+        description: "Enter one task name for next week.",
+        target: activeTarget('[data-weekly-section="next-tasks"] .ng-weekly-next-task-input'),
+        before: () => setActiveInput(".ng-weekly-next-task-input", nextWeekTaskName)
+      },
+      {
+        title: "Choose the effort",
+        description: "Select an effort level to save this next-week task.",
+        target: activeTarget('[data-weekly-section="next-tasks"] .ng-weekly-task-effort'),
+        interaction: { event: "click" }
+      }
+    ]);
+    const homeSupport = withInterface("Home", [
+      {
+        title: "This week's tasks on Home",
+        description: "Tasks you planned in Weekly Recap appear here.",
+        target: activeTarget(".ng-this-week-tasks"),
+        before: async () => {
+          await this.navigation.openHome();
+          await this.navigation.refreshHome();
+        }
+      },
+      {
+        title: "Adding a weekly task",
+        description: "Press a task row here to add it directly to the Task Manager with effort already set.",
+        target: activeTarget(".ng-this-week-task"),
+        interaction: {
+          event: "click",
+          target: activeTarget(".ng-this-week-task"),
+          autoAdvance: true
+        }
+      },
+      {
+        title: "Task Manager update",
+        description: "Great. The selected weekly task is now added to Task Manager. This Home view shows your weekly tasks, task list, support notes, and support hints together.",
+        target: activeTarget(".neural-garden-home"),
+        before: async () => {
+          await this.navigation.openHome();
+          await this.navigation.refreshHome();
+        }
+      },
+      {
+        title: "Support notes on Home",
+        description: "The created support note from the beginning is now listed here. Pressing a support note opens that note directly.",
+        target: activeTarget(".ng-home-support-note", ".ng-home-support"),
+        before: async () => {
+          await this.navigation.openHome();
+          await this.navigation.refreshHome();
+        }
+      },
+      {
+        title: "Support hints",
+        description: "Support hints from the Weekly Recap rotate here to give short, practical reminders.",
+        target: activeTarget(".ng-home-hints-strip"),
+        before: async () => {
+          await this.navigation.openHome();
+          await this.navigation.refreshHome();
+        }
+      },
+      {
+        title: "You are all set",
+        description: "Alright, you are settled. Have fun using and expanding YOUR Neural Garden.",
+        target: activeTarget(".neural-garden-home")
+      }
+    ]);
+    return [
+      ...withInterface("Journaling", journalSteps),
+      ...recapSteps,
+      ...homeSupport
+    ];
+  }
+};
+function activeTarget(selector, fallbackSelector) {
+  return () => {
+    var _a;
+    const activeLeaf = document.querySelector(".workspace-leaf.mod-active");
+    return (_a = activeLeaf == null ? void 0 : activeLeaf.querySelector(selector)) != null ? _a : fallbackSelector ? activeLeaf == null ? void 0 : activeLeaf.querySelector(fallbackSelector) : null;
+  };
+}
+function homeButton(label) {
+  return () => {
+    var _a, _b, _c;
+    return (_c = [...(_b = (_a = document.querySelector(".workspace-leaf.mod-active")) == null ? void 0 : _a.querySelectorAll(".ng-home-category-button")) != null ? _b : []].find((button) => {
+      var _a2;
+      return ((_a2 = button.textContent) == null ? void 0 : _a2.trim()) === label;
+    })) != null ? _c : null;
+  };
+}
+function activeButton(label) {
+  return () => {
+    var _a, _b, _c;
+    return (_c = [...(_b = (_a = document.querySelector(".workspace-leaf.mod-active")) == null ? void 0 : _a.querySelectorAll("button")) != null ? _b : []].find((button) => {
+      var _a2;
+      return ((_a2 = button.textContent) == null ? void 0 : _a2.trim()) === label;
+    })) != null ? _c : null;
+  };
+}
+function activeTextTarget(selector, text) {
+  return () => {
+    var _a, _b, _c;
+    return (_c = [...(_b = (_a = document.querySelector(".workspace-leaf.mod-active")) == null ? void 0 : _a.querySelectorAll(selector)) != null ? _b : []].find((element) => {
+      var _a2;
+      return (_a2 = element.textContent) == null ? void 0 : _a2.includes(text);
+    })) != null ? _c : null;
+  };
+}
+function activeDescendantTarget(rowSelector, text, targetSelector) {
+  return () => {
+    var _a, _b, _c, _d;
+    return (_d = (_c = [...(_b = (_a = document.querySelector(".workspace-leaf.mod-active")) == null ? void 0 : _a.querySelectorAll(rowSelector)) != null ? _b : []].find((element) => {
+      var _a2;
+      return (_a2 = element.textContent) == null ? void 0 : _a2.includes(text);
+    })) == null ? void 0 : _c.querySelector(targetSelector)) != null ? _d : null;
+  };
+}
+function withInterface(interfaceName, steps) {
+  return steps.map((step) => {
+    var _a;
+    return { ...step, interfaceName: (_a = step.interfaceName) != null ? _a : interfaceName };
+  });
+}
+function sectionLabel(section) {
+  if (section === "mynotes") {
+    return "MyNotes walkthrough";
+  }
+  if (section === "mylearning") {
+    return "MyLearning walkthrough";
+  }
+  if (section === "journaling") {
+    return "Journaling walkthrough";
+  }
+  return "Home walkthrough";
+}
+function overlayTarget(selector) {
+  return () => document.querySelector(`.ng-overlay-card ${selector}`);
+}
+function setOverlayInput(selector, value) {
+  setInputValue(document.querySelector(`.ng-overlay-card ${selector}`), value);
+}
+function setActiveInput(selector, value) {
+  var _a;
+  const activeLeaf = document.querySelector(".workspace-leaf.mod-active");
+  setInputValue((_a = activeLeaf == null ? void 0 : activeLeaf.querySelector(selector)) != null ? _a : null, value);
+}
+function setActiveEditable(selector, value) {
+  const activeLeaf = document.querySelector(".workspace-leaf.mod-active");
+  const editor = activeLeaf == null ? void 0 : activeLeaf.querySelector(selector);
+  if (!editor) {
+    return;
+  }
+  editor.innerText = value;
+  editor.dispatchEvent(new Event("input", { bubbles: true }));
+  editor.dispatchEvent(new FocusEvent("blur", { bubbles: true }));
+}
+function setInputValue(input, value) {
+  if (!input) {
+    return;
+  }
+  input.value = value;
+  input.dispatchEvent(new Event("input", { bubbles: true }));
+  input.focus();
+  input.setSelectionRange(0, input.value.length);
+}
+
+// src/onboardingDemo.ts
+var import_obsidian15 = require("obsidian");
+var SNAPSHOT_PATHS = [
+  TASK_MANAGER_FILE_PATH,
+  MY_NOTES_CATEGORIES_FILE_PATH,
+  MY_LEARNING_CONFIG_FILE_PATH
+];
+var OnboardingDemoSession = class {
+  constructor(app, journalingStorage, taskStorage, initialState, persist) {
+    this.app = app;
+    this.journalingStorage = journalingStorage;
+    this.taskStorage = taskStorage;
+    this.persist = persist;
+    this.eventRefs = [];
+    this.expectedPrefixes = [];
+    this.expectedRemaining = 0;
+    this.expectationExpiresAt = 0;
+    this.state = initialState;
+  }
+  get journalDates() {
+    var _a, _b;
+    return (_b = (_a = this.state) == null ? void 0 : _a.journalDates) != null ? _b : [];
+  }
+  get nameSuffix() {
+    var _a, _b;
+    return (_b = (_a = this.state) == null ? void 0 : _a.id.slice(-6)) != null ? _b : "demo";
+  }
+  get year() {
+    var _a, _b;
+    return (_b = (_a = this.state) == null ? void 0 : _a.year) != null ? _b : 0;
+  }
+  get week() {
+    var _a, _b;
+    return (_b = (_a = this.state) == null ? void 0 : _a.week) != null ? _b : 0;
+  }
+  async begin() {
+    await this.cleanup();
+    const snapshots = {};
+    for (const path of SNAPSHOT_PATHS) {
+      const file = this.app.vault.getAbstractFileByPath(path);
+      snapshots[path] = file instanceof import_obsidian15.TFile ? await this.app.vault.read(file) : null;
+    }
+    const { year, week, dates } = this.findEmptyDemoWeek();
+    this.state = {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      createdPaths: [],
+      snapshots,
+      journalDates: dates,
+      year,
+      week
+    };
+    this.bindVaultEvents();
+    await this.persist(this.state);
+  }
+  async seedJournalEntries() {
+    const dates = this.journalDates.slice(0, 3);
+    for (const [index, date] of dates.entries()) {
+      this.expectCreatedFiles([`${JOURNAL_DAILY_FOLDER}/`]);
+      const frontmatter = {
+        date,
+        mood: 35 + index * 5,
+        sleep: 40,
+        stress: 85 - index * 3,
+        anxiety: 76,
+        exhaustion: 72,
+        regulation: 38,
+        sensoryLoad: 68,
+        socialLoad: 65,
+        spentEnergy: 40,
+        completedTasks: [],
+        uncompletedTasks: [],
+        goodThing: "A temporary onboarding journal entry.",
+        emotions: ["Overwhelmed", "Drained"]
+      };
+      await this.journalingStorage.createDailyEntry(frontmatter, "Temporary Neural Garden onboarding entry.");
+    }
+  }
+  async seedJournalEntryMeasurements(dateKey) {
+    let entry = await this.journalingStorage.readDailyEntryByDate(dateKey);
+    for (let attempt = 0; !entry && attempt < 20; attempt += 1) {
+      await new Promise((resolve) => window.setTimeout(resolve, 50));
+      entry = await this.journalingStorage.readDailyEntryByDate(dateKey);
+    }
+    if (!entry) {
+      return;
+    }
+    Object.assign(entry.frontmatter, {
+      mood: 62,
+      sleep: 54,
+      stress: 68,
+      anxiety: 58,
+      exhaustion: 64,
+      regulation: 48,
+      sensoryLoad: 57,
+      socialLoad: 52
+    });
+    await this.journalingStorage.saveDailyEntry(entry.file, entry.frontmatter, entry.body);
+  }
+  async seedHomeTask() {
+    if (!this.state) {
+      return;
+    }
+    const state = await this.taskStorage.loadTaskManagerState();
+    const id = `ng-onboarding-${this.state.id}`;
+    if (state.tasks.some((task) => task.id === id)) {
+      return;
+    }
+    state.tasks.unshift({
+      id,
+      taskName: "Explore Neural Garden",
+      effort: "easy",
+      energy: 15,
+      completed: false
+    });
+    recalculateTotals(state);
+    await this.taskStorage.saveTaskManagerState(state);
+  }
+  async ensureWeeklyRecapSupportOutputs(year, week, supportNoteName) {
+    var _a;
+    const path = this.journalingStorage.weeklyRecapPath(year, week);
+    const file = this.app.vault.getAbstractFileByPath(path);
+    if (!(file instanceof import_obsidian15.TFile)) {
+      return;
+    }
+    const recap = await this.journalingStorage.readWeeklyRecap(file);
+    if (!recap.frontmatter.supportNotes.includes(supportNoteName)) {
+      recap.frontmatter.supportNotes = [supportNoteName, ...recap.frontmatter.supportNotes];
+    }
+    recap.frontmatter.supportNoteReasons = {
+      ...recap.frontmatter.supportNoteReasons,
+      [supportNoteName]: (_a = recap.frontmatter.supportNoteReasons[supportNoteName]) != null ? _a : "Stress"
+    };
+    if (recap.frontmatter.supportHints.length === 0) {
+      recap.frontmatter.supportHints = ["Lowering pace is still progress."];
+    }
+    await this.journalingStorage.saveWeeklyRecap(file, recap.frontmatter, recap.body);
+  }
+  expectCreatedFiles(prefixes, maxCount = 1) {
+    this.expectedPrefixes = prefixes;
+    this.expectedRemaining = maxCount;
+    this.expectationExpiresAt = Date.now() + 1e4;
+  }
+  async cleanup() {
+    this.unbindVaultEvents();
+    this.clearExpectation();
+    const state = this.state;
+    if (!state) {
+      return;
+    }
+    for (const path of [...state.createdPaths].reverse()) {
+      const file = this.app.vault.getAbstractFileByPath(path);
+      if (file instanceof import_obsidian15.TFile) {
+        try {
+          await this.app.vault.delete(file, true);
+        } catch (error) {
+          console.error(`[Neural Garden] Could not delete onboarding demo file: ${path}`, error);
+        }
+      }
+    }
+    const taggedDemoFiles = this.app.vault.getMarkdownFiles().filter((file) => {
+      var _a, _b;
+      const taggedId = (_b = (_a = this.app.metadataCache.getFileCache(file)) == null ? void 0 : _a.frontmatter) == null ? void 0 : _b.neuralGardenDemo;
+      return typeof taggedId === "string" && taggedId === state.id;
+    });
+    for (const file of taggedDemoFiles) {
+      try {
+        await this.app.vault.delete(file, true);
+      } catch (error) {
+        console.error(`[Neural Garden] Could not delete tagged onboarding demo file: ${file.path}`, error);
+      }
+    }
+    for (const [path, content] of Object.entries(state.snapshots)) {
+      const file = this.app.vault.getAbstractFileByPath(path);
+      try {
+        if (content === null) {
+          if (file instanceof import_obsidian15.TFile) {
+            await this.app.vault.delete(file, true);
+          }
+        } else if (file instanceof import_obsidian15.TFile) {
+          await this.app.vault.modify(file, content);
+        } else {
+          await this.ensureParentFolder(path);
+          await this.app.vault.create(path, content);
+        }
+      } catch (error) {
+        console.error(`[Neural Garden] Could not restore onboarding snapshot: ${path}`, error);
+      }
+    }
+    this.state = null;
+    await this.persist(null);
+  }
+  bindVaultEvents() {
+    this.unbindVaultEvents();
+    this.eventRefs.push(this.app.vault.on("create", (file) => {
+      if (!(file instanceof import_obsidian15.TFile) || !this.state || SNAPSHOT_PATHS.includes(file.path) || Date.now() > this.expectationExpiresAt || this.expectedRemaining <= 0 || !this.expectedPrefixes.some((prefix) => file.path.startsWith(prefix))) {
+        return;
+      }
+      this.addCreatedPath(file.path);
+      this.expectedRemaining -= 1;
+      if (this.expectedRemaining <= 0) {
+        this.clearExpectation();
+      }
+      if (file.extension === "md") {
+        window.setTimeout(() => void this.markDemoFile(file), 100);
+      }
+    }));
+    this.eventRefs.push(this.app.vault.on("rename", (file, oldPath) => {
+      if (!this.state || !(file instanceof import_obsidian15.TFile)) {
+        return;
+      }
+      const index = this.state.createdPaths.indexOf(oldPath);
+      if (index < 0) {
+        return;
+      }
+      this.state.createdPaths[index] = file.path;
+      void this.persist(this.state);
+    }));
+  }
+  unbindVaultEvents() {
+    for (const ref of this.eventRefs) {
+      this.app.vault.offref(ref);
+    }
+    this.eventRefs = [];
+  }
+  clearExpectation() {
+    this.expectedPrefixes = [];
+    this.expectedRemaining = 0;
+    this.expectationExpiresAt = 0;
+  }
+  addCreatedPath(path) {
+    if (!this.state || this.state.createdPaths.includes(path)) {
+      return;
+    }
+    this.state.createdPaths.push(path);
+    void this.persist(this.state);
+  }
+  async markDemoFile(file) {
+    const state = this.state;
+    if (!state || !state.createdPaths.includes(file.path) || !file.parent) {
+      return;
+    }
+    try {
+      await this.app.fileManager.processFrontMatter(file, (frontmatter) => {
+        frontmatter.neuralGardenDemo = state.id;
+      });
+    } catch (e) {
+    }
+  }
+  findEmptyDemoWeek() {
+    for (let year = 1990; year >= 1970; year -= 1) {
+      const januaryFourth = new Date(year, 0, 4, 12);
+      const monday = new Date(januaryFourth);
+      monday.setDate(januaryFourth.getDate() - (januaryFourth.getDay() + 6) % 7);
+      const dates = [0, 1, 2, 3].map((offset) => {
+        const date = new Date(monday);
+        date.setDate(monday.getDate() + offset);
+        return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+      });
+      const occupied = dates.some((date) => this.app.vault.getAbstractFileByPath(`${JOURNAL_DAILY_FOLDER}/${date}.md`) instanceof import_obsidian15.TFile);
+      if (!occupied) {
+        return { year, week: 1, dates };
+      }
+    }
+    throw new Error("Could not find an empty week for onboarding demo entries.");
+  }
+  async ensureParentFolder(path) {
+    const parts = path.split("/").slice(0, -1);
+    let current = "";
+    for (const part of parts) {
+      current = current ? `${current}/${part}` : part;
+      if (!this.app.vault.getAbstractFileByPath(current)) {
+        await this.app.vault.createFolder(current);
+      }
+    }
+  }
+};
+
 // src/plugin.ts
-var NeuralGardenPlugin = class extends import_obsidian14.Plugin {
+var NeuralGardenPlugin = class extends import_obsidian16.Plugin {
   constructor() {
     super(...arguments);
     this.settings = { ...DEFAULT_SETTINGS };
@@ -11963,13 +13658,15 @@ var NeuralGardenPlugin = class extends import_obsidian14.Plugin {
     };
   }
   async onload() {
-    var _a, _b, _c, _d, _e, _f, _g;
+    var _a, _b, _c, _d, _e, _f, _g, _h, _i;
     const stored = await this.loadData();
     this.settings = {
       breakModeEnabled: (_b = (_a = stored == null ? void 0 : stored.breakModeEnabled) != null ? _a : stored == null ? void 0 : stored.forcedBreaksEnabled) != null ? _b : DEFAULT_SETTINGS.breakModeEnabled,
       generalColor: (_d = (_c = stored == null ? void 0 : stored.generalColor) != null ? _c : stored == null ? void 0 : stored.secondaryAccent) != null ? _d : DEFAULT_SETTINGS.generalColor,
       hoverColor: (_e = stored == null ? void 0 : stored.hoverColor) != null ? _e : DEFAULT_SETTINGS.hoverColor,
-      highlightColor: (_g = (_f = stored == null ? void 0 : stored.highlightColor) != null ? _f : stored == null ? void 0 : stored.primaryAccent) != null ? _g : DEFAULT_SETTINGS.highlightColor
+      highlightColor: (_g = (_f = stored == null ? void 0 : stored.highlightColor) != null ? _f : stored == null ? void 0 : stored.primaryAccent) != null ? _g : DEFAULT_SETTINGS.highlightColor,
+      onboardingCompleted: (_h = stored == null ? void 0 : stored.onboardingCompleted) != null ? _h : DEFAULT_SETTINGS.onboardingCompleted,
+      onboardingDemo: (_i = stored == null ? void 0 : stored.onboardingDemo) != null ? _i : DEFAULT_SETTINGS.onboardingDemo
     };
     injectNeuralGardenStyles();
     this.applyAppearanceSettings();
@@ -11991,6 +13688,79 @@ var NeuralGardenPlugin = class extends import_obsidian14.Plugin {
       this.journalingStorage,
       this.storage,
       this.myNotesStorage
+    );
+    this.onboardingDemo = new OnboardingDemoSession(
+      this.app,
+      this.journalingStorage,
+      this.storage,
+      this.settings.onboardingDemo,
+      async (state) => {
+        this.settings.onboardingDemo = state;
+        await this.saveData(this.settings);
+      }
+    );
+    if (this.settings.onboardingDemo) {
+      await this.onboardingDemo.cleanup();
+    }
+    this.walkthroughManager = new WalkthroughManager(
+      {
+        openHome: async () => {
+          var _a2;
+          const leaf = (_a2 = this.app.workspace.getMostRecentLeaf()) != null ? _a2 : this.app.workspace.getLeaf(true);
+          await this.openHomeView(true, leaf);
+        },
+        closeAllTourWindows: async () => this.closeAllNeuralGardenViews(),
+        openMyNotes: async () => {
+          var _a2;
+          const leaf = (_a2 = this.app.workspace.getMostRecentLeaf()) != null ? _a2 : this.app.workspace.getLeaf(true);
+          await this.openMyNotesView(true, leaf);
+        },
+        openMyNotesCategory: async (category) => {
+          var _a2;
+          const targetLeaf = (_a2 = this.app.workspace.getMostRecentLeaf()) != null ? _a2 : this.app.workspace.getLeaf(true);
+          await this.openMyNotesView(true, targetLeaf);
+          const leaf = this.app.workspace.getMostRecentLeaf();
+          if ((leaf == null ? void 0 : leaf.view) instanceof NeuralGardenMyNotesView) {
+            await leaf.view.showCategory(category);
+          }
+        },
+        openMyLearning: async () => {
+          var _a2;
+          const leaf = (_a2 = this.app.workspace.getMostRecentLeaf()) != null ? _a2 : this.app.workspace.getLeaf(true);
+          await this.openMyLearningView(true, leaf);
+        },
+        openJournaling: async () => {
+          var _a2;
+          const leaf = (_a2 = this.app.workspace.getMostRecentLeaf()) != null ? _a2 : this.app.workspace.getLeaf(true);
+          await this.openJournalingView(true, leaf);
+        },
+        openWeeklyRecapWeek: async (year, week) => this.openWeeklyRecap(year, week),
+        openJournalEntry: async (dateKey) => this.openJournalEntryView(dateKey, true),
+        openJournalingDate: async (dateKey) => this.openJournalingForDate(dateKey),
+        openJournalingDemoDate: async (dateKey) => {
+          await this.openJournalingView(true);
+          const leaf = this.app.workspace.getMostRecentLeaf();
+          if ((leaf == null ? void 0 : leaf.view) instanceof NeuralGardenJournalingView) {
+            await leaf.view.showDemoDate(dateKey);
+          }
+        },
+        setBreakMode: async (enabled) => this.setBreakModeEnabled(enabled),
+        refreshHome: async () => {
+          for (const leaf of this.app.workspace.getLeavesOfType(VIEW_TYPE_NEURAL_GARDEN_HOME)) {
+            if (leaf.view instanceof NeuralGardenHomeView) {
+              await leaf.view.refresh();
+            }
+          }
+        }
+      },
+      {
+        onFirstRunComplete: async () => {
+          this.settings.onboardingCompleted = true;
+          await this.saveData(this.settings);
+        },
+        onFirstRunSkip: () => void 0
+      },
+      this.onboardingDemo
     );
     await this.safeInitStep("ensure Notes folder", async () => {
       await this.storage.ensureNotesFolder();
@@ -12015,12 +13785,13 @@ var NeuralGardenPlugin = class extends import_obsidian14.Plugin {
         this.openJournalingView,
         this.openMyNotesView,
         this.openMyLearningView,
-        this.openWeeklyRecap
+        this.openWeeklyRecap,
+        () => void this.openWalkthrough("home")
       )
     );
     this.registerView(
       VIEW_TYPE_NEURAL_GARDEN_MY_NOTES,
-      (leaf) => new NeuralGardenMyNotesView(leaf, this.myNotesStorage, this.openHomeView)
+      (leaf) => new NeuralGardenMyNotesView(leaf, this.myNotesStorage, this.openHomeView, () => void this.openWalkthrough("mynotes"))
     );
     this.registerView(
       VIEW_TYPE_NEURAL_GARDEN_MY_LEARNING,
@@ -12031,12 +13802,13 @@ var NeuralGardenPlugin = class extends import_obsidian14.Plugin {
         this.myLearningSelection,
         (category, topic) => {
           this.myLearningSelection = { category, topic };
-        }
+        },
+        () => void this.openWalkthrough("mylearning")
       )
     );
     this.registerView(
       VIEW_TYPE_NEURAL_GARDEN_JOURNALING,
-      (leaf) => new NeuralGardenJournalingView(leaf, this.storage, this.journalingStorage, this.openHomeView, this.openJournalEntryView, this.openWeeklyRecap)
+      (leaf) => new NeuralGardenJournalingView(leaf, this.storage, this.journalingStorage, this.openHomeView, this.openJournalEntryView, this.openWeeklyRecap, () => void this.openWalkthrough("journaling"))
     );
     this.registerView(
       VIEW_TYPE_NEURAL_GARDEN_JOURNAL_ENTRY,
@@ -12107,7 +13879,7 @@ var NeuralGardenPlugin = class extends import_obsidian14.Plugin {
     );
     this.registerEvent(
       this.app.vault.on("rename", async (file, oldPath) => {
-        if (file instanceof import_obsidian14.TFile) {
+        if (file instanceof import_obsidian16.TFile) {
           await this.myLearningStorage.handleEntryRename(file, oldPath);
         }
         window.setTimeout(() => {
@@ -12124,6 +13896,7 @@ var NeuralGardenPlugin = class extends import_obsidian14.Plugin {
     });
   }
   onunload() {
+    void this.walkthroughManager.close();
     for (const key of APPEARANCE_SETTING_KEYS) {
       document.body.style.removeProperty(APPEARANCE_CSS_VARIABLES[key]);
     }
@@ -12161,6 +13934,20 @@ var NeuralGardenPlugin = class extends import_obsidian14.Plugin {
     this.applyAppearanceSettings();
     await this.saveData(this.settings);
   }
+  async openWalkthrough(section) {
+    await this.walkthroughManager.startSection(section);
+  }
+  async replayFullWalkthrough() {
+    await this.walkthroughManager.startFullReplay();
+  }
+  async closeAllNeuralGardenViews() {
+    this.app.workspace.detachLeavesOfType(VIEW_TYPE_NEURAL_GARDEN_HOME);
+    this.app.workspace.detachLeavesOfType(VIEW_TYPE_NEURAL_GARDEN_JOURNALING);
+    this.app.workspace.detachLeavesOfType(VIEW_TYPE_NEURAL_GARDEN_JOURNAL_ENTRY);
+    this.app.workspace.detachLeavesOfType(VIEW_TYPE_NEURAL_GARDEN_MY_NOTES);
+    this.app.workspace.detachLeavesOfType(VIEW_TYPE_NEURAL_GARDEN_MY_LEARNING);
+    this.app.workspace.detachLeavesOfType(VIEW_TYPE_NEURAL_GARDEN_WEEKLY_RECAP);
+  }
   applyAppearanceSettings() {
     for (const key of APPEARANCE_SETTING_KEYS) {
       document.body.style.setProperty(APPEARANCE_CSS_VARIABLES[key], this.settings[key]);
@@ -12177,6 +13964,9 @@ var NeuralGardenPlugin = class extends import_obsidian14.Plugin {
     var _a;
     const targetLeaf = (_a = this.app.workspace.getMostRecentLeaf()) != null ? _a : this.app.workspace.getLeaf(true);
     await this.openHomeView(true, targetLeaf);
+    if (!this.settings.onboardingCompleted) {
+      await this.walkthroughManager.startFirstRun();
+    }
   }
   async openHomeOnStartupSafe() {
     try {
@@ -12201,6 +13991,13 @@ var NeuralGardenPlugin = class extends import_obsidian14.Plugin {
     await leaf.setViewState({ type: VIEW_TYPE_NEURAL_GARDEN_JOURNALING, active: makeActive });
     if (makeActive) {
       this.app.workspace.revealLeaf(leaf);
+    }
+  }
+  async openJournalingForDate(dateKey) {
+    await this.openJournalingView(true);
+    const leaf = this.app.workspace.getMostRecentLeaf();
+    if ((leaf == null ? void 0 : leaf.view) instanceof NeuralGardenJournalingView) {
+      await leaf.view.showDate(dateKey);
     }
   }
   async openJournalEntryView(dateKey, editable, targetLeaf) {

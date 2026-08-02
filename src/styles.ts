@@ -31,6 +31,7 @@ export function injectNeuralGardenStyles(): void {
     .neural-garden-home {
       max-width: 720px;
       margin: 0 auto;
+      position: relative;
       display: flex;
       flex-direction: column;
       gap: 14px;
@@ -1241,6 +1242,7 @@ export function injectNeuralGardenStyles(): void {
     .ng-journal-calendar-grid {
       display: grid;
       grid-template-columns: minmax(54px, 62px) repeat(7, minmax(0, 1fr));
+      position: relative;
       gap: 4px 6px;
     }
     .ng-journal-calendar-weekday {
@@ -1662,19 +1664,27 @@ export function injectNeuralGardenStyles(): void {
       text-align: center;
     }
     .ng-journal-tracker-add-toggle {
-      all: unset;
       grid-column: 3;
       justify-self: end;
+      appearance: none;
+      padding: 6px 10px;
+      border: 1px solid #ec9a63 !important;
+      border-radius: 6px;
+      background: #172124 !important;
+      box-shadow: none !important;
       cursor: pointer;
       font-size: 0.88rem;
       font-weight: 600;
-      color: color-mix(in srgb, var(--ng-primary-accent) 55%, white);
-      transition: color 140ms ease;
+      line-height: 1.2;
+      color: #f4f7f6 !important;
+      transition: border-color 140ms ease, color 140ms ease, box-shadow 140ms ease;
       -webkit-tap-highlight-color: transparent;
     }
     .ng-journal-tracker-add-toggle:hover,
     .ng-journal-tracker-add-toggle:focus-visible {
-      color: var(--ng-primary-accent);
+      border-color: #00f0ff !important;
+      color: #bdfaff !important;
+      box-shadow: 0 0 0 2px rgba(0, 240, 255, 0.2) !important;
     }
     .ng-journal-tracker-add-row {
       margin-bottom: 14px;
@@ -3800,6 +3810,186 @@ export function injectNeuralGardenStyles(): void {
       .ng-mynotes-categories .ng-mylearning-inline-edit svg {
         width: 14px;
         height: 14px;
+      }
+    }
+    .ng-help-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      min-width: 40px;
+      height: 40px;
+      padding: 0;
+      border: none !important;
+      background: transparent !important;
+      box-shadow: none !important;
+      color: color-mix(in srgb, var(--text-muted) 76%, var(--ng-color-general));
+      cursor: pointer;
+      font-size: 26px;
+      font-weight: 700;
+      line-height: 1;
+    }
+    .ng-help-button:hover,
+    .ng-help-button:focus-visible {
+      color: var(--ng-color-hover);
+    }
+    .ng-help-button svg {
+      width: 28px;
+      height: 28px;
+      stroke-width: 2.25;
+    }
+    .neural-garden-home > .ng-help-button {
+      position: absolute;
+      top: 8px;
+      right: 0;
+    }
+    .ng-mynotes-topbar > .ng-help-button,
+    .ng-mylearning-topbar > .ng-help-button,
+    .ng-journaling .ng-journal-topbar > .ng-help-button {
+      margin-left: auto;
+    }
+    .ng-tour {
+      position: fixed;
+      inset: 0;
+      z-index: 10000;
+      pointer-events: none;
+    }
+    .ng-tour-blocker {
+      position: fixed;
+      background: color-mix(in srgb, #000 84%, transparent);
+      pointer-events: auto;
+    }
+    .ng-tour-spotlight {
+      position: fixed;
+      border: 2px solid var(--ng-color-highlight);
+      border-radius: 7px;
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--ng-color-highlight) 35%, transparent), 0 0 22px color-mix(in srgb, var(--ng-color-highlight) 34%, transparent);
+      pointer-events: auto;
+      transition: left 180ms ease, top 180ms ease, width 180ms ease, height 180ms ease;
+    }
+    .ng-tour.is-resolving .ng-tour-spotlight {
+      visibility: hidden;
+      transition: none;
+    }
+    .ng-tour.is-resolving .ng-tour-blocker:first-of-type {
+      inset: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+    }
+    .ng-tour.is-resolving .ng-tour-blocker:not(:first-of-type) {
+      visibility: hidden;
+    }
+    .ng-tour.is-message-highlight .ng-tour-blocker:first-of-type {
+      inset: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+    }
+    .ng-tour.is-message-highlight .ng-tour-blocker:not(:first-of-type),
+    .ng-tour.is-message-highlight .ng-tour-spotlight {
+      display: none;
+    }
+    .ng-tour.is-interactive .ng-tour-spotlight {
+      pointer-events: none;
+    }
+    .ng-tour-target {
+      position: relative;
+      z-index: 10001 !important;
+    }
+    .ng-tour-panel {
+      position: fixed;
+      width: min(420px, calc(100vw - 24px));
+      min-height: 190px;
+      padding: 16px;
+      border: 1px solid color-mix(in srgb, var(--ng-color-general) 68%, var(--background-modifier-border));
+      border-radius: 7px;
+      background: color-mix(in srgb, var(--background-primary) 62%, #080c0d);
+      color: #f4f7f6;
+      box-shadow: 0 16px 44px rgba(0, 0, 0, 0.42);
+      box-sizing: border-box;
+      pointer-events: auto;
+    }
+    .ng-tour.is-message-highlight .ng-tour-panel {
+      left: 50% !important;
+      top: 50% !important;
+      transform: translate(-50%, -50%);
+      border-color: #00f0ff;
+      box-shadow: 0 0 0 2px rgba(0, 240, 255, 0.22), 0 18px 52px rgba(0, 0, 0, 0.55);
+    }
+    .ng-tour-header,
+    .ng-tour-actions,
+    .ng-tour-navigation {
+      display: flex;
+      align-items: center;
+    }
+    .ng-tour-header,
+    .ng-tour-actions {
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .ng-tour-progress {
+      color: var(--text-muted);
+      font-size: 0.76rem;
+      font-weight: 600;
+    }
+    .ng-tour-title {
+      margin: 10px 0 7px;
+      color: #f4f7f6;
+      font-size: 1.12rem;
+      letter-spacing: 0;
+    }
+    .ng-tour-description {
+      min-height: 72px;
+      color: #c4cecc;
+      font-size: 0.9rem;
+      line-height: 1.55;
+    }
+    .ng-tour-actions {
+      margin-top: 15px;
+    }
+    .ng-tour-choices {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .ng-tour-choice {
+      flex: 1 1 170px;
+      border-color: #ec9a63 !important;
+      background: #172124 !important;
+      color: #f4f7f6 !important;
+    }
+    .ng-tour-choice:hover,
+    .ng-tour-choice:focus-visible {
+      border-color: #00f0ff !important;
+      box-shadow: 0 0 0 2px rgba(0, 240, 255, 0.2) !important;
+    }
+    .ng-tour-navigation {
+      gap: 8px;
+    }
+    .ng-tour-panel button {
+      min-height: 32px;
+      border-radius: 5px;
+    }
+    .ng-tour-skip,
+    .ng-tour-back {
+      border-color: var(--background-modifier-border) !important;
+      background: transparent !important;
+      color: var(--text-muted) !important;
+    }
+    .ng-tour-next {
+      border-color: color-mix(in srgb, var(--ng-color-general) 72%, black) !important;
+      background: #253033 !important;
+      color: #f4f7f6 !important;
+    }
+    .ng-tour-next:disabled {
+      opacity: 0.42;
+    }
+    @media (max-width: 600px) {
+      .ng-tour-panel {
+        min-height: 205px;
+      }
+      .ng-tour-description {
+        min-height: 88px;
       }
     }
   `;

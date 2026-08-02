@@ -274,10 +274,11 @@ export class NeuralGardenJournalEntryView extends ItemView {
     this.renderCompactSummary(stickyHeader);
     const fullCheckIn = wrapper.createDiv({ cls: "ng-journal-full-check-in" });
     this.renderMetrics(fullCheckIn);
-    this.renderEmotions(fullCheckIn);
-    this.renderTrackerSection(fullCheckIn);
-    this.renderGoodThing(fullCheckIn);
-    this.renderTasks(fullCheckIn);
+    const secondaryCheckIn = fullCheckIn.createDiv({ cls: "ng-journal-secondary-check-in" });
+    this.renderEmotions(secondaryCheckIn);
+    this.renderTrackerSection(secondaryCheckIn);
+    this.renderGoodThing(secondaryCheckIn);
+    this.renderTasks(secondaryCheckIn);
     this.renderEntryBody(wrapper);
     this.syncCollapseHeights(wrapper);
   }
@@ -376,9 +377,16 @@ export class NeuralGardenJournalEntryView extends ItemView {
     const block = parent.createDiv({ cls: "ng-journal-good-thing" });
     block.createEl("h4", { text: "One Good Thing About Today" });
     if (!this.editable) {
+      const input = block.createEl("input", {
+        type: "text",
+        cls: "ng-task-input ng-journal-good-thing-input",
+        placeholder: "Name one good thing from today",
+      });
+      input.readOnly = true;
+      input.value = this.entry.frontmatter.goodThing || "";
       block.createDiv({
-        cls: this.entry.frontmatter.goodThing ? "ng-journal-good-thing-value" : "ng-empty",
-        text: this.entry.frontmatter.goodThing || "No reflection was recorded.",
+        cls: "ng-journal-good-thing-value",
+        text: "This entry is read-only in the introduction preview.",
       });
       return;
     }

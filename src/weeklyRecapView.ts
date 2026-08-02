@@ -113,6 +113,7 @@ export class NeuralGardenWeeklyRecapView extends ItemView {
     });
 
     const intro = wrap.createDiv({ cls: "ng-weekly-intro" });
+    intro.dataset.weeklySection = "intro";
     intro.createEl("h3", { text: "This is your Weekly Recap" });
     const start = frontmatter.processedDateRange.start;
     const end = frontmatter.processedDateRange.end;
@@ -121,6 +122,7 @@ export class NeuralGardenWeeklyRecapView extends ItemView {
     }
 
     const symptoms = wrap.createDiv({ cls: "ng-weekly-section" });
+    symptoms.dataset.weeklySection = "symptoms";
     symptoms.createEl("h4", { text: "Symptom Recap", cls: "ng-weekly-section-heading" });
     const symptomRows: SymptomRow[] = [
       { label: "Mood", value: frontmatter.averages.mood, highIsBad: false },
@@ -150,6 +152,7 @@ export class NeuralGardenWeeklyRecapView extends ItemView {
     }
 
     const emotions = wrap.createDiv({ cls: "ng-weekly-section" });
+    emotions.dataset.weeklySection = "emotions";
     emotions.createEl("h4", { text: "Emotions", cls: "ng-weekly-section-heading" });
     const emotionalBalance = frontmatter.emotionCounts.pleasantTotal - frontmatter.emotionCounts.unpleasantTotal;
     const polarity = Math.max(-100, Math.min(100, emotionalBalance * 12));
@@ -165,6 +168,7 @@ export class NeuralGardenWeeklyRecapView extends ItemView {
     emotionTokens.forEach((token) => token.addClass("ng-weekly-fragment-hidden"));
 
     const trackers = wrap.createDiv({ cls: "ng-weekly-section" });
+    trackers.dataset.weeklySection = "trackers";
     trackers.createEl("h4", { text: "Tracker", cls: "ng-weekly-section-heading" });
     const trackerRows = Object.entries(frontmatter.trackerCounts)
       .sort((a, b) => b[1] - a[1])
@@ -188,6 +192,7 @@ export class NeuralGardenWeeklyRecapView extends ItemView {
     }
 
     const critical = wrap.createDiv({ cls: "ng-weekly-section ng-weekly-critical-section" });
+    critical.dataset.weeklySection = "critical";
     critical.createEl("h4", { text: "Critical Days", cls: "ng-weekly-section-heading" });
     const criticalDays = groupCriticalDays(frontmatter.criticalDays);
     const criticalFragments: HTMLElement[] = [];
@@ -207,6 +212,7 @@ export class NeuralGardenWeeklyRecapView extends ItemView {
     }
 
     const highlights = wrap.createDiv({ cls: "ng-weekly-section ng-weekly-highlights-section" });
+    highlights.dataset.weeklySection = "highlights";
     highlights.createEl("h4", { text: "This week's highlights", cls: "ng-weekly-section-heading" });
     highlights.createDiv({
       cls: "ng-weekly-inline-copy ng-weekly-highlights-subtext",
@@ -284,12 +290,14 @@ export class NeuralGardenWeeklyRecapView extends ItemView {
     }
 
     const tasks = wrap.createDiv({ cls: "ng-weekly-section" });
+    tasks.dataset.weeklySection = "adjustments";
     tasks.createEl("h4", { text: "Adjustments", cls: "ng-weekly-section-heading" });
     renderTaskDeltaLine(tasks, "Weekly energy capacity", frontmatter.taskAdjustments.maxEnergy.from, frontmatter.taskAdjustments.maxEnergy.to, 200);
     renderTaskDeltaLine(tasks, "Break frequency", frontmatter.taskAdjustments.forcedBreakThreshold.from, frontmatter.taskAdjustments.forcedBreakThreshold.to, 100);
     renderTaskDeltaLine(tasks, "Break length", frontmatter.taskAdjustments.forcedBreakLength.from, frontmatter.taskAdjustments.forcedBreakLength.to, 60);
 
     const nextWeekTasks = wrap.createDiv({ cls: "ng-weekly-section" });
+    nextWeekTasks.dataset.weeklySection = "next-tasks";
     nextWeekTasks.createEl("h4", { text: "Next week's tasks", cls: "ng-weekly-section-heading" });
     this.renderNextWeekTaskPlanner(nextWeekTasks, frontmatter.nextWeekTasks);
 

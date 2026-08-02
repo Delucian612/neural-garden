@@ -3,6 +3,7 @@ import { VIEW_TYPE_NEURAL_GARDEN_MY_LEARNING } from "./constants";
 import { MyLearningStorage } from "./myLearningStorage";
 import { getNameValidationError } from "./nameValidation";
 import { openOverlay } from "./overlay";
+import { createHelpButton } from "./onboarding";
 
 const OPEN_RIGHT_ICON_CANDIDATES = ["separator-vertical", "panel-right-open", "split-square-vertical"];
 const EDIT_ICON_CANDIDATES = ["pencil", "pencil-line", "edit-3"];
@@ -51,6 +52,7 @@ export class NeuralGardenMyLearningView extends ItemView {
     private readonly openHomeView: (makeActive: boolean, targetLeaf?: WorkspaceLeaf) => Promise<void>,
     initialSelection?: { category: string | null; topic: string | null },
     private readonly onSelectionChange?: (category: string | null, topic: string | null) => void,
+    private readonly openHelp: () => void = () => undefined,
   ) {
     super(leaf);
     this.selectedCategory = initialSelection?.category ?? null;
@@ -108,6 +110,7 @@ export class NeuralGardenMyLearningView extends ItemView {
     homeButton.addEventListener("click", async () => {
       await this.openHomeView(true, this.leaf);
     });
+    createHelpButton(topBar, this.openHelp);
 
     const headingRow = wrapper.createDiv({ cls: "ng-mylearning-heading-row" });
     headingRow.createEl("h2", { text: "MyLearning", cls: "ng-mynotes-heading" });

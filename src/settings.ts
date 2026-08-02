@@ -1,11 +1,15 @@
 import { PluginSettingTab, Setting } from "obsidian";
 import type NeuralGardenPlugin from "./plugin";
+import type { OnboardingDemoState } from "./onboardingDemo";
+import type { WalkthroughSection } from "./walkthroughs";
 
 export type NeuralGardenSettings = {
   breakModeEnabled: boolean;
   generalColor: string;
   hoverColor: string;
   highlightColor: string;
+  onboardingCompleted: boolean;
+  onboardingDemo: OnboardingDemoState | null;
 };
 
 export const DEFAULT_SETTINGS: NeuralGardenSettings = {
@@ -13,9 +17,11 @@ export const DEFAULT_SETTINGS: NeuralGardenSettings = {
   generalColor: "#ec9a63",
   hoverColor: "#ffd2b0",
   highlightColor: "#00f0ff",
+  onboardingCompleted: false,
+  onboardingDemo: null,
 };
 
-export type AppearanceSettingKey = Exclude<keyof NeuralGardenSettings, "breakModeEnabled">;
+export type AppearanceSettingKey = "generalColor" | "hoverColor" | "highlightColor";
 
 export const APPEARANCE_SETTING_KEYS: AppearanceSettingKey[] = [
   "generalColor",
@@ -74,6 +80,35 @@ export class NeuralGardenSettingTab extends PluginSettingTab {
         .setValue(this.plugin.settings.breakModeEnabled)
         .onChange(async (value) => {
           await this.plugin.setBreakModeEnabled(value);
+        }));
+
+    containerEl.createEl("h3", { text: "Help and onboarding" });
+    new Setting(containerEl)
+      .setName("Full introduction")
+      .setDesc("Replay the complete explanation without creating temporary demo data.")
+      .addButton((button) => button
+        .setButtonText("Replay")
+        .onClick(async () => {
+          await this.plugin.replayFullWalkthrough();
+        }));
+
+    let selectedSection: WalkthroughSection = "home";
+    new Setting(containerEl)
+      .setName("Section walkthrough")
+      .setDesc("Choose the part of Neural Garden you want explained.")
+      .addDropdown((dropdown) => dropdown
+        .addOption("home", "Home and Task Manager")
+        .addOption("mynotes", "MyNotes")
+        .addOption("mylearning", "MyLearning")
+        .addOption("journaling", "Journaling")
+        .setValue(selectedSection)
+        .onChange((value) => {
+          selectedSection = value as WalkthroughSection;
+        }))
+      .addButton((button) => button
+        .setButtonText("Replay")
+        .onClick(async () => {
+          await this.plugin.openWalkthrough(selectedSection);
         }));
   }
 

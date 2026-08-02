@@ -20,6 +20,8 @@ import {
 import { TaskManagerStorage } from "./storage";
 import { injectNeuralGardenStyles } from "./styles";
 import { WeeklyRecapManager } from "./weeklyRecapManager";
+import { WalkthroughManager, WalkthroughSection } from "./walkthroughs";
+import { OnboardingDemoSession } from "./onboardingDemo";
 import {
   QUICK_NOTES_CATEGORY,
   VIEW_TYPE_NEURAL_GARDEN_HOME,
@@ -38,6 +40,8 @@ export default class NeuralGardenPlugin extends Plugin {
   private myLearningStorage!: MyLearningStorage;
   private noteHeaderManager!: NoteHeaderManager;
   private weeklyRecapManager!: WeeklyRecapManager;
+  private walkthroughManager!: WalkthroughManager;
+  private onboardingDemo!: OnboardingDemoSession;
   private myLearningSelection: { category: string | null; topic: string | null } = {
     category: null,
     topic: null,
@@ -61,6 +65,8 @@ export default class NeuralGardenPlugin extends Plugin {
       highlightColor: stored?.highlightColor
         ?? stored?.primaryAccent
         ?? DEFAULT_SETTINGS.highlightColor,
+      onboardingCompleted: stored?.onboardingCompleted ?? DEFAULT_SETTINGS.onboardingCompleted,
+      onboardingDemo: stored?.onboardingDemo ?? DEFAULT_SETTINGS.onboardingDemo,
     };
     injectNeuralGardenStyles();
     this.applyAppearanceSettings();
@@ -82,6 +88,74 @@ export default class NeuralGardenPlugin extends Plugin {
       this.journalingStorage,
       this.storage,
       this.myNotesStorage,
+    );
+    this.onboardingDemo = new OnboardingDemoSession(
+      this.app,
+      this.journalingStorage,
+      this.storage,
+      this.settings.onboardingDemo,
+      async (state) => {
+        this.settings.onboardingDemo = state;
+        await this.saveData(this.settings);
+      },
+    );
+    if (this.settings.onboardingDemo) {
+      await this.onboardingDemo.cleanup();
+    }
+    this.walkthroughManager = new WalkthroughManager(
+      {
+        openHome: async () => {
+          const leaf = this.app.workspace.getMostRecentLeaf() ?? this.app.workspace.getLeaf(true);
+          await this.openHomeView(true, leaf);
+        },
+        closeAllTourWindows: async () => this.closeAllNeuralGardenViews(),
+        openMyNotes: async () => {
+          const leaf = this.app.workspace.getMostRecentLeaf() ?? this.app.workspace.getLeaf(true);
+          await this.openMyNotesView(true, leaf);
+        },
+        openMyNotesCategory: async (category) => {
+          const targetLeaf = this.app.workspace.getMostRecentLeaf() ?? this.app.workspace.getLeaf(true);
+          await this.openMyNotesView(true, targetLeaf);
+          const leaf = this.app.workspace.getMostRecentLeaf();
+          if (leaf?.view instanceof NeuralGardenMyNotesView) {
+            await leaf.view.showCategory(category);
+          }
+        },
+        openMyLearning: async () => {
+          const leaf = this.app.workspace.getMostRecentLeaf() ?? this.app.workspace.getLeaf(true);
+          await this.openMyLearningView(true, leaf);
+        },
+        openJournaling: async () => {
+          const leaf = this.app.workspace.getMostRecentLeaf() ?? this.app.workspace.getLeaf(true);
+          await this.openJournalingView(true, leaf);
+        },
+        openWeeklyRecapWeek: async (year, week) => this.openWeeklyRecap(year, week),
+        openJournalEntry: async (dateKey) => this.openJournalEntryView(dateKey, true),
+        openJournalingDate: async (dateKey) => this.openJournalingForDate(dateKey),
+        openJournalingDemoDate: async (dateKey) => {
+          await this.openJournalingView(true);
+          const leaf = this.app.workspace.getMostRecentLeaf();
+          if (leaf?.view instanceof NeuralGardenJournalingView) {
+            await leaf.view.showDemoDate(dateKey);
+          }
+        },
+        setBreakMode: async (enabled) => this.setBreakModeEnabled(enabled),
+        refreshHome: async () => {
+          for (const leaf of this.app.workspace.getLeavesOfType(VIEW_TYPE_NEURAL_GARDEN_HOME)) {
+            if (leaf.view instanceof NeuralGardenHomeView) {
+              await leaf.view.refresh();
+            }
+          }
+        },
+      },
+      {
+        onFirstRunComplete: async () => {
+          this.settings.onboardingCompleted = true;
+          await this.saveData(this.settings);
+        },
+        onFirstRunSkip: () => undefined,
+      },
+      this.onboardingDemo,
     );
     await this.safeInitStep("ensure Notes folder", async () => {
       await this.storage.ensureNotesFolder();
@@ -107,10 +181,11 @@ export default class NeuralGardenPlugin extends Plugin {
         this.openMyNotesView,
         this.openMyLearningView,
         this.openWeeklyRecap,
+        () => void this.openWalkthrough("home"),
       ),
     );
     this.registerView(VIEW_TYPE_NEURAL_GARDEN_MY_NOTES, (leaf) =>
-      new NeuralGardenMyNotesView(leaf, this.myNotesStorage, this.openHomeView),
+      new NeuralGardenMyNotesView(leaf, this.myNotesStorage, this.openHomeView, () => void this.openWalkthrough("mynotes")),
     );
     this.registerView(VIEW_TYPE_NEURAL_GARDEN_MY_LEARNING, (leaf) =>
       new NeuralGardenMyLearningView(
@@ -121,10 +196,11 @@ export default class NeuralGardenPlugin extends Plugin {
         (category, topic) => {
           this.myLearningSelection = { category, topic };
         },
+        () => void this.openWalkthrough("mylearning"),
       ),
     );
     this.registerView(VIEW_TYPE_NEURAL_GARDEN_JOURNALING, (leaf) =>
-      new NeuralGardenJournalingView(leaf, this.storage, this.journalingStorage, this.openHomeView, this.openJournalEntryView, this.openWeeklyRecap),
+      new NeuralGardenJournalingView(leaf, this.storage, this.journalingStorage, this.openHomeView, this.openJournalEntryView, this.openWeeklyRecap, () => void this.openWalkthrough("journaling")),
     );
     this.registerView(VIEW_TYPE_NEURAL_GARDEN_JOURNAL_ENTRY, (leaf) =>
       new NeuralGardenJournalEntryView(leaf, this.storage, this.journalingStorage, this.openHomeView, this.openJournalingView),
@@ -219,6 +295,7 @@ export default class NeuralGardenPlugin extends Plugin {
   }
 
   onunload() {
+    void this.walkthroughManager.close();
     for (const key of APPEARANCE_SETTING_KEYS) {
       document.body.style.removeProperty(APPEARANCE_CSS_VARIABLES[key]);
     }
@@ -261,6 +338,23 @@ export default class NeuralGardenPlugin extends Plugin {
     await this.saveData(this.settings);
   }
 
+  async openWalkthrough(section: WalkthroughSection): Promise<void> {
+    await this.walkthroughManager.startSection(section);
+  }
+
+  async replayFullWalkthrough(): Promise<void> {
+    await this.walkthroughManager.startFullReplay();
+  }
+
+  private async closeAllNeuralGardenViews(): Promise<void> {
+    this.app.workspace.detachLeavesOfType(VIEW_TYPE_NEURAL_GARDEN_HOME);
+    this.app.workspace.detachLeavesOfType(VIEW_TYPE_NEURAL_GARDEN_JOURNALING);
+    this.app.workspace.detachLeavesOfType(VIEW_TYPE_NEURAL_GARDEN_JOURNAL_ENTRY);
+    this.app.workspace.detachLeavesOfType(VIEW_TYPE_NEURAL_GARDEN_MY_NOTES);
+    this.app.workspace.detachLeavesOfType(VIEW_TYPE_NEURAL_GARDEN_MY_LEARNING);
+    this.app.workspace.detachLeavesOfType(VIEW_TYPE_NEURAL_GARDEN_WEEKLY_RECAP);
+  }
+
   private applyAppearanceSettings(): void {
     for (const key of APPEARANCE_SETTING_KEYS) {
       document.body.style.setProperty(APPEARANCE_CSS_VARIABLES[key], this.settings[key]);
@@ -280,6 +374,9 @@ export default class NeuralGardenPlugin extends Plugin {
   private async openHomeOnStartup(): Promise<void> {
     const targetLeaf = this.app.workspace.getMostRecentLeaf() ?? this.app.workspace.getLeaf(true);
     await this.openHomeView(true, targetLeaf);
+    if (!this.settings.onboardingCompleted) {
+      await this.walkthroughManager.startFirstRun();
+    }
   }
 
   private async openHomeOnStartupSafe(): Promise<void> {
@@ -316,6 +413,14 @@ export default class NeuralGardenPlugin extends Plugin {
     await leaf.setViewState({ type: VIEW_TYPE_NEURAL_GARDEN_JOURNALING, active: makeActive });
     if (makeActive) {
       this.app.workspace.revealLeaf(leaf);
+    }
+  }
+
+  private async openJournalingForDate(dateKey: string): Promise<void> {
+    await this.openJournalingView(true);
+    const leaf = this.app.workspace.getMostRecentLeaf();
+    if (leaf?.view instanceof NeuralGardenJournalingView) {
+      await leaf.view.showDate(dateKey);
     }
   }
 

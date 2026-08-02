@@ -4,6 +4,7 @@ import { JournalingStorage } from "./journalingStorage";
 import { injectNeuralGardenStyles } from "./styles";
 import { TaskManagerStorage } from "./storage";
 import { effortColor, effortLabel } from "./taskState";
+import { createHelpButton } from "./onboarding";
 import { EffortKey, JournalEntryFrontmatter, JournalEntryRecord, JournalTrackerRecord, WeeklyRecapFrontmatter } from "./types";
 
 type WeeklyPreviewState = {
@@ -88,6 +89,7 @@ export class NeuralGardenJournalingView extends ItemView {
   private selectedWeekKey: string | null = null;
   private weeklyPreview: WeeklyPreviewState | null = null;
   private generatedWeeklyRecaps = new Set<string>();
+  private demoDateKey: string | null = null;
 
   constructor(
     leaf: WorkspaceLeaf,
@@ -96,6 +98,7 @@ export class NeuralGardenJournalingView extends ItemView {
     private readonly openHomeView: (makeActive: boolean, targetLeaf?: WorkspaceLeaf) => Promise<void>,
     private readonly openJournalEntryView: (dateKey: string, editable: boolean, targetLeaf?: WorkspaceLeaf) => Promise<void>,
     private readonly openWeeklyRecap: (year: number, week: number, targetLeaf?: WorkspaceLeaf) => Promise<void>,
+    private readonly openHelp: () => void,
   ) {
     super(leaf);
   }
@@ -123,6 +126,22 @@ export class NeuralGardenJournalingView extends ItemView {
     this.selectedDateKey = null;
     this.selectedWeekKey = null;
     this.weeklyPreview = null;
+    this.demoDateKey = null;
+  }
+
+  async showDate(dateKey: string): Promise<void> {
+    this.calendarMonth = startOfMonth(parseDateKey(dateKey) ?? new Date());
+    this.selectedDateKey = dateKey;
+    this.selectedWeekKey = null;
+    this.weeklyPreview = null;
+    await this.reloadState();
+    this.selectedEntry = this.dailyEntries.find((entry) => entry.frontmatter.date === dateKey) ?? null;
+    this.render();
+  }
+
+  async showDemoDate(dateKey: string): Promise<void> {
+    this.demoDateKey = dateKey;
+    await this.showDate(dateKey);
   }
 
   private async reloadState(): Promise<void> {
@@ -132,7 +151,8 @@ export class NeuralGardenJournalingView extends ItemView {
     this.generatedWeeklyRecaps = await this.loadGeneratedWeeklyRecapKeys();
 
     if (this.selectedDateKey) {
-      if (!this.dailyEntries.some((entry) => entry.frontmatter.date === this.selectedDateKey)) {
+      const isPendingDemoDate = this.selectedDateKey === this.demoDateKey;
+      if (!isPendingDemoDate && !this.dailyEntries.some((entry) => entry.frontmatter.date === this.selectedDateKey)) {
         const latest = this.dailyEntries[this.dailyEntries.length - 1];
         if (latest) {
           this.selectedDateKey = latest.frontmatter.date;
@@ -160,6 +180,7 @@ export class NeuralGardenJournalingView extends ItemView {
 
     const titleWrap = topBar.createDiv({ cls: "ng-journal-title-wrap" });
     titleWrap.createEl("h2", { text: "Journal Hub" });
+    createHelpButton(topBar, this.openHelp);
 
     this.renderDailySection(wrapper);
   }
@@ -206,14 +227,15 @@ export class NeuralGardenJournalingView extends ItemView {
     });
 
     const today = todayKey();
-    const hasTodayEntry = this.dailyEntries.some((entry) => entry.frontmatter.date === today);
+    const newEntryDate = this.demoDateKey ?? today;
+    const hasTodayEntry = this.dailyEntries.some((entry) => entry.frontmatter.date === newEntryDate);
     const createButton = calendarHeader.createEl("button", { text: "New Entry" });
     createButton.addClass("ng-journal-create-button");
     createButton.disabled = hasTodayEntry;
     if (!createButton.disabled) {
       createButton.addClass("is-highlighted");
       createButton.addEventListener("click", async () => {
-        await this.openJournalEntryView(today, true, this.leaf);
+        await this.openJournalEntryView(newEntryDate, true, this.leaf);
       });
     }
 

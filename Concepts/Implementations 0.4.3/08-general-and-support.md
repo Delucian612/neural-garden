@@ -36,6 +36,7 @@ onboarding or contextual help.
 - Add a "help" affordance on each main interface (Home incl. Task Manager,
   MyNotes, MyLearning, Journaling) that opens a how-to / visual walkthrough
   highlighting and explaining that specific section.
+- redo the first startup possibilities in the settings
 
 **Acceptance criteria:**
 - First launch triggers the guided intro exactly once (persisted so it doesn't

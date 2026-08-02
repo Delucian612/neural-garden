@@ -16,6 +16,7 @@ import { MyNotesStorage } from "./myNotesStorage";
 import { openOverlay } from "./overlay";
 import { TaskManagerStorage } from "./storage";
 import { injectNeuralGardenStyles } from "./styles";
+import { createHelpButton } from "./onboarding";
 import {
   createId,
   effortColor,
@@ -57,6 +58,7 @@ export class NeuralGardenHomeView extends ItemView {
     private readonly openMyNotesView: (makeActive: boolean, targetLeaf?: WorkspaceLeaf) => Promise<void>,
     private readonly openMyLearningView: (makeActive: boolean, targetLeaf?: WorkspaceLeaf) => Promise<void>,
     private readonly openWeeklyRecap: (year: number, week: number, targetLeaf?: WorkspaceLeaf) => Promise<void>,
+    private readonly openHelp: () => void,
   ) {
     super(leaf);
   }
@@ -117,6 +119,11 @@ export class NeuralGardenHomeView extends ItemView {
     await this.persistAndRender();
   }
 
+  async refresh(): Promise<void> {
+    this.state = await this.storage.loadTaskManagerState();
+    this.render();
+  }
+
   private async persistAndRender(): Promise<void> {
     recalculateTotals(this.state);
     this.applyBreakRecovery();
@@ -130,6 +137,7 @@ export class NeuralGardenHomeView extends ItemView {
     contentEl.addClass("neural-garden-root");
 
     const wrapper = contentEl.createDiv({ cls: "neural-garden-home" });
+    createHelpButton(wrapper, this.openHelp);
     wrapper.createEl("h2", { text: "Home" });
 
     const hintStrip = wrapper.createDiv({ cls: "ng-home-hints-strip" });
