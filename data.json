@@ -1,3 +1,6 @@
 {
-  "forcedBreaksEnabled": false
+  "breakModeEnabled": false,
+  "generalColor": "#ec9a63",
+  "hoverColor": "#ffd2b0",
+  "highlightColor": "#00f0ff"
 }

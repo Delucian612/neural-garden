@@ -43,6 +43,7 @@ export class NeuralGardenHomeView extends ItemView {
   lastSupportHintIndex: number | null = null;
   refocusTaskInputAfterRender = false;
   weeklyTasksEl: HTMLElement | null = null;
+  weeklyTasksRenderVersion = 0;
   taskManagerEl: HTMLElement | null = null;
   energyAnimationFromPercent: number | null = null;
 
@@ -51,7 +52,7 @@ export class NeuralGardenHomeView extends ItemView {
     private readonly storage: TaskManagerStorage,
     private readonly journalingStorage: JournalingStorage,
     private readonly myNotesStorage: MyNotesStorage,
-    private forcedBreaksEnabled: boolean,
+    private breakModeEnabled: boolean,
     private readonly openJournalingView: (makeActive: boolean, targetLeaf?: WorkspaceLeaf) => Promise<void>,
     private readonly openMyNotesView: (makeActive: boolean, targetLeaf?: WorkspaceLeaf) => Promise<void>,
     private readonly openMyLearningView: (makeActive: boolean, targetLeaf?: WorkspaceLeaf) => Promise<void>,
@@ -77,7 +78,7 @@ export class NeuralGardenHomeView extends ItemView {
     if (this.state.forcedBreakThreshold === 50) {
       this.state.forcedBreakThreshold = 70;
     }
-    if (this.forcedBreaksEnabled) {
+    if (this.breakModeEnabled) {
       this.applyBreakRecovery();
     } else {
       this.resetForcedBreakState();
@@ -108,8 +109,8 @@ export class NeuralGardenHomeView extends ItemView {
     this.syncBreakLiveUpdates();
   }
 
-  async setForcedBreaksEnabled(enabled: boolean): Promise<void> {
-    this.forcedBreaksEnabled = enabled;
+  async setBreakModeEnabled(enabled: boolean): Promise<void> {
+    this.breakModeEnabled = enabled;
     if (!enabled) {
       this.resetForcedBreakState();
     }
@@ -477,21 +478,23 @@ export class NeuralGardenHomeView extends ItemView {
   }
 
   private async renderWeeklyPlannedTasks(container: HTMLElement): Promise<void> {
-    container.empty();
-    container.style.display = "none";
+    const renderVersion = ++this.weeklyTasksRenderVersion;
     if (this.state.forcedBreak || this.state.resting) {
+      container.empty();
+      container.style.display = "none";
       return;
     }
 
     const recap = await this.getLatestWeeklyRecap();
-    if (!recap) {
+    if (
+      renderVersion !== this.weeklyTasksRenderVersion
+      || !container.isConnected
+      || !recap
+    ) {
       return;
     }
 
     const recapPath = recap.file.path;
-    if (!container.isConnected) {
-      return;
-    }
 
     const convertedCounts = new Map<string, number>();
     for (const task of this.state.tasks) {
@@ -511,7 +514,9 @@ export class NeuralGardenHomeView extends ItemView {
       return false;
     });
 
+    container.empty();
     if (availableTasks.length === 0) {
+      container.style.display = "none";
       return;
     }
 
@@ -642,7 +647,7 @@ export class NeuralGardenHomeView extends ItemView {
         task.completed = true;
         task.completedAt = Date.now();
         this.state.spentEnergy += task.energy;
-        if (this.forcedBreaksEnabled) {
+        if (this.breakModeEnabled) {
           this.state.forcedBreakEnergy += task.energy;
           this.updateForcedBreakValues();
         }
@@ -791,7 +796,7 @@ export class NeuralGardenHomeView extends ItemView {
   }
 
   private updateForcedBreakValues(): void {
-    if (!this.forcedBreaksEnabled) {
+    if (!this.breakModeEnabled) {
       this.resetForcedBreakState();
       return;
     }
@@ -870,20 +875,9 @@ export class NeuralGardenHomeView extends ItemView {
     return this.supportHints[next];
   }
 
-  private makeCategoryButton(label: string, iconName: string, onClick: () => void, color = "#EC9A63"): HTMLButtonElement {
+  private makeCategoryButton(label: string, iconName: string, onClick: () => void): HTMLButtonElement {
     const btn = document.createElement("button");
-    btn.style.padding = "16px";
-    btn.style.borderRadius = "10px";
-    btn.style.border = `1px solid ${color}`;
-    btn.style.background = "transparent";
-    btn.style.fontSize = "14px";
-    btn.style.width = "100%";
-    btn.style.cursor = "pointer";
-    btn.style.color = "var(--text-normal)";
-    btn.style.display = "flex";
-    btn.style.alignItems = "center";
-    btn.style.gap = "8px";
-    btn.style.transition = "all 0.15s ease";
+    btn.className = "ng-home-category-button";
 
     const icon = document.createElement("span");
     icon.className = "ng-category-icon";
@@ -895,24 +889,6 @@ export class NeuralGardenHomeView extends ItemView {
     btn.appendChild(icon);
     btn.appendChild(text);
 
-    btn.addEventListener("mouseenter", () => {
-      btn.style.borderColor = "#FFD2B0";
-      btn.style.boxShadow = "0 0 0 2px rgba(236, 154, 99, 0.25)";
-    });
-    btn.addEventListener("mouseleave", () => {
-      btn.style.borderColor = color;
-      btn.style.boxShadow = "none";
-    });
-    btn.addEventListener("touchstart", () => {
-      btn.style.borderColor = "#FFD2B0";
-      btn.style.boxShadow = "0 0 0 2px rgba(236, 154, 99, 0.25)";
-    });
-    btn.addEventListener("touchend", () => {
-      window.setTimeout(() => {
-        btn.style.borderColor = color;
-        btn.style.boxShadow = "none";
-      }, 150);
-    });
     btn.onclick = onClick;
     return btn;
   }

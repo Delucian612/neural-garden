@@ -1,12 +1,33 @@
 export function injectNeuralGardenStyles(): void {
   const styleId = "neural-garden-style";
-  if (document.getElementById(styleId)) {
-    return;
-  }
-
-  const style = document.createElement("style");
+  const style = document.getElementById(styleId) as HTMLStyleElement | null
+    ?? document.createElement("style");
   style.id = styleId;
   style.textContent = `
+    body {
+      --ng-color-general: #ec9a63;
+      --ng-color-hover: #ffd2b0;
+      --ng-color-highlight: #00f0ff;
+      --ng-primary-accent: var(--ng-color-highlight);
+      --ng-secondary-accent: var(--ng-color-general);
+    }
+    .neural-garden-root input:not([type="color"]):not([type="checkbox"]):not([type="radio"]):focus,
+    .neural-garden-root input:not([type="color"]):not([type="checkbox"]):not([type="radio"]):focus-visible,
+    .neural-garden-root textarea:focus,
+    .neural-garden-root textarea:focus-visible,
+    .ng-note-header input:not([type="color"]):not([type="checkbox"]):not([type="radio"]):focus,
+    .ng-note-header input:not([type="color"]):not([type="checkbox"]):not([type="radio"]):focus-visible,
+    .ng-note-header textarea:focus,
+    .ng-note-header textarea:focus-visible,
+    .ng-overlay-card input:not([type="color"]):not([type="checkbox"]):not([type="radio"]):focus,
+    .ng-overlay-card input:not([type="color"]):not([type="checkbox"]):not([type="radio"]):focus-visible,
+    .ng-overlay-card textarea:focus,
+    .ng-overlay-card textarea:focus-visible,
+    .ng-journal-body-markdown:focus-within {
+      border-color: color-mix(in srgb, var(--ng-color-general) 50%, black 50%) !important;
+      box-shadow: none !important;
+      outline: none !important;
+    }
     .neural-garden-home {
       max-width: 720px;
       margin: 0 auto;
@@ -32,7 +53,7 @@ export function injectNeuralGardenStyles(): void {
     }
     .ng-weekly-available-hint {
       text-align: center;
-      color: #00f0ff;
+      color: var(--ng-primary-accent);
       font-size: 0.92rem;
       letter-spacing: 0.02em;
       margin-bottom: 2px;
@@ -41,9 +62,9 @@ export function injectNeuralGardenStyles(): void {
     }
     .ng-weekly-available-hint:hover,
     .ng-weekly-available-hint:focus-visible {
-      color: #c8fcff;
+      color: color-mix(in srgb, var(--ng-primary-accent) 35%, white);
       filter: brightness(1.55);
-      text-shadow: 0 0 8px color-mix(in srgb, #00f0ff 72%, transparent);
+      text-shadow: 0 0 8px color-mix(in srgb, var(--ng-primary-accent) 72%, transparent);
     }
     .ng-weekly-recap-row {
       width: min(420px, 100%);
@@ -54,7 +75,7 @@ export function injectNeuralGardenStyles(): void {
       background: transparent;
     }
     .ng-home-support {
-      border-top: 1px solid color-mix(in srgb, var(--background-modifier-border) 78%, transparent);
+      border-top: 1px solid color-mix(in srgb, var(--ng-color-general) 24%, var(--background-modifier-border));
       margin-top: 10px;
       padding-top: 12px;
       display: flex;
@@ -134,7 +155,7 @@ export function injectNeuralGardenStyles(): void {
     }
     .ng-weekly-overlay-card {
       width: 100%;
-      border: 1px solid color-mix(in srgb, #00f0ff 48%, var(--background-modifier-border));
+      border: 1px solid color-mix(in srgb, var(--ng-secondary-accent) 48%, var(--background-modifier-border));
       border-radius: 12px;
       padding: 18px 18px 16px;
       background: color-mix(in srgb, var(--background-primary) 90%, transparent);
@@ -159,7 +180,7 @@ export function injectNeuralGardenStyles(): void {
       transition: color 140ms ease;
     }
     .ng-weekly-overlay-generate:hover {
-      color: #00f0ff;
+      color: var(--ng-primary-accent);
     }
     .ng-weekly-breath-label,
     .ng-weekly-breath-count {
@@ -199,7 +220,7 @@ export function injectNeuralGardenStyles(): void {
       color: var(--text-muted);
     }
     .ng-weekly-section {
-      border: 1px solid var(--background-modifier-border);
+      border: 1px solid var(--ng-color-general);
       border-radius: 12px;
       padding: 12px;
       background: color-mix(in srgb, var(--background-primary) 15%, transparent);
@@ -349,8 +370,8 @@ export function injectNeuralGardenStyles(): void {
       justify-content: center;
       border-radius: 999px;
       padding: 5px 7px;
-      border: 1px solid color-mix(in srgb, #ec9a63 40%, var(--background-modifier-border));
-      background: color-mix(in srgb, #ec9a63 11%, transparent);
+      border: 1px solid color-mix(in srgb, var(--ng-color-general) 40%, var(--background-modifier-border));
+      background: color-mix(in srgb, var(--ng-color-general) 11%, transparent);
       color: var(--text-normal);
       animation-name: ng-weekly-float;
       animation-iteration-count: infinite;
@@ -371,21 +392,21 @@ export function injectNeuralGardenStyles(): void {
       box-shadow: 0 0 0 1px color-mix(in srgb, #f5d742 60%, transparent), 0 0 18px color-mix(in srgb, #f5d742 25%, transparent);
     }
     .ng-weekly-tracker-count {
-      color: #ec9a63;
+      color: var(--ng-color-general);
       font-weight: 700;
     }
     .ng-weekly-support-chip {
-      border: 1px solid color-mix(in srgb, #39e05a 45%, var(--background-modifier-border));
+      border: 1px solid var(--ng-color-general);
       border-radius: 999px;
       padding: 6px 10px;
       text-align: center;
-      color: color-mix(in srgb, #39e05a 65%, var(--text-normal));
+      color: var(--text-normal);
     }
     .ng-weekly-support-link {
       all: unset;
       appearance: none;
       -webkit-appearance: none;
-      color: #8fcf9d;
+      color: var(--text-normal);
       cursor: pointer;
       font-size: 1.25rem;
       line-height: 1.3;
@@ -396,7 +417,7 @@ export function injectNeuralGardenStyles(): void {
       display: inline;
     }
     .ng-weekly-support-link:hover {
-      color: #47fc82;
+      color: var(--text-normal);
     }
     .ng-weekly-support-link:focus,
     .ng-weekly-support-link:focus-visible {
@@ -469,7 +490,7 @@ export function injectNeuralGardenStyles(): void {
       min-width: 0;
       width: 100%;
       padding: 7px 9px;
-      border: 1px solid var(--background-modifier-border);
+      border: 1px solid var(--ng-color-general);
       border-radius: 8px;
       background: transparent !important;
       box-shadow: none !important;
@@ -544,7 +565,7 @@ export function injectNeuralGardenStyles(): void {
       font-weight: 600;
     }
     .ng-weekly-task-status-value.is-at-max {
-      color: #00F0FF;
+      color: var(--ng-primary-accent);
       font-weight: 700;
     }
     .ng-weekly-support-row {
@@ -596,11 +617,11 @@ export function injectNeuralGardenStyles(): void {
     .ng-search-row {
       padding: 8px 10px;
       border-radius: 10px;
-      border: 1px solid var(--background-modifier-border);
+      border: 1px solid color-mix(in srgb, var(--ng-color-general) 30%, var(--background-modifier-border));
       cursor: pointer;
     }
     .ng-search-row:hover {
-      border-color: #ec9a63;
+      border-color: color-mix(in srgb, var(--ng-color-hover) 55%, var(--background-modifier-border));
     }
     .ng-mylearning-search {
       display: flex;
@@ -641,11 +662,11 @@ export function injectNeuralGardenStyles(): void {
       gap: 8px;
       padding: 10px;
       border-radius: 10px;
-      border: 2px solid rgba(236, 154, 99, 0.6);
+      border: 2px solid color-mix(in srgb, var(--ng-secondary-accent) 60%, transparent);
       background-color: rgba(0, 0, 0, 0.02);
     }
     .ng-task-input {
-      border: 1px solid var(--background-modifier-border);
+      border: 1px solid color-mix(in srgb, var(--ng-color-general) 30%, var(--background-modifier-border));
       background-color: var(--background-primary);
       color: var(--text-normal);
       border-radius: 8px;
@@ -730,7 +751,7 @@ export function injectNeuralGardenStyles(): void {
       gap: 4px;
       margin: 2px 0;
       padding: 6px 0 6px 10px;
-      border-left: 2px solid color-mix(in srgb, #ec9a63 62%, transparent);
+      border-left: 2px solid color-mix(in srgb, var(--ng-secondary-accent) 62%, transparent);
     }
     .ng-this-week-heading {
       text-align: left;
@@ -841,7 +862,7 @@ export function injectNeuralGardenStyles(): void {
       background: color-mix(in srgb, var(--ng-task-badge-color) 10%, transparent);
     }
     .ng-row-button {
-      border: 1px solid var(--background-modifier-border);
+      border: 1px solid var(--ng-color-general);
       border-radius: 8px;
       padding: 4px 8px;
       background: transparent;
@@ -899,7 +920,7 @@ export function injectNeuralGardenStyles(): void {
       font-weight: 600;
     }
     .ng-break-button {
-      border: 1px solid #ec9a63;
+      border: 1px solid var(--ng-color-general);
       border-radius: 10px;
       padding: 17px 29px;
       background: transparent;
@@ -955,7 +976,7 @@ export function injectNeuralGardenStyles(): void {
     .ng-journal-create-button {
       padding: 16px;
       border-radius: 10px;
-      border: 1px solid #ec9a63;
+      border: 1px solid var(--ng-secondary-accent);
       background: transparent;
       font-size: 14px;
       width: 100%;
@@ -975,8 +996,8 @@ export function injectNeuralGardenStyles(): void {
     .ng-journal-nav-button:hover,
     .ng-journal-mode-button:hover,
     .ng-journal-create-button:hover {
-      border-color: #ffd2b0;
-      box-shadow: 0 0 0 2px rgba(236, 154, 99, 0.25);
+      border-color: var(--ng-primary-accent);
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--ng-primary-accent) 25%, transparent);
     }
     .ng-journal-create-button {
       width: auto;
@@ -1096,12 +1117,12 @@ export function injectNeuralGardenStyles(): void {
       justify-content: center;
     }
     .ng-journal-mode-button.is-active {
-      border-color: #ec9a63;
-      box-shadow: 0 0 0 2px rgba(236, 154, 99, 0.18);
+      border-color: var(--ng-secondary-accent);
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--ng-secondary-accent) 18%, transparent);
     }
     .ng-journal-create-button.is-highlighted {
-      border-color: #00f0ff;
-      box-shadow: 0 0 0 2px rgba(0, 240, 255, 0.18);
+      border-color: var(--ng-primary-accent);
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--ng-primary-accent) 18%, transparent);
     }
     .ng-journal-create-button:disabled {
       opacity: 0.45;
@@ -1118,7 +1139,7 @@ export function injectNeuralGardenStyles(): void {
     .ng-journal-trackers,
     .ng-journal-placeholder,
     .ng-journal-entry-card {
-      border: 1px solid var(--background-modifier-border);
+      border: 1px solid color-mix(in srgb, var(--ng-secondary-accent) 24%, var(--background-modifier-border));
       border-radius: 14px;
       padding: 14px;
       background: color-mix(in srgb, var(--background-primary) 18%, transparent);
@@ -1185,7 +1206,7 @@ export function injectNeuralGardenStyles(): void {
       min-width: 180px;
       padding: 7px 14px;
       border-radius: 999px;
-      border: 1px solid rgba(236, 154, 99, 0.5);
+      border: 1px solid color-mix(in srgb, var(--ng-secondary-accent) 50%, transparent);
       background: color-mix(in srgb, var(--background-primary) 20%, transparent);
       color: var(--text-normal);
       font-size: 0.92rem;
@@ -1195,8 +1216,8 @@ export function injectNeuralGardenStyles(): void {
     }
     .ng-journal-month-selector:hover,
     .ng-journal-month-selector:focus-visible {
-      border-color: #ffd2b0;
-      box-shadow: 0 0 0 2px rgba(236, 154, 99, 0.18);
+      border-color: var(--ng-primary-accent);
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--ng-primary-accent) 18%, transparent);
       outline: none;
     }
     .ng-journal-create-button {
@@ -1245,7 +1266,7 @@ export function injectNeuralGardenStyles(): void {
       min-height: 30px;
       padding: 4px 6px;
       border-radius: 9px;
-      border: 1px solid rgba(236, 154, 99, 0.45);
+      border: 1px solid color-mix(in srgb, var(--ng-secondary-accent) 45%, transparent);
       background: color-mix(in srgb, var(--background-primary) 16%, transparent);
       color: var(--text-normal);
       display: flex;
@@ -1257,9 +1278,9 @@ export function injectNeuralGardenStyles(): void {
       margin-right: 10px;
     }
     .ng-journal-week-cell.is-available {
-      border-color: #00f0ff;
+      border-color: var(--ng-primary-accent);
       background: color-mix(in srgb, var(--background-primary) 16%, transparent);
-      box-shadow: 0 0 0 2px rgba(0, 240, 255, 0.18);
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--ng-primary-accent) 18%, transparent);
     }
     .ng-journal-week-cell.is-generated {
       border-color: #39e05a;
@@ -1274,13 +1295,13 @@ export function injectNeuralGardenStyles(): void {
       font-size: 0.94rem;
       line-height: 1;
       font-weight: 700;
-      color: #00f0ff;
+      color: var(--ng-primary-accent);
       opacity: 0.95;
       pointer-events: none;
     }
     .ng-journal-week-cell:hover:not(:disabled) {
-      border-color: #ffd2b0;
-      box-shadow: 0 0 0 2px rgba(236, 154, 99, 0.18);
+      border-color: var(--ng-primary-accent);
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--ng-primary-accent) 18%, transparent);
     }
     .ng-journal-week-cell:disabled {
       opacity: 0.45;
@@ -1291,7 +1312,7 @@ export function injectNeuralGardenStyles(): void {
       min-height: 30px;
       padding: 5px 3px;
       border-radius: 8px;
-      border: 1px solid rgba(236, 154, 99, 0.38);
+      border: 1px solid color-mix(in srgb, var(--ng-secondary-accent) 38%, transparent);
       background: transparent;
       color: var(--text-normal);
       display: flex;
@@ -1300,23 +1321,23 @@ export function injectNeuralGardenStyles(): void {
       transition: all 0.15s ease;
     }
     .ng-journal-day-cell:hover {
-      border-color: #ffd2b0;
-      box-shadow: 0 0 0 2px rgba(236, 154, 99, 0.18);
+      border-color: var(--ng-primary-accent);
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--ng-primary-accent) 18%, transparent);
     }
     .ng-journal-day-cell.is-outside-month {
       opacity: 0.35;
     }
     .ng-journal-day-cell.has-entry {
-      border-color: rgba(236, 154, 99, 0.5);
-      background: rgba(236, 154, 99, 0.07);
+      border-color: color-mix(in srgb, var(--ng-secondary-accent) 50%, transparent);
+      background: color-mix(in srgb, var(--ng-secondary-accent) 7%, transparent);
     }
     .ng-journal-day-cell.is-today {
-      border-color: #0e8f9f;
-      box-shadow: 0 0 0 1.4px rgba(14, 143, 159, 0.16);
+      border-color: color-mix(in srgb, var(--ng-primary-accent) 72%, var(--background-modifier-border));
+      box-shadow: 0 0 0 1.4px color-mix(in srgb, var(--ng-primary-accent) 16%, transparent);
     }
     .ng-journal-day-cell.is-selected {
-      border-color: #00f0ff;
-      box-shadow: 0 0 0 2px rgba(0, 240, 255, 0.22);
+      border-color: var(--ng-primary-accent);
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--ng-primary-accent) 22%, transparent);
     }
     .ng-journal-day-number {
       font-size: 0.76rem;
@@ -1326,7 +1347,7 @@ export function injectNeuralGardenStyles(): void {
       width: 7px;
       height: 7px;
       border-radius: 999px;
-      background: #ec9a63;
+      background: var(--ng-secondary-accent);
       position: absolute;
       bottom: 4px;
       right: 4px;
@@ -1445,7 +1466,7 @@ export function injectNeuralGardenStyles(): void {
     .ng-journal-task-editor > .ng-task-input,
     .ng-journal-good-thing-input {
       padding: 5px 7px;
-      border: 1px solid var(--background-modifier-border);
+      border: 1px solid var(--ng-color-general);
       border-radius: 8px;
       background: transparent !important;
       box-shadow: none !important;
@@ -1592,7 +1613,7 @@ export function injectNeuralGardenStyles(): void {
     .ng-journal-emotion-chip {
       display: inline-flex;
       align-items: center;
-      border: 1px solid var(--background-modifier-border);
+      border: 1px solid var(--ng-color-general);
       border-radius: 999px;
       padding: 5px 10px;
       margin: 0;
@@ -1613,7 +1634,7 @@ export function injectNeuralGardenStyles(): void {
       width: 100%;
       resize: vertical;
       border-radius: 10px;
-      border: 1px solid var(--background-modifier-border);
+      border: 1px solid var(--ng-color-general);
       background: transparent;
       color: var(--text-normal);
       padding: 30px 10px 10px;
@@ -1647,13 +1668,13 @@ export function injectNeuralGardenStyles(): void {
       cursor: pointer;
       font-size: 0.88rem;
       font-weight: 600;
-      color: color-mix(in srgb, #ec9a63 55%, white);
+      color: color-mix(in srgb, var(--ng-primary-accent) 55%, white);
       transition: color 140ms ease;
       -webkit-tap-highlight-color: transparent;
     }
     .ng-journal-tracker-add-toggle:hover,
     .ng-journal-tracker-add-toggle:focus-visible {
-      color: #ec9a63;
+      color: var(--ng-primary-accent);
     }
     .ng-journal-tracker-add-row {
       margin-bottom: 14px;
@@ -1680,7 +1701,7 @@ export function injectNeuralGardenStyles(): void {
     }
     .ng-journal-tracker-color-option:focus-visible {
       outline: none;
-      box-shadow: 0 0 0 2px rgba(236, 154, 99, 0.45);
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--ng-primary-accent) 45%, transparent);
     }
     .ng-journal-tracker-list {
       display: grid;
@@ -1763,7 +1784,7 @@ export function injectNeuralGardenStyles(): void {
       align-items: center;
       gap: 6px;
       padding: 5px 12px;
-      border: 1px solid var(--background-modifier-border);
+      border: 1px solid color-mix(in srgb, var(--ng-color-general) 28%, var(--background-modifier-border));
       border-radius: 999px;
       font-size: 0.85rem;
       color: var(--text-normal);
@@ -1809,7 +1830,7 @@ export function injectNeuralGardenStyles(): void {
       z-index: 2;
       padding-bottom: 2px;
       margin-bottom: 4px;
-      border-bottom: 1px solid var(--background-modifier-border);
+      border-bottom: none;
       background: color-mix(in srgb, var(--background-primary) 16%, transparent);
       backdrop-filter: blur(6px);
     }
@@ -1826,7 +1847,7 @@ export function injectNeuralGardenStyles(): void {
       transform: translateY(1px);
     }
     .ng-journal-tracker-header-cell.is-today .ng-journal-tracker-day {
-      color: #ec9a63;
+      color: var(--ng-primary-accent);
     }
     .ng-journal-tracker-cell {
       all: unset;
@@ -1844,7 +1865,7 @@ export function injectNeuralGardenStyles(): void {
       width: 19px;
       height: 19px;
       border-radius: 50%;
-      border: 1.5px solid var(--background-modifier-border);
+      border: 1.5px solid color-mix(in srgb, var(--ng-color-general) 25%, var(--background-modifier-border));
       background: transparent;
       box-sizing: border-box;
       transition: background-color 160ms ease, border-color 160ms ease, transform 160ms ease;
@@ -1857,7 +1878,7 @@ export function injectNeuralGardenStyles(): void {
       box-shadow: 0 0 0 2px color-mix(in srgb, var(--ng-tracker-color, #ec9a63) 45%, transparent);
     }
     .ng-journal-tracker-cell.is-today .ng-journal-tracker-dot {
-      border-color: color-mix(in srgb, #ec9a63 55%, var(--background-modifier-border));
+      border-color: color-mix(in srgb, var(--ng-primary-accent) 55%, var(--background-modifier-border));
     }
     .ng-journal-tracker-cell.is-active .ng-journal-tracker-dot {
       background: var(--ng-tracker-color, #ec9a63);
@@ -1870,7 +1891,7 @@ export function injectNeuralGardenStyles(): void {
       top: 50%;
       transform: translateY(-50%);
       height: 6px;
-      background: color-mix(in srgb, var(--ng-tracker-color, #ec9a63) 55%, var(--background-primary));
+      background: color-mix(in srgb, var(--ng-tracker-color, #ec9a63) 28%, var(--background-primary));
       z-index: 0;
     }
     .ng-journal-tracker-cell.has-prev::before {
@@ -1971,8 +1992,8 @@ export function injectNeuralGardenStyles(): void {
       transition: border-color 160ms ease, box-shadow 160ms ease;
     }
     .ng-journal-body-markdown:focus-within {
-      border-color: color-mix(in srgb, var(--interactive-accent) 68%, var(--background-modifier-border));
-      box-shadow: 0 0 0 2px color-mix(in srgb, var(--interactive-accent) 31%, transparent), 0 0 29px color-mix(in srgb, var(--interactive-accent) 36%, transparent);
+      border-color: color-mix(in srgb, var(--ng-color-general) 50%, black 50%) !important;
+      box-shadow: none !important;
     }
     .ng-journal-body-markdown h4 {
       text-align: center;
@@ -2068,14 +2089,14 @@ export function injectNeuralGardenStyles(): void {
       align-self: center;
       margin-left: auto;
       padding: 3px 8px;
-      border-color: color-mix(in srgb, #ec9a63 24%, var(--background-modifier-border));
+      border-color: color-mix(in srgb, var(--ng-secondary-accent) 24%, var(--background-modifier-border));
       color: color-mix(in srgb, var(--text-normal) 88%, var(--text-muted));
       font-size: 0.68rem;
       text-transform: none;
     }
     .ng-journal-compact-expand:hover {
-      border-color: color-mix(in srgb, #ec9a63 36%, var(--background-modifier-border));
-      box-shadow: 0 0 0 1px color-mix(in srgb, #ec9a63 12%, transparent);
+      border-color: color-mix(in srgb, var(--ng-primary-accent) 36%, var(--background-modifier-border));
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--ng-primary-accent) 12%, transparent);
     }
     .ng-journal-compact-metrics {
       display: grid;
@@ -2358,7 +2379,7 @@ export function injectNeuralGardenStyles(): void {
       min-width: 34px;
       height: 35px;
       padding: 3px 3px 6px;
-      border: 1px solid rgba(236, 154, 99, 0.3);
+      border: 1px solid color-mix(in srgb, var(--ng-secondary-accent) 30%, transparent);
       border-radius: 5px;
       background: transparent;
       box-shadow: none;
@@ -2370,12 +2391,12 @@ export function injectNeuralGardenStyles(): void {
       cursor: pointer;
     }
     .ng-mylearning-daily-day:hover {
-      border-color: #ffd2b0;
-      box-shadow: 0 0 0 1px rgba(236, 154, 99, 0.16);
+      border-color: var(--ng-primary-accent);
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--ng-primary-accent) 16%, transparent);
     }
     .ng-mylearning-daily-day.is-today {
-      border-color: #0e8f9f;
-      box-shadow: 0 0 0 1px rgba(14, 143, 159, 0.16);
+      border-color: var(--ng-primary-accent);
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--ng-primary-accent) 16%, transparent);
       color: var(--text-normal);
       font-weight: 700;
     }
@@ -2418,8 +2439,8 @@ export function injectNeuralGardenStyles(): void {
       width: 7px;
       height: 7px;
       border-radius: 50%;
-      background: #ec9a63 !important;
-      box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.14), 0 0 5px rgba(236, 154, 99, 0.34);
+      background: var(--ng-secondary-accent) !important;
+      box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.14), 0 0 5px color-mix(in srgb, var(--ng-secondary-accent) 34%, transparent);
     }
     .ng-mylearning-daily-done {
       display: inline-flex;
@@ -2466,7 +2487,7 @@ export function injectNeuralGardenStyles(): void {
       height: 20px;
       padding: 0;
       font-size: 1.25em;
-      color: color-mix(in srgb, #ec9a63 60%, white);
+      color: color-mix(in srgb, var(--ng-primary-accent) 60%, white);
     }
     .ng-mylearning-inline-edit {
       min-width: 18px;
@@ -2476,8 +2497,8 @@ export function injectNeuralGardenStyles(): void {
       color: color-mix(in srgb, var(--text-muted) 72%, white);
     }
     .ng-mylearning-inline-edit.is-active {
-      color: #ec9a63;
-      text-shadow: 0 0 8px color-mix(in srgb, #ec9a63 36%, transparent);
+      color: var(--ng-secondary-accent);
+      text-shadow: 0 0 8px color-mix(in srgb, var(--ng-secondary-accent) 36%, transparent);
     }
     .ng-mylearning-inline-edit svg {
       width: 13px;
@@ -2523,7 +2544,7 @@ export function injectNeuralGardenStyles(): void {
       justify-content: center;
       width: 40px;
       height: 40px;
-      color: #ec9a63;
+      color: var(--ng-primary-accent);
       cursor: pointer;
       border: none !important;
       background: transparent !important;
@@ -2537,7 +2558,7 @@ export function injectNeuralGardenStyles(): void {
       flex: 0 0 auto;
     }
     .ng-mylearning-quick-create:hover {
-      color: color-mix(in srgb, #ec9a63 75%, white);
+      color: color-mix(in srgb, var(--ng-primary-accent) 75%, white);
       background: transparent !important;
       box-shadow: none !important;
     }
@@ -2648,7 +2669,7 @@ export function injectNeuralGardenStyles(): void {
       display: inline-flex;
       align-self: center;
       padding: 2px;
-      border: 1px solid var(--background-modifier-border);
+      border: 1px solid var(--ng-color-general);
       border-radius: 6px;
     }
     .ng-mylearning-type-control button {
@@ -2659,7 +2680,7 @@ export function injectNeuralGardenStyles(): void {
     }
     .ng-mylearning-type-control button.is-active {
       background: var(--background-modifier-hover);
-      color: #ec9a63;
+      color: var(--ng-secondary-accent);
     }
     .ng-note-header-input-error {
       width: 100%;
@@ -2674,7 +2695,7 @@ export function injectNeuralGardenStyles(): void {
       align-items: center;
       gap: 10px;
       padding: 5px 8px;
-      border: 1px solid var(--background-modifier-border);
+      border: 1px solid var(--ng-color-general);
       border-radius: 6px;
       background: var(--background-primary);
       color: var(--text-normal);
@@ -2688,7 +2709,7 @@ export function injectNeuralGardenStyles(): void {
       box-shadow: none;
     }
     .ng-learning-canvas-back:hover {
-      color: #ec9a63;
+      color: var(--ng-primary-accent);
     }
     .ng-learning-canvas-progress {
       display: inline-flex;
@@ -2975,8 +2996,8 @@ export function injectNeuralGardenStyles(): void {
     }
     .ng-learning-topic-edit.is-active,
     .ng-learning-category-edit.is-active {
-      color: #ec9a63;
-      text-shadow: 0 0 8px color-mix(in srgb, #ec9a63 35%, transparent);
+      color: var(--ng-secondary-accent);
+      text-shadow: 0 0 8px color-mix(in srgb, var(--ng-secondary-accent) 35%, transparent);
     }
     .ng-learning-topic-edit svg,
     .ng-learning-category-edit svg {
@@ -3116,21 +3137,22 @@ export function injectNeuralGardenStyles(): void {
       gap: 6px;
       padding: 6px 12px;
       border-radius: 999px;
-      border: 1px solid #ec9a63;
+      border: 1px solid var(--ng-secondary-accent);
       background: transparent;
       color: var(--text-normal);
       cursor: pointer;
     }
     .ng-mylearning-topbar .ng-mynotes-new-button {
-      border-color: color-mix(in srgb, #ec9a63 32%, var(--background-modifier-border));
+      border-color: color-mix(in srgb, var(--ng-secondary-accent) 32%, var(--background-modifier-border));
       color: color-mix(in srgb, var(--text-normal) 92%, var(--text-muted));
     }
     .ng-mynotes-new-button:hover {
-      box-shadow: 0 0 0 2px rgba(236, 154, 99, 0.25);
+      border-color: var(--ng-primary-accent);
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--ng-primary-accent) 25%, transparent);
     }
     .ng-mylearning-topbar .ng-mynotes-new-button:hover {
-      border-color: color-mix(in srgb, #ec9a63 46%, var(--background-modifier-border));
-      box-shadow: 0 0 0 1px color-mix(in srgb, #ec9a63 18%, transparent);
+      border-color: color-mix(in srgb, var(--ng-primary-accent) 46%, var(--background-modifier-border));
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--ng-primary-accent) 18%, transparent);
     }
     .ng-mynotes-button-icon {
       display: inline-flex;
@@ -3151,14 +3173,14 @@ export function injectNeuralGardenStyles(): void {
       gap: 6px;
       padding: 6px 12px;
       border-radius: 999px;
-      border: 1px solid var(--background-modifier-border);
+      border: 1px solid var(--ng-color-general);
       background: transparent;
       color: var(--text-normal);
       cursor: pointer;
       transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
     }
     .ng-mynotes-pill:hover {
-      border-color: #ec9a63;
+      border-color: var(--ng-primary-accent);
     }
     .ng-mynotes-pill:not(.is-active) {
       border-color: color-mix(in srgb, var(--background-modifier-border) 54%, transparent);
@@ -3170,9 +3192,9 @@ export function injectNeuralGardenStyles(): void {
       box-shadow: none;
     }
     .ng-mynotes-pill.is-active {
-      border-color: #ec9a63;
+      border-color: var(--ng-secondary-accent);
       background: transparent;
-      box-shadow: 0 0 0 2px rgba(236, 154, 99, 0.2);
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--ng-secondary-accent) 20%, transparent);
     }
     .ng-mynotes-pill.is-edit-target {
       border-style: dashed;
@@ -3285,7 +3307,7 @@ export function injectNeuralGardenStyles(): void {
       width: 3px;
       height: 18px;
       border-radius: 2px;
-      background: #ec9a63;
+      background: var(--ng-secondary-accent);
       flex-shrink: 0;
       margin-left: -7px;
     }
@@ -3335,14 +3357,14 @@ export function injectNeuralGardenStyles(): void {
       100% { transform: scale(1); }
     }
     .ng-mynotes-note-open-right:hover {
-      color: #ec9a63;
-      filter: drop-shadow(0 0 4px rgba(236, 154, 99, 0.4));
+      color: var(--ng-primary-accent);
+      filter: drop-shadow(0 0 4px color-mix(in srgb, var(--ng-primary-accent) 40%, transparent));
       transform: translateY(-0.5px);
     }
     .ng-mynotes-note-open-right:hover svg,
     .ng-mynotes-note-open-right:hover svg * {
-      stroke: #ec9a63;
-      fill: #ec9a63;
+      stroke: var(--ng-primary-accent);
+      fill: var(--ng-primary-accent);
     }
     .ng-mynotes-note-delete {
       color: #ff6565;
@@ -3361,7 +3383,7 @@ export function injectNeuralGardenStyles(): void {
     }
     .ng-overlay-card {
       background: var(--background-primary);
-      border: 1px solid var(--background-modifier-border);
+      border: 1px solid var(--ng-color-general);
       border-radius: 14px;
       padding: 20px;
       min-width: 280px;
@@ -3404,14 +3426,14 @@ export function injectNeuralGardenStyles(): void {
     .ng-overlay-danger {
       padding: 6px 16px;
       border-radius: 999px;
-      border: 1px solid var(--background-modifier-border);
+      border: 1px solid var(--ng-color-general);
       background: transparent;
       color: var(--text-normal);
       cursor: pointer;
     }
     .ng-overlay-confirm {
-      border-color: #ec9a63;
-      background: rgba(236, 154, 99, 0.18);
+      border-color: var(--ng-primary-accent);
+      background: color-mix(in srgb, var(--ng-primary-accent) 18%, transparent);
     }
     .ng-overlay-danger {
       border-color: #fb2c36;
@@ -3472,16 +3494,17 @@ export function injectNeuralGardenStyles(): void {
       transition: opacity 254ms ease 203ms;
     }
     .ng-note-header .ng-journal-nav-button {
-      border: none !important;
-      background: none !important;
-      box-shadow: none !important;
-      padding: 0;
+      border: 1px solid color-mix(in srgb, var(--ng-color-general) 60%, var(--background-modifier-border)) !important;
+      border-radius: 8px;
+      background: transparent !important;
+      box-shadow: none;
+      padding: 6px 10px;
       width: auto;
     }
     .ng-note-header .ng-journal-nav-button:hover {
-      border: none !important;
-      background: none !important;
-      box-shadow: none !important;
+      border-color: var(--ng-color-hover) !important;
+      background: transparent !important;
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--ng-color-hover) 22%, transparent) !important;
     }
     .ng-note-header-stage {
       position: relative;
@@ -3541,7 +3564,7 @@ export function injectNeuralGardenStyles(): void {
       align-items: center;
       padding: 2px 8px;
       border-radius: 999px;
-      border: 1px solid color-mix(in srgb, #ec9a63 30%, transparent);
+      border: 1px solid color-mix(in srgb, var(--ng-secondary-accent) 30%, transparent);
       font-size: 0.82em;
       color: var(--text-muted);
       background: transparent;
@@ -3582,7 +3605,7 @@ export function injectNeuralGardenStyles(): void {
       border: none !important;
       background: none !important;
       box-shadow: none !important;
-      color: color-mix(in srgb, #ec9a63 62%, white);
+      color: color-mix(in srgb, var(--ng-primary-accent) 62%, white);
       font-size: 28px;
       font-weight: 700;
       line-height: 1;
@@ -3592,7 +3615,7 @@ export function injectNeuralGardenStyles(): void {
       transition: color 150ms ease, transform 150ms ease;
     }
     .ng-note-header-to-top:hover {
-      color: #ec9a63;
+      color: var(--ng-primary-accent);
       transform: translateY(-1px);
     }
     .ng-note-header-box {
@@ -3629,17 +3652,17 @@ export function injectNeuralGardenStyles(): void {
       border: none !important;
       background: none !important;
       box-shadow: none !important;
-      color: color-mix(in srgb, #ec9a63 55%, white);
+      color: color-mix(in srgb, var(--ng-primary-accent) 55%, white);
       cursor: pointer;
       font-size: 1.5em;
       font-weight: 600;
       line-height: 1;
     }
     .ng-note-header-add-category-icon:hover {
-      color: #ec9a63;
+      color: var(--ng-primary-accent);
     }
     .ng-note-header-add-category-icon.has-input {
-      color: #ec9a63;
+      color: var(--ng-primary-accent);
     }
     .ng-note-header-fav {
       display: inline-flex;
@@ -3691,6 +3714,24 @@ export function injectNeuralGardenStyles(): void {
     .ng-note-header-support-toggle.is-active svg * {
       stroke: #00f0ff;
       fill: #00f0ff !important;
+    }
+    .ng-home-category-button:hover,
+    .ng-journal-nav-button:hover,
+    .ng-journal-mode-button:hover,
+    .ng-journal-create-button:hover,
+    .ng-break-button:hover,
+    .ng-mynotes-new-button:hover,
+    .ng-mynotes-pill:not(.ng-mynotes-support-pill):hover,
+    .ng-journal-compact-expand:hover {
+      border-color: var(--ng-color-hover) !important;
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--ng-color-hover) 25%, transparent) !important;
+    }
+    .ng-home-support,
+    .ng-mylearning-daily-calendar,
+    .ng-mylearning-divider,
+    .ng-mylearning-grid-divider,
+    .ng-note-header {
+      border-color: color-mix(in srgb, var(--ng-color-general) 24%, var(--background-modifier-border));
     }
     .ng-note-header-nav {
       display: flex;
@@ -3762,5 +3803,7 @@ export function injectNeuralGardenStyles(): void {
       }
     }
   `;
-  document.head.appendChild(style);
+  if (!style.isConnected) {
+    document.head.appendChild(style);
+  }
 }

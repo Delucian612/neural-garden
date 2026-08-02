@@ -10,11 +10,15 @@ import { JournalingStorage } from "./journalingStorage";
 import { MyNotesStorage } from "./myNotesStorage";
 import { NoteHeaderManager } from "./noteHeader";
 import {
+  APPEARANCE_CSS_VARIABLES,
+  APPEARANCE_SETTING_KEYS,
+  AppearanceSettingKey,
   DEFAULT_SETTINGS,
   NeuralGardenSettings,
   NeuralGardenSettingTab,
 } from "./settings";
 import { TaskManagerStorage } from "./storage";
+import { injectNeuralGardenStyles } from "./styles";
 import { WeeklyRecapManager } from "./weeklyRecapManager";
 import {
   QUICK_NOTES_CATEGORY,
@@ -40,10 +44,26 @@ export default class NeuralGardenPlugin extends Plugin {
   };
 
   async onload() {
+    const stored = await this.loadData() as (Partial<NeuralGardenSettings> & {
+      forcedBreaksEnabled?: boolean;
+      primaryAccent?: string;
+      secondaryAccent?: string;
+      supportAccent?: string;
+    }) | null;
     this.settings = {
-      ...DEFAULT_SETTINGS,
-      ...await this.loadData() as Partial<NeuralGardenSettings> | null,
+      breakModeEnabled: stored?.breakModeEnabled
+        ?? stored?.forcedBreaksEnabled
+        ?? DEFAULT_SETTINGS.breakModeEnabled,
+      generalColor: stored?.generalColor
+        ?? stored?.secondaryAccent
+        ?? DEFAULT_SETTINGS.generalColor,
+      hoverColor: stored?.hoverColor ?? DEFAULT_SETTINGS.hoverColor,
+      highlightColor: stored?.highlightColor
+        ?? stored?.primaryAccent
+        ?? DEFAULT_SETTINGS.highlightColor,
     };
+    injectNeuralGardenStyles();
+    this.applyAppearanceSettings();
     this.storage = new TaskManagerStorage(this.app);
     this.journalingStorage = new JournalingStorage(this.app);
     this.myNotesStorage = new MyNotesStorage(this.app);
@@ -82,7 +102,7 @@ export default class NeuralGardenPlugin extends Plugin {
         this.storage,
         this.journalingStorage,
         this.myNotesStorage,
-        this.settings.forcedBreaksEnabled,
+        this.settings.breakModeEnabled,
         this.openJournalingView,
         this.openMyNotesView,
         this.openMyLearningView,
@@ -199,6 +219,9 @@ export default class NeuralGardenPlugin extends Plugin {
   }
 
   onunload() {
+    for (const key of APPEARANCE_SETTING_KEYS) {
+      document.body.style.removeProperty(APPEARANCE_CSS_VARIABLES[key]);
+    }
     this.noteHeaderManager.detachAll();
     this.app.workspace.detachLeavesOfType(VIEW_TYPE_NEURAL_GARDEN_HOME);
     this.app.workspace.detachLeavesOfType(VIEW_TYPE_NEURAL_GARDEN_JOURNALING);
@@ -208,13 +231,39 @@ export default class NeuralGardenPlugin extends Plugin {
     this.app.workspace.detachLeavesOfType(VIEW_TYPE_NEURAL_GARDEN_WEEKLY_RECAP);
   }
 
-  async setForcedBreaksEnabled(enabled: boolean): Promise<void> {
-    this.settings.forcedBreaksEnabled = enabled;
+  async setBreakModeEnabled(enabled: boolean): Promise<void> {
+    this.settings.breakModeEnabled = enabled;
     await this.saveData(this.settings);
     for (const leaf of this.app.workspace.getLeavesOfType(VIEW_TYPE_NEURAL_GARDEN_HOME)) {
       if (leaf.view instanceof NeuralGardenHomeView) {
-        await leaf.view.setForcedBreaksEnabled(enabled);
+        await leaf.view.setBreakModeEnabled(enabled);
       }
+    }
+  }
+
+  async setAppearanceColor(key: AppearanceSettingKey, value: string): Promise<void> {
+    this.settings[key] = value;
+    this.applyAppearanceSettings();
+    await this.saveData(this.settings);
+  }
+
+  async resetAppearanceColor(key: AppearanceSettingKey): Promise<void> {
+    this.settings[key] = DEFAULT_SETTINGS[key];
+    this.applyAppearanceSettings();
+    await this.saveData(this.settings);
+  }
+
+  async resetAllAppearanceColors(): Promise<void> {
+    for (const key of APPEARANCE_SETTING_KEYS) {
+      this.settings[key] = DEFAULT_SETTINGS[key];
+    }
+    this.applyAppearanceSettings();
+    await this.saveData(this.settings);
+  }
+
+  private applyAppearanceSettings(): void {
+    for (const key of APPEARANCE_SETTING_KEYS) {
+      document.body.style.setProperty(APPEARANCE_CSS_VARIABLES[key], this.settings[key]);
     }
   }
 
