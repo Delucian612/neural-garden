@@ -45,6 +45,7 @@ var TRACKER_FOLDER = "Maintenance/Tracker";
 var NOTES_FOLDER = "Notes";
 var MY_NOTES_MAINTENANCE_FOLDER = "Maintenance/MyNotes";
 var MY_NOTES_CATEGORIES_FILE_PATH = "Maintenance/MyNotes/Categories.md";
+var QUICK_NOTES_CATEGORY = "Quick Notes";
 var MY_LEARNING_MAINTENANCE_FOLDER = "Maintenance/MyLearning";
 var MY_LEARNING_CONFIG_FILE_PATH = "Maintenance/MyLearning/MyLearning.md";
 var LEARNING_FOLDER = "Learning";
@@ -108,132 +109,27 @@ var DEFAULT_STATE = {
   lastWeeklyRecap: void 0
 };
 
-// src/taskState.ts
-function normalizeState(raw) {
-  var _a;
-  const parsedTasks = Array.isArray(raw.tasks) ? raw.tasks.map((task) => {
-    var _a2, _b;
-    const mapped = task;
-    if (!mapped || typeof mapped !== "object") {
-      return void 0;
-    }
-    const effort = EFFORT_MAP.get(mapped.effort);
-    return {
-      id: typeof mapped.id === "string" ? mapped.id : createId(),
-      taskName: typeof mapped.taskName === "string" ? mapped.taskName : "Untitled Task",
-      effort: (_a2 = effort == null ? void 0 : effort.key) != null ? _a2 : "easy",
-      energy: typeof mapped.energy === "number" ? mapped.energy : (_b = effort == null ? void 0 : effort.energy) != null ? _b : 15,
-      completed: Boolean(mapped.completed),
-      completedAt: typeof mapped.completedAt === "number" ? mapped.completedAt : void 0,
-      weeklySource: normalizeWeeklySource(mapped.weeklySource)
-    };
-  }).filter((task) => task !== void 0) : [];
-  const state = {
-    maxEnergy: numberOr(raw.maxEnergy, DEFAULT_STATE.maxEnergy),
-    totalEnergy: numberOr(raw.totalEnergy, DEFAULT_STATE.totalEnergy),
-    spentEnergy: numberOr(raw.spentEnergy, DEFAULT_STATE.spentEnergy),
-    tasks: parsedTasks,
-    resting: boolOr(raw.resting, DEFAULT_STATE.resting),
-    forcedBreak: boolOr(raw.forcedBreak, DEFAULT_STATE.forcedBreak),
-    forcedBreakThreshold: numberOr(raw.forcedBreakThreshold, DEFAULT_STATE.forcedBreakThreshold),
-    forcedBreakEnergy: numberOr(raw.forcedBreakEnergy, DEFAULT_STATE.forcedBreakEnergy),
-    forcedBreakEnergyEx: numberOr(raw.forcedBreakEnergyEx, DEFAULT_STATE.forcedBreakEnergyEx),
-    forcedBreakAdd: numberOr(raw.forcedBreakAdd, DEFAULT_STATE.forcedBreakAdd),
-    forcedBreakLength: numberOr(raw.forcedBreakLength, DEFAULT_STATE.forcedBreakLength),
-    forcedBreakTime: numberOr(raw.forcedBreakTime, DEFAULT_STATE.forcedBreakTime),
-    forcedBreakEnd: numberOrUndefined(raw.forcedBreakEnd),
-    baseTaskEnergy: numberOr(raw.baseTaskEnergy, (_a = DEFAULT_STATE.baseTaskEnergy) != null ? _a : 120),
-    lastWeeklyRecap: stringOrUndefined(raw.lastWeeklyRecap)
+// src/overlay.ts
+function openOverlay(title, dismissible = true) {
+  const overlay = document.body.createDiv({ cls: "ng-overlay" });
+  const card = overlay.createDiv({ cls: "ng-overlay-card" });
+  card.createEl("h3", { text: title, cls: "ng-overlay-title" });
+  const close = () => {
+    overlay.remove();
+    document.removeEventListener("keydown", onKeyDown);
   };
-  recalculateTotals(state);
-  return state;
-}
-function recalculateTotals(state) {
-  state.totalEnergy = state.tasks.reduce((sum, task) => sum + task.energy, 0);
-  state.spentEnergy = state.tasks.filter((task) => task.completed).reduce((sum, task) => sum + task.energy, 0);
-}
-function effortLabel(effort) {
-  var _a, _b;
-  return (_b = (_a = EFFORT_MAP.get(effort)) == null ? void 0 : _a.label) != null ? _b : "Easy";
-}
-function effortColor(effort) {
-  var _a, _b;
-  return (_b = (_a = EFFORT_MAP.get(effort)) == null ? void 0 : _a.color) != null ? _b : "#39E05A";
-}
-function createId() {
-  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
-}
-function normalizeFrontmatterTags(value) {
-  if (!value) {
-    return [];
-  }
-  if (Array.isArray(value)) {
-    return value.map((item) => String(item).toLowerCase());
-  }
-  if (typeof value === "string") {
-    return value.split(",").map((tag) => tag.trim().toLowerCase()).filter(Boolean);
-  }
-  return [];
-}
-function numberOr(value, fallback) {
-  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
-}
-function boolOr(value, fallback) {
-  return typeof value === "boolean" ? value : fallback;
-}
-function numberOrUndefined(value) {
-  return typeof value === "number" && Number.isFinite(value) ? value : void 0;
-}
-function stringOrUndefined(value) {
-  return typeof value === "string" && value.trim().length > 0 ? value : void 0;
-}
-function normalizeWeeklySource(value) {
-  if (!value || typeof value !== "object" || Array.isArray(value)) {
-    return void 0;
-  }
-  const record = value;
-  const recapPath = stringOrUndefined(record.recapPath);
-  const taskName = stringOrUndefined(record.taskName);
-  const effort = record.effort;
-  if (!recapPath || !taskName || !["light", "easy", "fair", "hard", "heavy"].includes(effort)) {
-    return void 0;
-  }
-  return { recapPath, taskName, effort };
-}
-
-// src/search.ts
-async function searchNotesInFolder(app, query, maxResults = 20) {
-  var _a, _b, _c;
-  if (query.trim().length < 2) {
-    return [];
-  }
-  const files = app.vault.getFiles().filter((file) => file.path.startsWith(`${NOTES_FOLDER}/`));
-  if (files.length === 0) {
-    return [];
-  }
-  const q = query.toLowerCase();
-  const matches = [];
-  for (const file of files) {
-    const fromName = file.basename.toLowerCase().includes(q) || file.path.toLowerCase().includes(q);
-    const cache = app.metadataCache.getFileCache(file);
-    const tags = [
-      ...(_b = (_a = cache == null ? void 0 : cache.tags) == null ? void 0 : _a.map((tag) => tag.tag.toLowerCase())) != null ? _b : [],
-      ...normalizeFrontmatterTags((_c = cache == null ? void 0 : cache.frontmatter) == null ? void 0 : _c.tags)
-    ];
-    const fromTags = tags.some((tag) => tag.includes(q));
-    let fromContent = false;
-    if (!fromName && !fromTags) {
-      const content = await app.vault.cachedRead(file);
-      fromContent = content.toLowerCase().includes(q);
+  const onKeyDown = (event) => {
+    if (dismissible && event.key === "Escape") {
+      close();
     }
-    if (fromName || fromTags || fromContent) {
-      matches.push(file);
+  };
+  overlay.addEventListener("click", (event) => {
+    if (dismissible && event.target === overlay) {
+      close();
     }
-    if (matches.length >= maxResults) {
-      break;
-    }
-  }
-  return matches;
+  });
+  document.addEventListener("keydown", onKeyDown);
+  return { card, close };
 }
 
 // src/styles.ts
@@ -256,6 +152,7 @@ function injectNeuralGardenStyles() {
     .neural-garden-home > h2 {
       text-align: center;
       margin: 0;
+      font-size: 2.08em;
     }
     .ng-categories {
       display: flex;
@@ -273,6 +170,14 @@ function injectNeuralGardenStyles() {
       font-size: 0.92rem;
       letter-spacing: 0.02em;
       margin-bottom: 2px;
+      cursor: pointer;
+      transition: color 160ms ease, filter 160ms ease, text-shadow 160ms ease;
+    }
+    .ng-weekly-available-hint:hover,
+    .ng-weekly-available-hint:focus-visible {
+      color: #c8fcff;
+      filter: brightness(1.55);
+      text-shadow: 0 0 8px color-mix(in srgb, #00f0ff 72%, transparent);
     }
     .ng-weekly-recap-row {
       width: min(420px, 100%);
@@ -815,12 +720,6 @@ function injectNeuralGardenStyles() {
       color: var(--text-normal);
       text-align: center;
     }
-    .neural-garden-home .ng-search .ng-search-heading {
-      font-size: 1rem;
-    }
-    .ng-search-heading {
-      text-align: center !important;
-    }
     .ng-search-results {
       margin-top: 8px;
       display: flex;
@@ -962,55 +861,75 @@ function injectNeuralGardenStyles() {
     .ng-this-week-tasks {
       display: flex;
       flex-direction: column;
-      gap: 7px;
-      margin-top: 10px;
-      padding: 9px 10px;
+      gap: 4px;
+      margin: 2px 0;
+      padding: 6px 0 6px 10px;
       border-left: 2px solid color-mix(in srgb, #ec9a63 62%, transparent);
     }
     .ng-this-week-heading {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
+      text-align: left;
     }
     .ng-this-week-heading h4 {
       margin: 0;
-      font-size: 0.9rem;
+      font-size: 1rem;
       font-weight: 650;
     }
     .ng-this-week-buttons {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-      gap: 6px;
+      display: flex;
+      flex-wrap: wrap;
+      column-gap: 11px;
+      row-gap: 3px;
     }
     .ng-this-week-task {
+      position: relative;
       display: flex;
+      flex: 0 1 auto;
+      max-width: 100%;
       min-width: 0;
       align-items: center;
-      justify-content: space-between;
       gap: 8px;
-      padding: 7px 8px;
-      border: 1px solid var(--background-modifier-border);
-      border-radius: 7px;
-      background: color-mix(in srgb, #ec9a63 5%, transparent);
-      color: var(--text-normal);
+      padding: 8px 10px;
+      border-radius: 10px;
       cursor: pointer;
-      text-align: left;
+      transition: background-color 250ms ease;
+    }
+    .ng-this-week-task:not(:last-child)::after {
+      content: "|";
+      position: absolute;
+      right: -7px;
+      color: color-mix(in srgb, var(--text-muted) 60%, transparent);
+      pointer-events: none;
     }
     .ng-this-week-task:hover,
     .ng-this-week-task:focus-visible {
-      border-color: var(--ng-weekly-effort-color);
-      background: color-mix(in srgb, #ec9a63 11%, transparent);
+      background: color-mix(in srgb, var(--ng-weekly-effort-color) 12%, transparent);
+    }
+    .ng-this-week-task[data-effort="hard"]:hover,
+    .ng-this-week-task[data-effort="hard"]:focus-visible {
+      background: color-mix(in srgb, var(--ng-weekly-effort-color) 19%, transparent);
     }
     .ng-this-week-task-name {
       min-width: 0;
-      overflow-wrap: anywhere;
+      max-width: 300px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      line-height: 1.35;
     }
-    .ng-this-week-task-effort {
-      flex: 0 0 auto;
-      color: var(--ng-weekly-effort-color);
-      font-size: 0.68rem;
-      font-weight: 650;
+    .ng-this-week-task-effort-dot {
+      width: 8px;
+      height: 8px;
+      flex: 0 0 8px;
+      border-radius: 50%;
+      background: var(--ng-weekly-effort-color);
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--ng-weekly-effort-color) 16%, transparent);
+    }
+    .ng-this-week-task[data-effort="hard"] .ng-this-week-task-effort-dot {
+      filter: brightness(1.2) saturate(1.08);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--ng-weekly-effort-color) 25%, transparent);
+    }
+    .ng-this-week-task[data-effort="heavy"] .ng-this-week-task-effort-dot {
+      box-shadow: 0 0 0 4px color-mix(in srgb, var(--ng-weekly-effort-color) 38%, transparent);
     }
     .ng-task-row {
       position: relative;
@@ -1051,6 +970,9 @@ function injectNeuralGardenStyles() {
       white-space: nowrap;
       flex-shrink: 0;
       opacity: 0.95;
+    }
+    .ng-task-row .ng-badge {
+      background: color-mix(in srgb, var(--ng-task-badge-color) 10%, transparent);
     }
     .ng-row-button {
       border: 1px solid var(--background-modifier-border);
@@ -3977,18 +3899,112 @@ function injectNeuralGardenStyles() {
   document.head.appendChild(style);
 }
 
+// src/taskState.ts
+function normalizeState(raw) {
+  var _a;
+  const parsedTasks = Array.isArray(raw.tasks) ? raw.tasks.map((task) => {
+    var _a2, _b;
+    const mapped = task;
+    if (!mapped || typeof mapped !== "object") {
+      return void 0;
+    }
+    const effort = EFFORT_MAP.get(mapped.effort);
+    return {
+      id: typeof mapped.id === "string" ? mapped.id : createId(),
+      taskName: typeof mapped.taskName === "string" ? mapped.taskName : "Untitled Task",
+      effort: (_a2 = effort == null ? void 0 : effort.key) != null ? _a2 : "easy",
+      energy: typeof mapped.energy === "number" ? mapped.energy : (_b = effort == null ? void 0 : effort.energy) != null ? _b : 15,
+      completed: Boolean(mapped.completed),
+      completedAt: typeof mapped.completedAt === "number" ? mapped.completedAt : void 0,
+      weeklySource: normalizeWeeklySource(mapped.weeklySource)
+    };
+  }).filter((task) => task !== void 0) : [];
+  const state = {
+    maxEnergy: numberOr(raw.maxEnergy, DEFAULT_STATE.maxEnergy),
+    totalEnergy: numberOr(raw.totalEnergy, DEFAULT_STATE.totalEnergy),
+    spentEnergy: numberOr(raw.spentEnergy, DEFAULT_STATE.spentEnergy),
+    tasks: parsedTasks,
+    resting: boolOr(raw.resting, DEFAULT_STATE.resting),
+    forcedBreak: boolOr(raw.forcedBreak, DEFAULT_STATE.forcedBreak),
+    forcedBreakThreshold: numberOr(raw.forcedBreakThreshold, DEFAULT_STATE.forcedBreakThreshold),
+    forcedBreakEnergy: numberOr(raw.forcedBreakEnergy, DEFAULT_STATE.forcedBreakEnergy),
+    forcedBreakEnergyEx: numberOr(raw.forcedBreakEnergyEx, DEFAULT_STATE.forcedBreakEnergyEx),
+    forcedBreakAdd: numberOr(raw.forcedBreakAdd, DEFAULT_STATE.forcedBreakAdd),
+    forcedBreakLength: numberOr(raw.forcedBreakLength, DEFAULT_STATE.forcedBreakLength),
+    forcedBreakTime: numberOr(raw.forcedBreakTime, DEFAULT_STATE.forcedBreakTime),
+    forcedBreakEnd: numberOrUndefined(raw.forcedBreakEnd),
+    baseTaskEnergy: numberOr(raw.baseTaskEnergy, (_a = DEFAULT_STATE.baseTaskEnergy) != null ? _a : 120),
+    lastWeeklyRecap: stringOrUndefined(raw.lastWeeklyRecap)
+  };
+  recalculateTotals(state);
+  return state;
+}
+function recalculateTotals(state) {
+  state.totalEnergy = state.tasks.reduce((sum, task) => sum + task.energy, 0);
+  state.spentEnergy = state.tasks.filter((task) => task.completed).reduce((sum, task) => sum + task.energy, 0);
+}
+function effortLabel(effort) {
+  var _a, _b;
+  return (_b = (_a = EFFORT_MAP.get(effort)) == null ? void 0 : _a.label) != null ? _b : "Easy";
+}
+function effortColor(effort) {
+  var _a, _b;
+  return (_b = (_a = EFFORT_MAP.get(effort)) == null ? void 0 : _a.color) != null ? _b : "#39E05A";
+}
+function createId() {
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+}
+function normalizeFrontmatterTags(value) {
+  if (!value) {
+    return [];
+  }
+  if (Array.isArray(value)) {
+    return value.map((item) => String(item).toLowerCase());
+  }
+  if (typeof value === "string") {
+    return value.split(",").map((tag) => tag.trim().toLowerCase()).filter(Boolean);
+  }
+  return [];
+}
+function numberOr(value, fallback) {
+  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
+}
+function boolOr(value, fallback) {
+  return typeof value === "boolean" ? value : fallback;
+}
+function numberOrUndefined(value) {
+  return typeof value === "number" && Number.isFinite(value) ? value : void 0;
+}
+function stringOrUndefined(value) {
+  return typeof value === "string" && value.trim().length > 0 ? value : void 0;
+}
+function normalizeWeeklySource(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return void 0;
+  }
+  const record = value;
+  const recapPath = stringOrUndefined(record.recapPath);
+  const taskName = stringOrUndefined(record.taskName);
+  const effort = record.effort;
+  if (!recapPath || !taskName || !["light", "easy", "fair", "hard", "heavy"].includes(effort)) {
+    return void 0;
+  }
+  return { recapPath, taskName, effort };
+}
+
 // src/homeView.ts
 var NeuralGardenHomeView = class extends import_obsidian.ItemView {
-  constructor(leaf, storage, journalingStorage, forcedBreaksEnabled, openJournalingView, openMyNotesView, openMyLearningView) {
+  constructor(leaf, storage, journalingStorage, myNotesStorage, forcedBreaksEnabled, openJournalingView, openMyNotesView, openMyLearningView, openWeeklyRecap) {
     super(leaf);
     this.storage = storage;
     this.journalingStorage = journalingStorage;
+    this.myNotesStorage = myNotesStorage;
     this.forcedBreaksEnabled = forcedBreaksEnabled;
     this.openJournalingView = openJournalingView;
     this.openMyNotesView = openMyNotesView;
     this.openMyLearningView = openMyLearningView;
+    this.openWeeklyRecap = openWeeklyRecap;
     this.state = { ...DEFAULT_STATE };
-    this.searchDebounceTimer = null;
     this.breakTickTimer = null;
     this.breakMessageTimer = null;
     this.breakTimerEl = null;
@@ -3999,6 +4015,7 @@ var NeuralGardenHomeView = class extends import_obsidian.ItemView {
     this.supportHints = [];
     this.lastSupportHintIndex = null;
     this.refocusTaskInputAfterRender = false;
+    this.weeklyTasksEl = null;
     this.taskManagerEl = null;
     this.energyAnimationFromPercent = null;
   }
@@ -4026,10 +4043,6 @@ var NeuralGardenHomeView = class extends import_obsidian.ItemView {
     this.startBreakTicker();
   }
   async onClose() {
-    if (this.searchDebounceTimer) {
-      window.clearTimeout(this.searchDebounceTimer);
-      this.searchDebounceTimer = null;
-    }
     if (this.breakTickTimer) {
       window.clearInterval(this.breakTickTimer);
       this.breakTickTimer = null;
@@ -4067,9 +4080,28 @@ var NeuralGardenHomeView = class extends import_obsidian.ItemView {
     contentEl.addClass("neural-garden-root");
     const wrapper = contentEl.createDiv({ cls: "neural-garden-home" });
     wrapper.createEl("h2", { text: "Home" });
+    const hintStrip = wrapper.createDiv({ cls: "ng-home-hints-strip" });
+    hintStrip.style.display = "none";
+    void this.renderSupportHintsStrip(hintStrip);
     const categories = wrapper.createDiv({ cls: "ng-categories" });
     if (this.shouldShowWeeklyRecapHint()) {
-      categories.createDiv({ cls: "ng-weekly-available-hint", text: "Weekly Recap Available" });
+      const recapHint = categories.createDiv({
+        cls: "ng-weekly-available-hint",
+        text: "Weekly Recap Available"
+      });
+      recapHint.setAttribute("role", "button");
+      recapHint.tabIndex = 0;
+      const openRecap = async () => {
+        const week = isoWeekInfo(/* @__PURE__ */ new Date());
+        await this.openWeeklyRecap(week.year, week.week, this.leaf);
+      };
+      recapHint.addEventListener("click", () => void openRecap());
+      recapHint.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          void openRecap();
+        }
+      });
     }
     const categoryGrid = categories.createDiv({ cls: "ng-category-grid" });
     const journalButton = this.makeCategoryButton("Journaling", "book-open", () => {
@@ -4081,22 +4113,61 @@ var NeuralGardenHomeView = class extends import_obsidian.ItemView {
     });
     categoryGrid.appendChild(notesButton);
     const quickNoteButton = this.makeCategoryButton("+ QuickNote", "pencil", () => {
-      new import_obsidian.Notice("QuickNote interface placeholder");
+      this.openQuickNoteOverlay();
     });
     categoryGrid.appendChild(quickNoteButton);
     const learningButton = this.makeCategoryButton("MyLearning", "brain", () => {
       void this.openMyLearningView(true, this.leaf);
     });
     categoryGrid.appendChild(learningButton);
-    const hintStrip = wrapper.createDiv({ cls: "ng-home-hints-strip" });
-    void this.renderSupportHintsStrip(hintStrip);
-    this.renderSearchSection(wrapper);
+    this.weeklyTasksEl = wrapper.createDiv({ cls: "ng-this-week-tasks" });
+    this.weeklyTasksEl.style.display = "none";
+    void this.renderWeeklyPlannedTasks(this.weeklyTasksEl);
     this.taskManagerEl = wrapper.createDiv({ cls: "ng-task-manager" });
     this.renderTaskManager(this.taskManagerEl);
     const supportSection = wrapper.createDiv({ cls: "ng-home-support" });
     void this.renderSupportSection(supportSection);
     injectNeuralGardenStyles();
     this.syncBreakLiveUpdates();
+  }
+  openQuickNoteOverlay() {
+    const { card, close } = openOverlay("Create A QuickNote");
+    card.createDiv({ cls: "ng-overlay-subtitle", text: "Write down a name" });
+    card.createDiv({ cls: "ng-overlay-text", text: `Category: ${QUICK_NOTES_CATEGORY}` });
+    const input = card.createEl("input", { type: "text", placeholder: "Note name..." });
+    input.addClass("ng-task-input");
+    const errorEl = card.createDiv({ cls: "ng-overlay-error" });
+    errorEl.hide();
+    const actions = card.createDiv({ cls: "ng-overlay-actions" });
+    const createButton = actions.createEl("button", { text: "Create", cls: "ng-overlay-confirm" });
+    const submit = async () => {
+      const name = input.value.trim();
+      if (!name) {
+        return;
+      }
+      if (this.myNotesStorage.noteExists(name)) {
+        errorEl.setText("This Note already exists");
+        errorEl.show();
+        input.value = "";
+        input.focus();
+        return;
+      }
+      const file = await this.myNotesStorage.createNote(name);
+      if (!file) {
+        new import_obsidian.Notice("Could not create the note. Try a different name.");
+        return;
+      }
+      await this.myNotesStorage.toggleNoteCategory(file, QUICK_NOTES_CATEGORY);
+      close();
+      await this.leaf.openFile(file);
+    };
+    createButton.addEventListener("click", () => void submit());
+    input.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        void submit();
+      }
+    });
+    input.focus();
   }
   async renderSupportSection(container) {
     container.empty();
@@ -4143,12 +4214,18 @@ var NeuralGardenHomeView = class extends import_obsidian.ItemView {
     var _a;
     container.empty();
     const recap = await this.getLatestWeeklyRecapFrontmatter();
-    this.supportHintEl = container.createDiv({ cls: "ng-home-support-hint" });
     this.supportHints = (_a = recap == null ? void 0 : recap.supportHints) != null ? _a : [];
     if (this.supportHints.length === 0) {
-      this.supportHintEl.textContent = "";
+      if (this.supportHintTimer) {
+        window.clearInterval(this.supportHintTimer);
+        this.supportHintTimer = null;
+      }
+      this.supportHintEl = null;
+      container.remove();
       return;
     }
+    container.style.removeProperty("display");
+    this.supportHintEl = container.createDiv({ cls: "ng-home-support-hint" });
     this.supportHintEl.textContent = this.getNextSupportHint();
     if (this.supportHintTimer) {
       window.clearInterval(this.supportHintTimer);
@@ -4191,57 +4268,14 @@ var NeuralGardenHomeView = class extends import_obsidian.ItemView {
     }
     return latestRecap;
   }
-  renderSearchSection(parent) {
-    const searchSection = parent.createDiv({ cls: "ng-search" });
-    const heading = searchSection.createEl("h3", { text: "Search Notes", cls: "ng-search-heading" });
-    heading.style.textAlign = "center";
-    const input = searchSection.createEl("input", {
-      type: "text",
-      placeholder: "Search Notes..."
-    });
-    input.addClass("ng-task-input");
-    const results = searchSection.createDiv({ cls: "ng-search-results ng-mynotes-list" });
-    input.addEventListener("input", () => {
-      if (this.searchDebounceTimer) {
-        window.clearTimeout(this.searchDebounceTimer);
-      }
-      this.searchDebounceTimer = window.setTimeout(async () => {
-        const query = input.value.trim();
-        await this.updateSearchResults(query, results);
-      }, 250);
-    });
-  }
-  async updateSearchResults(query, container) {
-    container.empty();
-    if (query.length < 2) {
-      return;
-    }
-    const files = this.app.vault.getFiles().filter((file) => file.path.startsWith(`${NOTES_FOLDER}/`));
-    if (files.length === 0) {
-      const noNotes = container.createDiv({ cls: "ng-empty" });
-      noNotes.textContent = "No notes found in Notes folder yet.";
-      return;
-    }
-    const matches = await searchNotesInFolder(this.app, query, 20);
-    if (matches.length === 0) {
-      const empty = container.createDiv({ cls: "ng-empty" });
-      empty.textContent = "No matching notes in Notes folder.";
-      return;
-    }
-    for (const file of matches) {
-      const row = container.createDiv({ cls: "ng-mynotes-note-row ng-home-search-note-row" });
-      row.createDiv({ cls: "ng-mynotes-note-indicator" });
-      row.createDiv({ cls: "ng-mynotes-note-title", text: file.basename });
-      row.addEventListener("click", async () => {
-        await this.app.workspace.getLeaf(true).openFile(file);
-      });
-    }
-  }
   renderTaskManagerOnly() {
-    var _a;
+    var _a, _b;
     if (!((_a = this.taskManagerEl) == null ? void 0 : _a.isConnected)) {
       this.render();
       return;
+    }
+    if ((_b = this.weeklyTasksEl) == null ? void 0 : _b.isConnected) {
+      void this.renderWeeklyPlannedTasks(this.weeklyTasksEl);
     }
     this.renderTaskManager(this.taskManagerEl);
     this.syncBreakLiveUpdates();
@@ -4330,14 +4364,11 @@ var NeuralGardenHomeView = class extends import_obsidian.ItemView {
         await this.persistAndRender();
       });
     }
-    const weeklyTasks = section.createDiv({ cls: "ng-this-week-tasks" });
     const listWrapper = section.createDiv({ cls: "ng-task-list" });
     if (isBreakActive) {
-      weeklyTasks.remove();
       this.renderForcedBreakPanel(listWrapper);
       return;
     }
-    void this.renderWeeklyPlannedTasks(weeklyTasks);
     const pendingTasks = this.state.tasks.filter((task) => !task.completed);
     if (pendingTasks.length === 0) {
       const emptyTaskList = listWrapper.createDiv({ cls: "ng-empty ng-task-empty" });
@@ -4350,9 +4381,13 @@ var NeuralGardenHomeView = class extends import_obsidian.ItemView {
   }
   async renderWeeklyPlannedTasks(container) {
     var _a, _b;
+    container.empty();
+    container.style.display = "none";
+    if (this.state.forcedBreak || this.state.resting) {
+      return;
+    }
     const recap = await this.getLatestWeeklyRecap();
     if (!recap) {
-      container.remove();
       return;
     }
     const recapPath = recap.file.path;
@@ -4378,28 +4413,40 @@ var NeuralGardenHomeView = class extends import_obsidian.ItemView {
       return false;
     });
     if (availableTasks.length === 0) {
-      container.remove();
       return;
     }
+    container.style.removeProperty("display");
     const heading = container.createDiv({ cls: "ng-this-week-heading" });
-    heading.createEl("h4", { text: "This week's tasks" });
-    const buttons = container.createDiv({ cls: "ng-this-week-buttons" });
+    heading.createEl("h4", { text: "This Week's Tasks" });
+    const taskList = container.createDiv({ cls: "ng-this-week-buttons" });
     for (const plannedTask of availableTasks) {
       const effortKey = weeklyEffortToTaskEffort(plannedTask.effort);
       const effort = EFFORT_MAP.get(effortKey);
       if (!effort) {
         continue;
       }
-      const button = buttons.createEl("button", { cls: "ng-this-week-task" });
-      button.style.setProperty("--ng-weekly-effort-color", effort.color);
-      button.createSpan({ cls: "ng-this-week-task-name", text: plannedTask.taskName });
-      const badge = button.createSpan({ cls: "ng-this-week-task-effort", text: effort.label });
-      button.addEventListener("click", async () => {
+      const row = taskList.createDiv({ cls: "ng-this-week-task" });
+      row.setAttribute("role", "button");
+      row.tabIndex = 0;
+      row.dataset.effort = effort.key;
+      const badgeColor = taskBadgeColor(effort.key);
+      row.style.setProperty("--ng-weekly-effort-color", badgeColor);
+      const effortDot = row.createSpan({ cls: "ng-this-week-task-effort-dot" });
+      effortDot.title = `${effort.label} effort`;
+      const textContainer = row.createDiv({ cls: "ng-task-text" });
+      const taskName = textContainer.createDiv({ cls: "ng-task-title ng-this-week-task-name", text: plannedTask.taskName });
+      taskName.title = plannedTask.taskName;
+      let activating = false;
+      const activate = async () => {
+        if (activating) {
+          return;
+        }
         if (this.state.forcedBreak || this.state.resting) {
           new import_obsidian.Notice("Task manager is in break mode");
           return;
         }
-        button.disabled = true;
+        activating = true;
+        row.setAttribute("aria-disabled", "true");
         this.energyAnimationFromPercent = this.state.maxEnergy > 0 ? this.state.totalEnergy / this.state.maxEnergy * 100 : 0;
         this.state.tasks.unshift({
           id: createId(),
@@ -4414,6 +4461,13 @@ var NeuralGardenHomeView = class extends import_obsidian.ItemView {
           }
         });
         await this.persistAndRender();
+      };
+      row.addEventListener("click", () => void activate());
+      row.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          void activate();
+        }
       });
     }
   }
@@ -4425,9 +4479,10 @@ var NeuralGardenHomeView = class extends import_obsidian.ItemView {
     const badgeWrap = row.createDiv({ cls: "ng-badge-wrap" });
     const badge = badgeWrap.createEl("span", { text: effortLabel(task.effort) });
     badge.addClass("ng-badge");
-    const mutedBadgeColor = toMutedButtonColor(effortColor(task.effort), 0.35, 0.35);
-    badge.style.borderColor = mutedBadgeColor;
-    badge.style.color = mutedBadgeColor;
+    const badgeColor = taskBadgeColor(task.effort);
+    badge.style.setProperty("--ng-task-badge-color", badgeColor);
+    badge.style.borderColor = badgeColor;
+    badge.style.color = badgeColor;
     const editButton = row.createEl("button", { text: "Edit" });
     editButton.addClass("ng-row-button", "ng-edit");
     const deleteButton = row.createEl("button", { text: "X" });
@@ -4744,6 +4799,12 @@ function weeklyEffortToTaskEffort(effort) {
   };
   return effortMap[effort];
 }
+function taskBadgeColor(effort) {
+  if (effort === "heavy") {
+    return toMutedButtonColor(effortColor(effort), 0.78, 0.68);
+  }
+  return toMutedButtonColor(effortColor(effort), 0.9, 0.75);
+}
 function weeklyTaskKey(taskName, effort) {
   return `${taskName}\0${effort}`;
 }
@@ -4932,31 +4993,6 @@ function hslToRgb(h, s, l) {
 
 // src/journalingEntryView.ts
 var import_obsidian2 = require("obsidian");
-
-// src/overlay.ts
-function openOverlay(title, dismissible = true) {
-  const overlay = document.body.createDiv({ cls: "ng-overlay" });
-  const card = overlay.createDiv({ cls: "ng-overlay-card" });
-  card.createEl("h3", { text: title, cls: "ng-overlay-title" });
-  const close = () => {
-    overlay.remove();
-    document.removeEventListener("keydown", onKeyDown);
-  };
-  const onKeyDown = (event) => {
-    if (dismissible && event.key === "Escape") {
-      close();
-    }
-  };
-  overlay.addEventListener("click", (event) => {
-    if (dismissible && event.target === overlay) {
-      close();
-    }
-  });
-  document.addEventListener("keydown", onKeyDown);
-  return { card, close };
-}
-
-// src/journalingEntryView.ts
 var METRICS = [
   { key: "mood", label: "Mood", explanation: "How have you been feeling?" },
   { key: "sleep", label: "Sleep", explanation: "How rested did you feel after sleeping?" },
@@ -8532,6 +8568,43 @@ Do not touch this.\\
 
 // src/myNotesView.ts
 var import_obsidian6 = require("obsidian");
+
+// src/search.ts
+async function searchNotesInFolder(app, query, maxResults = 20) {
+  var _a, _b, _c;
+  if (query.trim().length < 2) {
+    return [];
+  }
+  const files = app.vault.getFiles().filter((file) => file.path.startsWith(`${NOTES_FOLDER}/`));
+  if (files.length === 0) {
+    return [];
+  }
+  const q = query.toLowerCase();
+  const matches = [];
+  for (const file of files) {
+    const fromName = file.basename.toLowerCase().includes(q) || file.path.toLowerCase().includes(q);
+    const cache = app.metadataCache.getFileCache(file);
+    const tags = [
+      ...(_b = (_a = cache == null ? void 0 : cache.tags) == null ? void 0 : _a.map((tag) => tag.tag.toLowerCase())) != null ? _b : [],
+      ...normalizeFrontmatterTags((_c = cache == null ? void 0 : cache.frontmatter) == null ? void 0 : _c.tags)
+    ];
+    const fromTags = tags.some((tag) => tag.includes(q));
+    let fromContent = false;
+    if (!fromName && !fromTags) {
+      const content = await app.vault.cachedRead(file);
+      fromContent = content.toLowerCase().includes(q);
+    }
+    if (fromName || fromTags || fromContent) {
+      matches.push(file);
+    }
+    if (matches.length >= maxResults) {
+      break;
+    }
+  }
+  return matches;
+}
+
+// src/myNotesView.ts
 var FAVOURITE_CATEGORY = "__favourite__";
 var SUPPORT_PREFIX = "support:";
 var OPEN_RIGHT_ICON_CANDIDATES2 = ["separator-vertical", "panel-right-open", "split-square-vertical"];
@@ -8648,7 +8721,16 @@ var NeuralGardenMyNotesView = class extends import_obsidian6.ItemView {
     favouritePill.addEventListener("click", () => {
       void this.selectCategory(FAVOURITE_CATEGORY);
     });
-    const categories = await this.myNotesStorage.loadCategories();
+    const quickNotesPill = pillRow.createEl("button", { cls: "ng-mynotes-pill" });
+    quickNotesPill.dataset.categoryKey = QUICK_NOTES_CATEGORY;
+    quickNotesPill.createSpan({ text: QUICK_NOTES_CATEGORY });
+    if (this.selectedCategory === QUICK_NOTES_CATEGORY) {
+      quickNotesPill.addClass("is-active");
+    }
+    quickNotesPill.addEventListener("click", () => {
+      void this.selectCategory(QUICK_NOTES_CATEGORY);
+    });
+    const categories = (await this.myNotesStorage.loadCategories()).filter((category) => category.name !== QUICK_NOTES_CATEGORY);
     for (const category of categories) {
       const pill = pillRow.createEl("button", { cls: "ng-mynotes-pill" });
       pill.dataset.categoryKey = category.name;
@@ -8668,7 +8750,7 @@ var NeuralGardenMyNotesView = class extends import_obsidian6.ItemView {
     if (categories.length === 0) {
       section.createDiv({
         cls: "ng-empty",
-        text: "No categories yet. Add categories from a note's header."
+        text: "No custom categories yet. Add categories from a note's header."
       });
     }
   }
@@ -11848,6 +11930,9 @@ var NeuralGardenPlugin = class extends import_obsidian14.Plugin {
     await this.safeInitStep("ensure Notes folder", async () => {
       await this.storage.ensureNotesFolder();
     });
+    await this.safeInitStep("ensure Quick Notes category", async () => {
+      await this.myNotesStorage.addCategory(QUICK_NOTES_CATEGORY);
+    });
     await this.safeInitStep("ensure Journal folders", async () => {
       await this.journalingStorage.ensureJournalFolders();
     });
@@ -11860,10 +11945,12 @@ var NeuralGardenPlugin = class extends import_obsidian14.Plugin {
         leaf,
         this.storage,
         this.journalingStorage,
+        this.myNotesStorage,
         this.settings.forcedBreaksEnabled,
         this.openJournalingView,
         this.openMyNotesView,
-        this.openMyLearningView
+        this.openMyLearningView,
+        this.openWeeklyRecap
       )
     );
     this.registerView(

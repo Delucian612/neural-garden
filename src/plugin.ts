@@ -17,6 +17,7 @@ import {
 import { TaskManagerStorage } from "./storage";
 import { WeeklyRecapManager } from "./weeklyRecapManager";
 import {
+  QUICK_NOTES_CATEGORY,
   VIEW_TYPE_NEURAL_GARDEN_HOME,
   VIEW_TYPE_NEURAL_GARDEN_JOURNALING,
   VIEW_TYPE_NEURAL_GARDEN_JOURNAL_ENTRY,
@@ -65,6 +66,9 @@ export default class NeuralGardenPlugin extends Plugin {
     await this.safeInitStep("ensure Notes folder", async () => {
       await this.storage.ensureNotesFolder();
     });
+    await this.safeInitStep("ensure Quick Notes category", async () => {
+      await this.myNotesStorage.addCategory(QUICK_NOTES_CATEGORY);
+    });
     await this.safeInitStep("ensure Journal folders", async () => {
       await this.journalingStorage.ensureJournalFolders();
     });
@@ -77,10 +81,12 @@ export default class NeuralGardenPlugin extends Plugin {
         leaf,
         this.storage,
         this.journalingStorage,
+        this.myNotesStorage,
         this.settings.forcedBreaksEnabled,
         this.openJournalingView,
         this.openMyNotesView,
         this.openMyLearningView,
+        this.openWeeklyRecap,
       ),
     );
     this.registerView(VIEW_TYPE_NEURAL_GARDEN_MY_NOTES, (leaf) =>

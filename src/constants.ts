@@ -14,6 +14,7 @@ export const TRACKER_FOLDER = "Maintenance/Tracker";
 export const NOTES_FOLDER = "Notes";
 export const MY_NOTES_MAINTENANCE_FOLDER = "Maintenance/MyNotes";
 export const MY_NOTES_CATEGORIES_FILE_PATH = "Maintenance/MyNotes/Categories.md";
+export const QUICK_NOTES_CATEGORY = "Quick Notes";
 export const MY_LEARNING_MAINTENANCE_FOLDER = "Maintenance/MyLearning";
 export const MY_LEARNING_CONFIG_FILE_PATH = "Maintenance/MyLearning/MyLearning.md";
 export const LEARNING_FOLDER = "Learning";

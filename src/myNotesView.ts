@@ -1,5 +1,6 @@
 import { ItemView, Notice, TFile, WorkspaceLeaf, setIcon } from "obsidian";
 import {
+  QUICK_NOTES_CATEGORY,
   SUPPORT_CATEGORIES,
   VIEW_TYPE_NEURAL_GARDEN_MY_NOTES,
 } from "./constants";
@@ -149,7 +150,18 @@ export class NeuralGardenMyNotesView extends ItemView {
       void this.selectCategory(FAVOURITE_CATEGORY);
     });
 
-    const categories = await this.myNotesStorage.loadCategories();
+    const quickNotesPill = pillRow.createEl("button", { cls: "ng-mynotes-pill" });
+    quickNotesPill.dataset.categoryKey = QUICK_NOTES_CATEGORY;
+    quickNotesPill.createSpan({ text: QUICK_NOTES_CATEGORY });
+    if (this.selectedCategory === QUICK_NOTES_CATEGORY) {
+      quickNotesPill.addClass("is-active");
+    }
+    quickNotesPill.addEventListener("click", () => {
+      void this.selectCategory(QUICK_NOTES_CATEGORY);
+    });
+
+    const categories = (await this.myNotesStorage.loadCategories())
+      .filter((category) => category.name !== QUICK_NOTES_CATEGORY);
     for (const category of categories) {
       const pill = pillRow.createEl("button", { cls: "ng-mynotes-pill" });
       pill.dataset.categoryKey = category.name;
@@ -170,7 +182,7 @@ export class NeuralGardenMyNotesView extends ItemView {
     if (categories.length === 0) {
       section.createDiv({
         cls: "ng-empty",
-        text: "No categories yet. Add categories from a note's header.",
+        text: "No custom categories yet. Add categories from a note's header.",
       });
     }
   }

@@ -18,6 +18,7 @@ export function injectNeuralGardenStyles(): void {
     .neural-garden-home > h2 {
       text-align: center;
       margin: 0;
+      font-size: 2.08em;
     }
     .ng-categories {
       display: flex;
@@ -35,6 +36,14 @@ export function injectNeuralGardenStyles(): void {
       font-size: 0.92rem;
       letter-spacing: 0.02em;
       margin-bottom: 2px;
+      cursor: pointer;
+      transition: color 160ms ease, filter 160ms ease, text-shadow 160ms ease;
+    }
+    .ng-weekly-available-hint:hover,
+    .ng-weekly-available-hint:focus-visible {
+      color: #c8fcff;
+      filter: brightness(1.55);
+      text-shadow: 0 0 8px color-mix(in srgb, #00f0ff 72%, transparent);
     }
     .ng-weekly-recap-row {
       width: min(420px, 100%);
@@ -577,12 +586,6 @@ export function injectNeuralGardenStyles(): void {
       color: var(--text-normal);
       text-align: center;
     }
-    .neural-garden-home .ng-search .ng-search-heading {
-      font-size: 1rem;
-    }
-    .ng-search-heading {
-      text-align: center !important;
-    }
     .ng-search-results {
       margin-top: 8px;
       display: flex;
@@ -724,55 +727,75 @@ export function injectNeuralGardenStyles(): void {
     .ng-this-week-tasks {
       display: flex;
       flex-direction: column;
-      gap: 7px;
-      margin-top: 10px;
-      padding: 9px 10px;
+      gap: 4px;
+      margin: 2px 0;
+      padding: 6px 0 6px 10px;
       border-left: 2px solid color-mix(in srgb, #ec9a63 62%, transparent);
     }
     .ng-this-week-heading {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
+      text-align: left;
     }
     .ng-this-week-heading h4 {
       margin: 0;
-      font-size: 0.9rem;
+      font-size: 1rem;
       font-weight: 650;
     }
     .ng-this-week-buttons {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-      gap: 6px;
+      display: flex;
+      flex-wrap: wrap;
+      column-gap: 11px;
+      row-gap: 3px;
     }
     .ng-this-week-task {
+      position: relative;
       display: flex;
+      flex: 0 1 auto;
+      max-width: 100%;
       min-width: 0;
       align-items: center;
-      justify-content: space-between;
       gap: 8px;
-      padding: 7px 8px;
-      border: 1px solid var(--background-modifier-border);
-      border-radius: 7px;
-      background: color-mix(in srgb, #ec9a63 5%, transparent);
-      color: var(--text-normal);
+      padding: 8px 10px;
+      border-radius: 10px;
       cursor: pointer;
-      text-align: left;
+      transition: background-color 250ms ease;
+    }
+    .ng-this-week-task:not(:last-child)::after {
+      content: "|";
+      position: absolute;
+      right: -7px;
+      color: color-mix(in srgb, var(--text-muted) 60%, transparent);
+      pointer-events: none;
     }
     .ng-this-week-task:hover,
     .ng-this-week-task:focus-visible {
-      border-color: var(--ng-weekly-effort-color);
-      background: color-mix(in srgb, #ec9a63 11%, transparent);
+      background: color-mix(in srgb, var(--ng-weekly-effort-color) 12%, transparent);
+    }
+    .ng-this-week-task[data-effort="hard"]:hover,
+    .ng-this-week-task[data-effort="hard"]:focus-visible {
+      background: color-mix(in srgb, var(--ng-weekly-effort-color) 19%, transparent);
     }
     .ng-this-week-task-name {
       min-width: 0;
-      overflow-wrap: anywhere;
+      max-width: 300px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      line-height: 1.35;
     }
-    .ng-this-week-task-effort {
-      flex: 0 0 auto;
-      color: var(--ng-weekly-effort-color);
-      font-size: 0.68rem;
-      font-weight: 650;
+    .ng-this-week-task-effort-dot {
+      width: 8px;
+      height: 8px;
+      flex: 0 0 8px;
+      border-radius: 50%;
+      background: var(--ng-weekly-effort-color);
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--ng-weekly-effort-color) 16%, transparent);
+    }
+    .ng-this-week-task[data-effort="hard"] .ng-this-week-task-effort-dot {
+      filter: brightness(1.2) saturate(1.08);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--ng-weekly-effort-color) 25%, transparent);
+    }
+    .ng-this-week-task[data-effort="heavy"] .ng-this-week-task-effort-dot {
+      box-shadow: 0 0 0 4px color-mix(in srgb, var(--ng-weekly-effort-color) 38%, transparent);
     }
     .ng-task-row {
       position: relative;
@@ -813,6 +836,9 @@ export function injectNeuralGardenStyles(): void {
       white-space: nowrap;
       flex-shrink: 0;
       opacity: 0.95;
+    }
+    .ng-task-row .ng-badge {
+      background: color-mix(in srgb, var(--ng-task-badge-color) 10%, transparent);
     }
     .ng-row-button {
       border: 1px solid var(--background-modifier-border);

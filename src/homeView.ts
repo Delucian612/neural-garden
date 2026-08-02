@@ -7,11 +7,13 @@ import {
   ENERGY_STOPS,
   JOURNAL_WEEKLY_FOLDER,
   NOTES_FOLDER,
+  QUICK_NOTES_CATEGORY,
   VIEW_TYPE_NEURAL_GARDEN_HOME,
   WEEKLY_RECAP_HOME_HINT_MIN_ENTRIES,
 } from "./constants";
 import { JournalingStorage } from "./journalingStorage";
-import { searchNotesInFolder } from "./search";
+import { MyNotesStorage } from "./myNotesStorage";
+import { openOverlay } from "./overlay";
 import { TaskManagerStorage } from "./storage";
 import { injectNeuralGardenStyles } from "./styles";
 import {
@@ -30,7 +32,6 @@ import {
 } from "./types";
 export class NeuralGardenHomeView extends ItemView {
   state: TaskManagerState = { ...DEFAULT_STATE };
-  searchDebounceTimer: number | null = null;
   breakTickTimer: number | null = null;
   breakMessageTimer: number | null = null;
   breakTimerEl: HTMLElement | null = null;
@@ -41,6 +42,7 @@ export class NeuralGardenHomeView extends ItemView {
   supportHints: string[] = [];
   lastSupportHintIndex: number | null = null;
   refocusTaskInputAfterRender = false;
+  weeklyTasksEl: HTMLElement | null = null;
   taskManagerEl: HTMLElement | null = null;
   energyAnimationFromPercent: number | null = null;
 
@@ -48,10 +50,12 @@ export class NeuralGardenHomeView extends ItemView {
     leaf: WorkspaceLeaf,
     private readonly storage: TaskManagerStorage,
     private readonly journalingStorage: JournalingStorage,
+    private readonly myNotesStorage: MyNotesStorage,
     private forcedBreaksEnabled: boolean,
     private readonly openJournalingView: (makeActive: boolean, targetLeaf?: WorkspaceLeaf) => Promise<void>,
     private readonly openMyNotesView: (makeActive: boolean, targetLeaf?: WorkspaceLeaf) => Promise<void>,
     private readonly openMyLearningView: (makeActive: boolean, targetLeaf?: WorkspaceLeaf) => Promise<void>,
+    private readonly openWeeklyRecap: (year: number, week: number, targetLeaf?: WorkspaceLeaf) => Promise<void>,
   ) {
     super(leaf);
   }
@@ -84,10 +88,6 @@ export class NeuralGardenHomeView extends ItemView {
   }
 
   async onClose(): Promise<void> {
-    if (this.searchDebounceTimer) {
-      window.clearTimeout(this.searchDebounceTimer);
-      this.searchDebounceTimer = null;
-    }
     if (this.breakTickTimer) {
       window.clearInterval(this.breakTickTimer);
       this.breakTickTimer = null;
@@ -131,9 +131,29 @@ export class NeuralGardenHomeView extends ItemView {
     const wrapper = contentEl.createDiv({ cls: "neural-garden-home" });
     wrapper.createEl("h2", { text: "Home" });
 
+    const hintStrip = wrapper.createDiv({ cls: "ng-home-hints-strip" });
+    hintStrip.style.display = "none";
+    void this.renderSupportHintsStrip(hintStrip);
+
     const categories = wrapper.createDiv({ cls: "ng-categories" });
     if (this.shouldShowWeeklyRecapHint()) {
-      categories.createDiv({ cls: "ng-weekly-available-hint", text: "Weekly Recap Available" });
+      const recapHint = categories.createDiv({
+        cls: "ng-weekly-available-hint",
+        text: "Weekly Recap Available",
+      });
+      recapHint.setAttribute("role", "button");
+      recapHint.tabIndex = 0;
+      const openRecap = async () => {
+        const week = isoWeekInfo(new Date());
+        await this.openWeeklyRecap(week.year, week.week, this.leaf);
+      };
+      recapHint.addEventListener("click", () => void openRecap());
+      recapHint.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          void openRecap();
+        }
+      });
     }
     const categoryGrid = categories.createDiv({ cls: "ng-category-grid" });
     const journalButton = this.makeCategoryButton("Journaling", "book-open", () => {
@@ -147,7 +167,7 @@ export class NeuralGardenHomeView extends ItemView {
     categoryGrid.appendChild(notesButton);
 
     const quickNoteButton = this.makeCategoryButton("+ QuickNote", "pencil", () => {
-      new Notice("QuickNote interface placeholder");
+      this.openQuickNoteOverlay();
     });
     categoryGrid.appendChild(quickNoteButton);
 
@@ -156,15 +176,59 @@ export class NeuralGardenHomeView extends ItemView {
     });
     categoryGrid.appendChild(learningButton);
 
-    const hintStrip = wrapper.createDiv({ cls: "ng-home-hints-strip" });
-    void this.renderSupportHintsStrip(hintStrip);
-    this.renderSearchSection(wrapper);
+    this.weeklyTasksEl = wrapper.createDiv({ cls: "ng-this-week-tasks" });
+    this.weeklyTasksEl.style.display = "none";
+    void this.renderWeeklyPlannedTasks(this.weeklyTasksEl);
     this.taskManagerEl = wrapper.createDiv({ cls: "ng-task-manager" });
     this.renderTaskManager(this.taskManagerEl);
     const supportSection = wrapper.createDiv({ cls: "ng-home-support" });
     void this.renderSupportSection(supportSection);
     injectNeuralGardenStyles();
     this.syncBreakLiveUpdates();
+  }
+
+  private openQuickNoteOverlay(): void {
+    const { card, close } = openOverlay("Create A QuickNote");
+    card.createDiv({ cls: "ng-overlay-subtitle", text: "Write down a name" });
+    card.createDiv({ cls: "ng-overlay-text", text: `Category: ${QUICK_NOTES_CATEGORY}` });
+
+    const input = card.createEl("input", { type: "text", placeholder: "Note name..." });
+    input.addClass("ng-task-input");
+    const errorEl = card.createDiv({ cls: "ng-overlay-error" });
+    errorEl.hide();
+    const actions = card.createDiv({ cls: "ng-overlay-actions" });
+    const createButton = actions.createEl("button", { text: "Create", cls: "ng-overlay-confirm" });
+
+    const submit = async () => {
+      const name = input.value.trim();
+      if (!name) {
+        return;
+      }
+      if (this.myNotesStorage.noteExists(name)) {
+        errorEl.setText("This Note already exists");
+        errorEl.show();
+        input.value = "";
+        input.focus();
+        return;
+      }
+
+      const file = await this.myNotesStorage.createNote(name);
+      if (!file) {
+        new Notice("Could not create the note. Try a different name.");
+        return;
+      }
+      await this.myNotesStorage.toggleNoteCategory(file, QUICK_NOTES_CATEGORY);
+      close();
+      await this.leaf.openFile(file);
+    };
+
+    createButton.addEventListener("click", () => void submit());
+    input.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        void submit();
+      }
+    });
+    input.focus();
   }
 
   private async renderSupportSection(container: HTMLElement): Promise<void> {
@@ -216,13 +280,19 @@ export class NeuralGardenHomeView extends ItemView {
   private async renderSupportHintsStrip(container: HTMLElement): Promise<void> {
     container.empty();
     const recap = await this.getLatestWeeklyRecapFrontmatter();
-    this.supportHintEl = container.createDiv({ cls: "ng-home-support-hint" });
     this.supportHints = recap?.supportHints ?? [];
     if (this.supportHints.length === 0) {
-      this.supportHintEl.textContent = "";
+      if (this.supportHintTimer) {
+        window.clearInterval(this.supportHintTimer);
+        this.supportHintTimer = null;
+      }
+      this.supportHintEl = null;
+      container.remove();
       return;
     }
 
+    container.style.removeProperty("display");
+    this.supportHintEl = container.createDiv({ cls: "ng-home-support-hint" });
     this.supportHintEl.textContent = this.getNextSupportHint();
     if (this.supportHintTimer) {
       window.clearInterval(this.supportHintTimer);
@@ -276,65 +346,13 @@ export class NeuralGardenHomeView extends ItemView {
     return latestRecap;
   }
 
-  private renderSearchSection(parent: HTMLElement): void {
-    const searchSection = parent.createDiv({ cls: "ng-search" });
-    const heading = searchSection.createEl("h3", { text: "Search Notes", cls: "ng-search-heading" });
-    heading.style.textAlign = "center";
-
-    const input = searchSection.createEl("input", {
-      type: "text",
-      placeholder: "Search Notes...",
-    });
-    input.addClass("ng-task-input");
-
-    const results = searchSection.createDiv({ cls: "ng-search-results ng-mynotes-list" });
-
-    input.addEventListener("input", () => {
-      if (this.searchDebounceTimer) {
-        window.clearTimeout(this.searchDebounceTimer);
-      }
-      this.searchDebounceTimer = window.setTimeout(async () => {
-        const query = input.value.trim();
-        await this.updateSearchResults(query, results);
-      }, 250);
-    });
-  }
-
-  private async updateSearchResults(query: string, container: HTMLElement): Promise<void> {
-    container.empty();
-
-    if (query.length < 2) {
-      return;
-    }
-
-    const files = this.app.vault.getFiles().filter((file) => file.path.startsWith(`${NOTES_FOLDER}/`));
-    if (files.length === 0) {
-      const noNotes = container.createDiv({ cls: "ng-empty" });
-      noNotes.textContent = "No notes found in Notes folder yet.";
-      return;
-    }
-
-    const matches = await searchNotesInFolder(this.app, query, 20);
-    if (matches.length === 0) {
-      const empty = container.createDiv({ cls: "ng-empty" });
-      empty.textContent = "No matching notes in Notes folder.";
-      return;
-    }
-
-    for (const file of matches) {
-      const row = container.createDiv({ cls: "ng-mynotes-note-row ng-home-search-note-row" });
-      row.createDiv({ cls: "ng-mynotes-note-indicator" });
-      row.createDiv({ cls: "ng-mynotes-note-title", text: file.basename });
-      row.addEventListener("click", async () => {
-        await this.app.workspace.getLeaf(true).openFile(file);
-      });
-    }
-  }
-
   private renderTaskManagerOnly(): void {
     if (!this.taskManagerEl?.isConnected) {
       this.render();
       return;
+    }
+    if (this.weeklyTasksEl?.isConnected) {
+      void this.renderWeeklyPlannedTasks(this.weeklyTasksEl);
     }
     this.renderTaskManager(this.taskManagerEl);
     this.syncBreakLiveUpdates();
@@ -439,16 +457,12 @@ export class NeuralGardenHomeView extends ItemView {
       });
     }
 
-    const weeklyTasks = section.createDiv({ cls: "ng-this-week-tasks" });
     const listWrapper = section.createDiv({ cls: "ng-task-list" });
 
     if (isBreakActive) {
-      weeklyTasks.remove();
       this.renderForcedBreakPanel(listWrapper);
       return;
     }
-
-    void this.renderWeeklyPlannedTasks(weeklyTasks);
 
     const pendingTasks = this.state.tasks.filter((task) => !task.completed);
     if (pendingTasks.length === 0) {
@@ -463,9 +477,14 @@ export class NeuralGardenHomeView extends ItemView {
   }
 
   private async renderWeeklyPlannedTasks(container: HTMLElement): Promise<void> {
+    container.empty();
+    container.style.display = "none";
+    if (this.state.forcedBreak || this.state.resting) {
+      return;
+    }
+
     const recap = await this.getLatestWeeklyRecap();
     if (!recap) {
-      container.remove();
       return;
     }
 
@@ -493,29 +512,41 @@ export class NeuralGardenHomeView extends ItemView {
     });
 
     if (availableTasks.length === 0) {
-      container.remove();
       return;
     }
 
+    container.style.removeProperty("display");
     const heading = container.createDiv({ cls: "ng-this-week-heading" });
-    heading.createEl("h4", { text: "This week's tasks" });
-    const buttons = container.createDiv({ cls: "ng-this-week-buttons" });
+    heading.createEl("h4", { text: "This Week's Tasks" });
+    const taskList = container.createDiv({ cls: "ng-this-week-buttons" });
     for (const plannedTask of availableTasks) {
       const effortKey = weeklyEffortToTaskEffort(plannedTask.effort);
       const effort = EFFORT_MAP.get(effortKey);
       if (!effort) {
         continue;
       }
-      const button = buttons.createEl("button", { cls: "ng-this-week-task" });
-      button.style.setProperty("--ng-weekly-effort-color", effort.color);
-      button.createSpan({ cls: "ng-this-week-task-name", text: plannedTask.taskName });
-      const badge = button.createSpan({ cls: "ng-this-week-task-effort", text: effort.label });
-      button.addEventListener("click", async () => {
+      const row = taskList.createDiv({ cls: "ng-this-week-task" });
+      row.setAttribute("role", "button");
+      row.tabIndex = 0;
+      row.dataset.effort = effort.key;
+      const badgeColor = taskBadgeColor(effort.key);
+      row.style.setProperty("--ng-weekly-effort-color", badgeColor);
+      const effortDot = row.createSpan({ cls: "ng-this-week-task-effort-dot" });
+      effortDot.title = `${effort.label} effort`;
+      const textContainer = row.createDiv({ cls: "ng-task-text" });
+      const taskName = textContainer.createDiv({ cls: "ng-task-title ng-this-week-task-name", text: plannedTask.taskName });
+      taskName.title = plannedTask.taskName;
+      let activating = false;
+      const activate = async () => {
+        if (activating) {
+          return;
+        }
         if (this.state.forcedBreak || this.state.resting) {
           new Notice("Task manager is in break mode");
           return;
         }
-        button.disabled = true;
+        activating = true;
+        row.setAttribute("aria-disabled", "true");
         this.energyAnimationFromPercent = this.state.maxEnergy > 0
           ? (this.state.totalEnergy / this.state.maxEnergy) * 100
           : 0;
@@ -532,6 +563,13 @@ export class NeuralGardenHomeView extends ItemView {
           },
         });
         await this.persistAndRender();
+      };
+      row.addEventListener("click", () => void activate());
+      row.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          void activate();
+        }
       });
     }
   }
@@ -545,9 +583,10 @@ export class NeuralGardenHomeView extends ItemView {
     const badgeWrap = row.createDiv({ cls: "ng-badge-wrap" });
     const badge = badgeWrap.createEl("span", { text: effortLabel(task.effort) });
     badge.addClass("ng-badge");
-    const mutedBadgeColor = toMutedButtonColor(effortColor(task.effort), 0.35, 0.35);
-    badge.style.borderColor = mutedBadgeColor;
-    badge.style.color = mutedBadgeColor;
+    const badgeColor = taskBadgeColor(task.effort);
+    badge.style.setProperty("--ng-task-badge-color", badgeColor);
+    badge.style.borderColor = badgeColor;
+    badge.style.color = badgeColor;
 
     const editButton = row.createEl("button", { text: "Edit" });
     editButton.addClass("ng-row-button", "ng-edit");
@@ -905,6 +944,13 @@ function weeklyEffortToTaskEffort(effort: WeeklyTaskEffort): EffortKey {
     heavy: "heavy",
   };
   return effortMap[effort];
+}
+
+function taskBadgeColor(effort: EffortKey): string {
+  if (effort === "heavy") {
+    return toMutedButtonColor(effortColor(effort), 0.78, 0.68);
+  }
+  return toMutedButtonColor(effortColor(effort), 0.9, 0.75);
 }
 
 function weeklyTaskKey(taskName: string, effort: WeeklyTaskEffort): string {
