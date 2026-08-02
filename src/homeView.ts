@@ -1,7 +1,8 @@
-import { ItemView, Notice, WorkspaceLeaf } from "obsidian";
+import { ItemView, Notice, TFile, WorkspaceLeaf } from "obsidian";
 import {
   BREAK_MESSAGES,
   DEFAULT_STATE,
+  EFFORT_MAP,
   EFFORTS,
   ENERGY_STOPS,
   JOURNAL_WEEKLY_FOLDER,
@@ -18,11 +19,15 @@ import {
   effortColor,
   effortLabel,
   energyColorAt,
-  getEffectiveForcedBreakThreshold,
-  getEffectiveMaxEnergy,
   recalculateTotals,
 } from "./taskState";
-import { TaskItem, TaskManagerState, WeeklyRecapFrontmatter } from "./types";
+import {
+  EffortKey,
+  TaskItem,
+  TaskManagerState,
+  WeeklyRecapFrontmatter,
+  WeeklyTaskEffort,
+} from "./types";
 export class NeuralGardenHomeView extends ItemView {
   state: TaskManagerState = { ...DEFAULT_STATE };
   searchDebounceTimer: number | null = null;
@@ -36,11 +41,14 @@ export class NeuralGardenHomeView extends ItemView {
   supportHints: string[] = [];
   lastSupportHintIndex: number | null = null;
   refocusTaskInputAfterRender = false;
+  taskManagerEl: HTMLElement | null = null;
+  energyAnimationFromPercent: number | null = null;
 
   constructor(
     leaf: WorkspaceLeaf,
     private readonly storage: TaskManagerStorage,
     private readonly journalingStorage: JournalingStorage,
+    private forcedBreaksEnabled: boolean,
     private readonly openJournalingView: (makeActive: boolean, targetLeaf?: WorkspaceLeaf) => Promise<void>,
     private readonly openMyNotesView: (makeActive: boolean, targetLeaf?: WorkspaceLeaf) => Promise<void>,
     private readonly openMyLearningView: (makeActive: boolean, targetLeaf?: WorkspaceLeaf) => Promise<void>,
@@ -65,7 +73,11 @@ export class NeuralGardenHomeView extends ItemView {
     if (this.state.forcedBreakThreshold === 50) {
       this.state.forcedBreakThreshold = 70;
     }
-    this.applyBreakRecovery();
+    if (this.forcedBreaksEnabled) {
+      this.applyBreakRecovery();
+    } else {
+      this.resetForcedBreakState();
+    }
     await this.storage.saveTaskManagerState(this.state);
     this.render();
     this.startBreakTicker();
@@ -96,11 +108,19 @@ export class NeuralGardenHomeView extends ItemView {
     this.syncBreakLiveUpdates();
   }
 
+  async setForcedBreaksEnabled(enabled: boolean): Promise<void> {
+    this.forcedBreaksEnabled = enabled;
+    if (!enabled) {
+      this.resetForcedBreakState();
+    }
+    await this.persistAndRender();
+  }
+
   private async persistAndRender(): Promise<void> {
     recalculateTotals(this.state);
     this.applyBreakRecovery();
     await this.storage.saveTaskManagerState(this.state);
-    this.render();
+    this.renderTaskManagerOnly();
   }
 
   private render(): void {
@@ -139,7 +159,8 @@ export class NeuralGardenHomeView extends ItemView {
     const hintStrip = wrapper.createDiv({ cls: "ng-home-hints-strip" });
     void this.renderSupportHintsStrip(hintStrip);
     this.renderSearchSection(wrapper);
-    this.renderTaskManager(wrapper);
+    this.taskManagerEl = wrapper.createDiv({ cls: "ng-task-manager" });
+    this.renderTaskManager(this.taskManagerEl);
     const supportSection = wrapper.createDiv({ cls: "ng-home-support" });
     void this.renderSupportSection(supportSection);
     injectNeuralGardenStyles();
@@ -224,6 +245,14 @@ export class NeuralGardenHomeView extends ItemView {
   }
 
   private async getLatestWeeklyRecapFrontmatter(): Promise<WeeklyRecapFrontmatter | null> {
+    return (await this.getLatestWeeklyRecap())?.frontmatter ?? null;
+  }
+
+  private async getLatestWeeklyRecap(): Promise<{
+    file: TFile;
+    frontmatter: WeeklyRecapFrontmatter;
+    body: string;
+  } | null> {
     const recaps = this.app.vault
       .getFiles()
       .filter((file) => file.path.startsWith(`${JOURNAL_WEEKLY_FOLDER}/`) && file.extension === "md");
@@ -231,19 +260,20 @@ export class NeuralGardenHomeView extends ItemView {
       return null;
     }
 
-    let latestFrontmatter: WeeklyRecapFrontmatter | null = null;
-    let latestTime = 0;
+    let latestRecap: { file: TFile; frontmatter: WeeklyRecapFrontmatter; body: string } | null = null;
+    let latestTime = Number.NEGATIVE_INFINITY;
 
     for (const recapFile of recaps) {
       const recap = await this.journalingStorage.readWeeklyRecap(recapFile);
       const stamp = Date.parse(recap.frontmatter.generatedAt || "");
-      if (!latestFrontmatter || stamp > latestTime) {
-        latestFrontmatter = recap.frontmatter;
-        latestTime = stamp;
+      const comparableTime = Number.isNaN(stamp) ? recapFile.stat.ctime : stamp;
+      if (!latestRecap || comparableTime > latestTime) {
+        latestRecap = { file: recapFile, ...recap };
+        latestTime = comparableTime;
       }
     }
 
-    return latestFrontmatter;
+    return latestRecap;
   }
 
   private renderSearchSection(parent: HTMLElement): void {
@@ -301,13 +331,20 @@ export class NeuralGardenHomeView extends ItemView {
     }
   }
 
-  private renderTaskManager(parent: HTMLElement): void {
-    const section = parent.createDiv({ cls: "ng-task-manager" });
+  private renderTaskManagerOnly(): void {
+    if (!this.taskManagerEl?.isConnected) {
+      this.render();
+      return;
+    }
+    this.renderTaskManager(this.taskManagerEl);
+    this.syncBreakLiveUpdates();
+  }
+
+  private renderTaskManager(section: HTMLElement): void {
+    section.empty();
+    section.removeClass("ng-resting", "ng-break-locked");
     if (this.state.resting) {
       section.addClass("ng-resting");
-    }
-    if (this.state.overdriveMode) {
-      section.addClass("ng-overdrive");
     }
 
     const isBreakActive = this.state.forcedBreak || this.state.resting;
@@ -319,27 +356,6 @@ export class NeuralGardenHomeView extends ItemView {
 
     const heading = form.createDiv({ cls: "ng-task-heading" });
     heading.createEl("h3", { text: "Add New Task" });
-    const overdriveButton = heading.createEl("button", { text: "Overdrive Mode" });
-    overdriveButton.addClass("ng-overdrive-button");
-    overdriveButton.style.borderColor = this.state.overdriveAvailability ? "#00F0FF" : "#DDDDFF";
-    overdriveButton.style.color = this.state.overdriveAvailability ? "#00F0FF" : "var(--text-normal)";
-    if (this.state.overdriveMode) {
-      overdriveButton.addClass("is-active");
-    } else if (this.state.overdriveAvailability) {
-      overdriveButton.addClass("is-inactive");
-    }
-    overdriveButton.addEventListener("click", async () => {
-      if (isBreakActive) {
-        new Notice("Task manager is in break mode");
-        return;
-      }
-      if (!this.state.overdriveAvailability) {
-        new Notice("Overdrive currently not available");
-        return;
-      }
-      this.state.overdriveMode = !this.state.overdriveMode;
-      await this.persistAndRender();
-    });
 
     const taskInput = form.createEl("input", { type: "text", placeholder: "Task" });
     taskInput.addClass("ng-task-input");
@@ -355,8 +371,7 @@ export class NeuralGardenHomeView extends ItemView {
     effortRow.createDiv({ cls: "ng-effort-label", text: "Effort" });
     const progressWrap = effortRow.createDiv({ cls: "ng-progress-wrap" });
 
-    const effectiveMaxEnergy = getEffectiveMaxEnergy(this.state);
-    const currentPercent = effectiveMaxEnergy > 0 ? (this.state.totalEnergy / effectiveMaxEnergy) * 100 : 0;
+    const currentPercent = this.state.maxEnergy > 0 ? (this.state.totalEnergy / this.state.maxEnergy) * 100 : 0;
 
     if (currentPercent >= 115) {
       const warning = progressWrap.createSpan({ cls: "ng-warning" });
@@ -367,13 +382,20 @@ export class NeuralGardenHomeView extends ItemView {
     const barOuter = progressWrap.createDiv({ cls: "ng-progress" });
     const barInner = barOuter.createDiv({ cls: "ng-progress-fill" });
 
-    barInner.style.width = `${Math.max(0, Math.min(currentPercent, 130))}%`;
-    const pair = this.state.overdriveMode
-      ? { primary: "#32fbff", secondary: "#87fdff" }
-      : getEnergyStopGradientPair(currentPercent);
-    const secondaryColor = this.state.overdriveMode ? pair.secondary : darkenColor(pair.secondary, 0.7);
+    const targetPercent = Math.max(0, Math.min(currentPercent, 130));
+    const animationStart = this.energyAnimationFromPercent;
+    this.energyAnimationFromPercent = null;
+    barInner.style.width = `${animationStart === null ? targetPercent : Math.max(0, Math.min(animationStart, 130))}%`;
+    const pair = getEnergyStopGradientPair(currentPercent);
+    const secondaryColor = darkenColor(pair.secondary, 0.7);
     barInner.style.background = `linear-gradient(120deg, ${pair.primary}, ${secondaryColor}, ${pair.primary})`;
     barInner.style.backgroundSize = "200% 100%";
+    if (animationStart !== null) {
+      void barInner.offsetWidth;
+      window.requestAnimationFrame(() => {
+        barInner.style.width = `${targetPercent}%`;
+      });
+    }
 
     const effortButtons = form.createDiv({ cls: "ng-effort-buttons" });
     for (const effort of EFFORTS) {
@@ -402,6 +424,7 @@ export class NeuralGardenHomeView extends ItemView {
         button.addClass("is-pulsing");
         window.setTimeout(() => button.removeClass("is-pulsing"), 500);
 
+        this.energyAnimationFromPercent = currentPercent;
         this.state.tasks.unshift({
           id: createId(),
           taskName,
@@ -416,12 +439,16 @@ export class NeuralGardenHomeView extends ItemView {
       });
     }
 
+    const weeklyTasks = section.createDiv({ cls: "ng-this-week-tasks" });
     const listWrapper = section.createDiv({ cls: "ng-task-list" });
 
     if (isBreakActive) {
+      weeklyTasks.remove();
       this.renderForcedBreakPanel(listWrapper);
       return;
     }
+
+    void this.renderWeeklyPlannedTasks(weeklyTasks);
 
     const pendingTasks = this.state.tasks.filter((task) => !task.completed);
     if (pendingTasks.length === 0) {
@@ -432,6 +459,80 @@ export class NeuralGardenHomeView extends ItemView {
 
     for (const task of pendingTasks) {
       this.renderTaskRow(listWrapper, task);
+    }
+  }
+
+  private async renderWeeklyPlannedTasks(container: HTMLElement): Promise<void> {
+    const recap = await this.getLatestWeeklyRecap();
+    if (!recap) {
+      container.remove();
+      return;
+    }
+
+    const recapPath = recap.file.path;
+    if (!container.isConnected) {
+      return;
+    }
+
+    const convertedCounts = new Map<string, number>();
+    for (const task of this.state.tasks) {
+      if (task.completed || task.weeklySource?.recapPath !== recapPath) {
+        continue;
+      }
+      const key = weeklyTaskKey(task.weeklySource.taskName, task.weeklySource.effort);
+      convertedCounts.set(key, (convertedCounts.get(key) ?? 0) + 1);
+    }
+    const availableTasks = recap.frontmatter.nextWeekTasks.filter((task) => {
+      const key = weeklyTaskKey(task.taskName, task.effort);
+      const converted = convertedCounts.get(key) ?? 0;
+      if (converted === 0) {
+        return true;
+      }
+      convertedCounts.set(key, converted - 1);
+      return false;
+    });
+
+    if (availableTasks.length === 0) {
+      container.remove();
+      return;
+    }
+
+    const heading = container.createDiv({ cls: "ng-this-week-heading" });
+    heading.createEl("h4", { text: "This week's tasks" });
+    const buttons = container.createDiv({ cls: "ng-this-week-buttons" });
+    for (const plannedTask of availableTasks) {
+      const effortKey = weeklyEffortToTaskEffort(plannedTask.effort);
+      const effort = EFFORT_MAP.get(effortKey);
+      if (!effort) {
+        continue;
+      }
+      const button = buttons.createEl("button", { cls: "ng-this-week-task" });
+      button.style.setProperty("--ng-weekly-effort-color", effort.color);
+      button.createSpan({ cls: "ng-this-week-task-name", text: plannedTask.taskName });
+      const badge = button.createSpan({ cls: "ng-this-week-task-effort", text: effort.label });
+      button.addEventListener("click", async () => {
+        if (this.state.forcedBreak || this.state.resting) {
+          new Notice("Task manager is in break mode");
+          return;
+        }
+        button.disabled = true;
+        this.energyAnimationFromPercent = this.state.maxEnergy > 0
+          ? (this.state.totalEnergy / this.state.maxEnergy) * 100
+          : 0;
+        this.state.tasks.unshift({
+          id: createId(),
+          taskName: plannedTask.taskName,
+          effort: effort.key,
+          energy: effort.energy,
+          completed: false,
+          weeklySource: {
+            recapPath,
+            taskName: plannedTask.taskName,
+            effort: plannedTask.effort,
+          },
+        });
+        await this.persistAndRender();
+      });
     }
   }
 
@@ -502,11 +603,38 @@ export class NeuralGardenHomeView extends ItemView {
         task.completed = true;
         task.completedAt = Date.now();
         this.state.spentEnergy += task.energy;
-        this.state.forcedBreakEnergy += task.energy;
-        this.updateForcedBreakValues();
+        if (this.forcedBreaksEnabled) {
+          this.state.forcedBreakEnergy += task.energy;
+          this.updateForcedBreakValues();
+        }
+        await this.removeCompletedWeeklyTask(task);
         await this.persistAndRender();
       }, 720);
     });
+  }
+
+  private async removeCompletedWeeklyTask(task: TaskItem): Promise<void> {
+    const source = task.weeklySource;
+    if (!source) {
+      return;
+    }
+    const recapFile = this.app.vault.getAbstractFileByPath(source.recapPath);
+    if (!(recapFile instanceof TFile)) {
+      return;
+    }
+    try {
+      const recap = await this.journalingStorage.readWeeklyRecap(recapFile);
+      const taskIndex = recap.frontmatter.nextWeekTasks.findIndex((plannedTask) => (
+        plannedTask.taskName === source.taskName && plannedTask.effort === source.effort
+      ));
+      if (taskIndex < 0) {
+        return;
+      }
+      recap.frontmatter.nextWeekTasks.splice(taskIndex, 1);
+      await this.journalingStorage.saveWeeklyRecap(recapFile, recap.frontmatter, recap.body);
+    } catch {
+      new Notice("Task completed, but its Weekly Recap entry could not be removed.");
+    }
   }
 
   private renderForcedBreakPanel(container: HTMLElement): void {
@@ -521,7 +649,7 @@ export class NeuralGardenHomeView extends ItemView {
       const minutes = this.getCalculatedBreakTimeMinutes();
       const windDown = panel.createDiv({ cls: "ng-break-copy", text: `Wind-down needed: ${minutes} min` });
       windDown.addClass("ng-break-intro-copy");
-      const breakButton = panel.createEl("button", { text: "Break Mode" });
+      const breakButton = panel.createEl("button", { text: "Start my Break" });
       breakButton.addClass("ng-break-button", "ng-break-intro-button");
       breakButton.addEventListener("click", async () => {
         const durationMinutes = this.getCalculatedBreakTimeMinutes();
@@ -624,7 +752,11 @@ export class NeuralGardenHomeView extends ItemView {
   }
 
   private updateForcedBreakValues(): void {
-    const effectiveThreshold = getEffectiveForcedBreakThreshold(this.state);
+    if (!this.forcedBreaksEnabled) {
+      this.resetForcedBreakState();
+      return;
+    }
+    const effectiveThreshold = this.state.forcedBreakThreshold;
     this.state.forcedBreakEnergyEx = Math.max(0, this.state.forcedBreakEnergy - effectiveThreshold);
     this.state.forcedBreakAdd = effectiveThreshold > 0 ? this.state.forcedBreakEnergyEx / effectiveThreshold : 0;
     this.state.forcedBreakTime = this.state.forcedBreakLength + this.state.forcedBreakLength * this.state.forcedBreakAdd;
@@ -762,6 +894,21 @@ function isoWeekInfo(date: Date): { year: number; week: number } {
   const yearStart = new Date(Date.UTC(utcDate.getUTCFullYear(), 0, 1));
   const week = Math.ceil((((utcDate.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
   return { year: utcDate.getUTCFullYear(), week };
+}
+
+function weeklyEffortToTaskEffort(effort: WeeklyTaskEffort): EffortKey {
+  const effortMap: Record<WeeklyTaskEffort, EffortKey> = {
+    light: "easy-peasy",
+    easy: "easy",
+    fair: "medium",
+    hard: "hard",
+    heavy: "heavy",
+  };
+  return effortMap[effort];
+}
+
+function weeklyTaskKey(taskName: string, effort: WeeklyTaskEffort): string {
+  return `${taskName}\u0000${effort}`;
 }
 
 function toMutedButtonColor(hex: string, saturationFactor = 0.7, lightnessFactor = 0.6, alpha = 1): string {

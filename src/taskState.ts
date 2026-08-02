@@ -1,5 +1,5 @@
 import { DEFAULT_STATE, EFFORT_MAP, ENERGY_STOPS } from "./constants";
-import { EffortKey, TaskItem, TaskManagerState } from "./types";
+import { EffortKey, TaskItem, TaskManagerState, WeeklyTaskEffort } from "./types";
 
 export function normalizeState(raw: Partial<TaskManagerState>): TaskManagerState {
   const parsedTasks: TaskItem[] = Array.isArray(raw.tasks)
@@ -17,6 +17,7 @@ export function normalizeState(raw: Partial<TaskManagerState>): TaskManagerState
             energy: typeof mapped.energy === "number" ? mapped.energy : effort?.energy ?? 15,
             completed: Boolean(mapped.completed),
             completedAt: typeof mapped.completedAt === "number" ? mapped.completedAt : undefined,
+            weeklySource: normalizeWeeklySource(mapped.weeklySource),
           };
         })
         .filter((task): task is TaskItem => task !== undefined)
@@ -27,9 +28,6 @@ export function normalizeState(raw: Partial<TaskManagerState>): TaskManagerState
     totalEnergy: numberOr(raw.totalEnergy, DEFAULT_STATE.totalEnergy),
     spentEnergy: numberOr(raw.spentEnergy, DEFAULT_STATE.spentEnergy),
     tasks: parsedTasks,
-    overdriveAvailability: boolOr(raw.overdriveAvailability, DEFAULT_STATE.overdriveAvailability),
-    overdriveMode: boolOr(raw.overdriveMode, DEFAULT_STATE.overdriveMode),
-    overdriveAftereffects: boolOr(raw.overdriveAftereffects, DEFAULT_STATE.overdriveAftereffects),
     resting: boolOr(raw.resting, DEFAULT_STATE.resting),
     forcedBreak: boolOr(raw.forcedBreak, DEFAULT_STATE.forcedBreak),
     forcedBreakThreshold: numberOr(raw.forcedBreakThreshold, DEFAULT_STATE.forcedBreakThreshold),
@@ -62,14 +60,6 @@ export function effortColor(effort: EffortKey): string {
 
 export function createId(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
-}
-
-export function getEffectiveMaxEnergy(state: TaskManagerState): number {
-  return state.overdriveMode ? state.maxEnergy * 2 : state.maxEnergy;
-}
-
-export function getEffectiveForcedBreakThreshold(state: TaskManagerState): number {
-  return state.overdriveMode ? state.forcedBreakThreshold * 2 : state.forcedBreakThreshold;
 }
 
 export function energyColorAt(percent: number): string {
@@ -123,4 +113,18 @@ function numberOrUndefined(value: unknown): number | undefined {
 
 function stringOrUndefined(value: unknown): string | undefined {
   return typeof value === "string" && value.trim().length > 0 ? value : undefined;
+}
+
+function normalizeWeeklySource(value: unknown): TaskItem["weeklySource"] {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return undefined;
+  }
+  const record = value as Record<string, unknown>;
+  const recapPath = stringOrUndefined(record.recapPath);
+  const taskName = stringOrUndefined(record.taskName);
+  const effort = record.effort as WeeklyTaskEffort;
+  if (!recapPath || !taskName || !["light", "easy", "fair", "hard", "heavy"].includes(effort)) {
+    return undefined;
+  }
+  return { recapPath, taskName, effort };
 }

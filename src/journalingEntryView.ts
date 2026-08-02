@@ -234,12 +234,6 @@ export class NeuralGardenJournalEntryView extends ItemView {
       taskState.forcedBreakEnergyEx = 0;
       taskState.forcedBreakAdd = 0;
       taskState.forcedBreakTime = taskState.forcedBreakLength;
-      if (taskState.overdriveMode) {
-        taskState.overdriveMode = false;
-        taskState.overdriveAftereffects = true;
-      } else if (taskState.overdriveAftereffects) {
-        taskState.overdriveAftereffects = false;
-      }
       await this.taskStorage.saveTaskManagerState(taskState);
     }
 

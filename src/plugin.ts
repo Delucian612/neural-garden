@@ -9,6 +9,11 @@ import { NeuralGardenWeeklyRecapView } from "./weeklyRecapView";
 import { JournalingStorage } from "./journalingStorage";
 import { MyNotesStorage } from "./myNotesStorage";
 import { NoteHeaderManager } from "./noteHeader";
+import {
+  DEFAULT_SETTINGS,
+  NeuralGardenSettings,
+  NeuralGardenSettingTab,
+} from "./settings";
 import { TaskManagerStorage } from "./storage";
 import { WeeklyRecapManager } from "./weeklyRecapManager";
 import {
@@ -21,6 +26,7 @@ import {
 } from "./constants";
 
 export default class NeuralGardenPlugin extends Plugin {
+  settings: NeuralGardenSettings = { ...DEFAULT_SETTINGS };
   private storage!: TaskManagerStorage;
   private journalingStorage!: JournalingStorage;
   private myNotesStorage!: MyNotesStorage;
@@ -33,6 +39,10 @@ export default class NeuralGardenPlugin extends Plugin {
   };
 
   async onload() {
+    this.settings = {
+      ...DEFAULT_SETTINGS,
+      ...await this.loadData() as Partial<NeuralGardenSettings> | null,
+    };
     this.storage = new TaskManagerStorage(this.app);
     this.journalingStorage = new JournalingStorage(this.app);
     this.myNotesStorage = new MyNotesStorage(this.app);
@@ -63,7 +73,15 @@ export default class NeuralGardenPlugin extends Plugin {
     });
 
     this.registerView(VIEW_TYPE_NEURAL_GARDEN_HOME, (leaf) =>
-      new NeuralGardenHomeView(leaf, this.storage, this.journalingStorage, this.openJournalingView, this.openMyNotesView, this.openMyLearningView),
+      new NeuralGardenHomeView(
+        leaf,
+        this.storage,
+        this.journalingStorage,
+        this.settings.forcedBreaksEnabled,
+        this.openJournalingView,
+        this.openMyNotesView,
+        this.openMyLearningView,
+      ),
     );
     this.registerView(VIEW_TYPE_NEURAL_GARDEN_MY_NOTES, (leaf) =>
       new NeuralGardenMyNotesView(leaf, this.myNotesStorage, this.openHomeView),
@@ -88,6 +106,7 @@ export default class NeuralGardenPlugin extends Plugin {
     this.registerView(VIEW_TYPE_NEURAL_GARDEN_WEEKLY_RECAP, (leaf) =>
       new NeuralGardenWeeklyRecapView(leaf, this.journalingStorage, this.weeklyRecapManager, this.openHomeView, this.openJournalingView),
     );
+    this.addSettingTab(new NeuralGardenSettingTab(this));
 
     this.addCommand({
       id: "open-neural-garden-home",
@@ -181,6 +200,16 @@ export default class NeuralGardenPlugin extends Plugin {
     this.app.workspace.detachLeavesOfType(VIEW_TYPE_NEURAL_GARDEN_MY_LEARNING);
     this.app.workspace.detachLeavesOfType(VIEW_TYPE_NEURAL_GARDEN_MY_NOTES);
     this.app.workspace.detachLeavesOfType(VIEW_TYPE_NEURAL_GARDEN_WEEKLY_RECAP);
+  }
+
+  async setForcedBreaksEnabled(enabled: boolean): Promise<void> {
+    this.settings.forcedBreaksEnabled = enabled;
+    await this.saveData(this.settings);
+    for (const leaf of this.app.workspace.getLeavesOfType(VIEW_TYPE_NEURAL_GARDEN_HOME)) {
+      if (leaf.view instanceof NeuralGardenHomeView) {
+        await leaf.view.setForcedBreaksEnabled(enabled);
+      }
+    }
   }
 
   private hidePropertiesInDocument(): void {

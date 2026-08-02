@@ -16,6 +16,11 @@ export type TaskItem = {
   energy: number;
   completed: boolean;
   completedAt?: number;
+  weeklySource?: {
+    recapPath: string;
+    taskName: string;
+    effort: WeeklyTaskEffort;
+  };
 };
 
 export type TaskManagerState = {
@@ -23,9 +28,6 @@ export type TaskManagerState = {
   totalEnergy: number;
   spentEnergy: number;
   tasks: TaskItem[];
-  overdriveAvailability: boolean;
-  overdriveMode: boolean;
-  overdriveAftereffects: boolean;
   resting: boolean;
   forcedBreak: boolean;
   forcedBreakThreshold: number;

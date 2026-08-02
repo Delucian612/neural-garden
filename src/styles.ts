@@ -632,20 +632,6 @@ export function injectNeuralGardenStyles(): void {
       font-size: 1.1rem;
       font-weight: 600;
     }
-    .ng-overdrive-button {
-      padding: 6px 10px;
-      border-radius: 999px;
-      border: 1px solid;
-      background: transparent;
-      cursor: pointer;
-    }
-    .ng-overdrive-button.is-active {
-      box-shadow: 0 0 0 2px rgba(0, 240, 255, 0.3);
-      background: rgba(0, 240, 255, 0.1);
-    }
-    .ng-overdrive-button.is-inactive {
-      filter: saturate(0.6) brightness(0.8);
-    }
     .ng-task-form {
       display: flex;
       flex-direction: column;
@@ -695,7 +681,7 @@ export function injectNeuralGardenStyles(): void {
     .ng-progress-fill {
       height: 100%;
       border-radius: 999px;
-      transition: width 250ms ease;
+      transition: width 500ms ease;
       animation: ng-energy-flow 2.2s linear infinite;
     }
     .ng-warning {
@@ -734,6 +720,59 @@ export function injectNeuralGardenStyles(): void {
       flex-direction: column;
       gap: 6px;
       margin-top: 8px;
+    }
+    .ng-this-week-tasks {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      margin-top: 10px;
+      padding: 9px 10px;
+      border-left: 2px solid color-mix(in srgb, #ec9a63 62%, transparent);
+    }
+    .ng-this-week-heading {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .ng-this-week-heading h4 {
+      margin: 0;
+      font-size: 0.9rem;
+      font-weight: 650;
+    }
+    .ng-this-week-buttons {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 6px;
+    }
+    .ng-this-week-task {
+      display: flex;
+      min-width: 0;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 7px 8px;
+      border: 1px solid var(--background-modifier-border);
+      border-radius: 7px;
+      background: color-mix(in srgb, #ec9a63 5%, transparent);
+      color: var(--text-normal);
+      cursor: pointer;
+      text-align: left;
+    }
+    .ng-this-week-task:hover,
+    .ng-this-week-task:focus-visible {
+      border-color: var(--ng-weekly-effort-color);
+      background: color-mix(in srgb, #ec9a63 11%, transparent);
+    }
+    .ng-this-week-task-name {
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+    .ng-this-week-task-effort {
+      flex: 0 0 auto;
+      color: var(--ng-weekly-effort-color);
+      font-size: 0.68rem;
+      font-weight: 650;
     }
     .ng-task-row {
       position: relative;
@@ -815,6 +854,7 @@ export function injectNeuralGardenStyles(): void {
     .ng-delete:active {
       border: none !important;
       background: transparent !important;
+      color: #ff6565;
       box-shadow: none !important;
     }
     .ng-break-panel {
@@ -872,15 +912,6 @@ export function injectNeuralGardenStyles(): void {
     }
     .ng-resting {
       filter: saturate(0.1);
-    }
-    .ng-overdrive {
-      --ng-accent: #00F0FF;
-    }
-    .ng-overdrive .ng-task-form,
-    .ng-overdrive .ng-task-row,
-    .ng-overdrive .ng-search-row,
-    .ng-overdrive .ng-break-panel {
-      border-color: rgba(0, 240, 255, 0.6);
     }
     .ng-break-locked .ng-task-form {
       opacity: 0.9;
