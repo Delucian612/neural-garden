@@ -774,28 +774,28 @@ function metricColor(metric: MetricKey, value: number): string {
   if (metric === "regulation" || metric === "mood" || metric === "sleep") {
     return interpolateMetricStops(clamped, [
       { value: 0, color: [255, 101, 101] },
-      { value: 46, color: [240, 160, 76] },
-      { value: 61, color: [244, 211, 94] },
+      { value: 30, color: [255, 150, 66] },
+      { value: 50, color: [244, 211, 94] },
       { value: 85, color: [57, 224, 90] },
-      { value: 100, color: [57, 224, 90] },
+      { value: 100, color: [57, 240, 90] },
     ]);
   }
   if (metric === "stress" || metric === "anxiety") {
     return interpolateMetricStops(clamped, [
       { value: 0, color: [57, 224, 90] },
-      { value: 36, color: [244, 211, 94] },
-      { value: 51, color: [240, 160, 76] },
+      { value: 40, color: [244, 211, 94] },
+      { value: 65, color: [240, 160, 76] },
       { value: 85, color: [255, 101, 101] },
-      { value: 100, color: [255, 101, 101] },
+      { value: 100, color: [255, 50, 50] },
     ]);
   }
   if (metric === "exhaustion" || metric === "sensoryLoad" || metric === "socialLoad") {
     return interpolateMetricStops(clamped, [
       { value: 0, color: [57, 224, 90] },
-      { value: 41, color: [244, 211, 94] },
-      { value: 56, color: [240, 160, 76] },
+      { value: 40, color: [244, 211, 94] },
+      { value: 65, color: [240, 160, 76] },
       { value: 85, color: [255, 101, 101] },
-      { value: 100, color: [255, 101, 101] },
+      { value: 100, color: [255, 50, 50] },
     ]);
   }
   return "#39e05a";
@@ -837,22 +837,24 @@ function rgbToHex([r, g, b]: [number, number, number]): string {
 
 function getMetricFeedback(metric: MetricKey, value: number): string {
   if (metric === "mood") {
-    if (value >= 80) return "I've been doing great.";
-    if (value >= 51) return "I've been doing fine.";
-    if (value >= 36) return "I've been alright.";
+    if (value >= 85) return "I've been doing great.";
+    if (value >= 60) return "I've been doing good.";
+    if (value >= 41) return "I've been doing okay.";
+    if (value >= 25) return "I've been struggling here and there.";
     return "I've been having a hard time.";
   }
   if (metric === "sleep") {
     if (value >= 80) return "My sleep was great, I feel well rested.";
     if (value >= 61) return "My sleep was good, I feel rested.";
-    if (value >= 41) return "My sleep was alright.";
+    if (value >= 41) return "My sleep was alright-ish.";
+    if (value >= 31) return "I have had struggles with sleep.";
     if (value >= 21) return "I didn't really sleep well.";
     return "I've had a terrible night.";
   }
   if (metric === "regulation") {
     if (value >= 70) return "Regulation felt strong and steady.";
     if (value >= 51) return "I was mostly able to regulate myself.";
-    if (value >= 36) return "Regulation was mixed, with some difficult moments.";
+    if (value >= 30) return "Regulation was mixed, with some difficult moments.";
     return "I felt overwhelmed and dysregulated.";
   }
   if (metric === "stress") {
