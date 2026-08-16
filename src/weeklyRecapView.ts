@@ -727,7 +727,7 @@ function describeSymptom(label: string, value: number, highIsBad: boolean): stri
   if (highIsBad) {
     if (v >= 80) return `${label} has been very high this week. Please prioritize recovery.`;
     if (v >= 60) return `${label} has been elevated. Keep support routines close.`;
-    if (v >= 40) return `${label} has been manageable, with some pressure.`;
+    if (v >= 40) return `${label} has been manageable.`;
     return `${label} looks stable this week.`;
   }
   if (v >= 80) return `Your ${label.toLowerCase()} has been great. Keep what helps you grounded.`;

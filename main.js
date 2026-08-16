@@ -6332,7 +6332,7 @@ function getMetricFeedback(metric, value) {
   if (metric === "regulation") {
     if (value >= 70) return "Regulation felt strong and steady.";
     if (value >= 51) return "I was mostly able to regulate myself.";
-    if (value >= 36) return "Regulation was mixed, with some difficult moments.";
+    if (value >= 30) return "Regulation was mixed, with some difficult moments.";
     return "I felt overwhelmed and dysregulated.";
   }
   if (metric === "stress") {
@@ -10325,7 +10325,7 @@ function describeSymptom(label, value, highIsBad) {
   if (highIsBad) {
     if (v >= 80) return `${label} has been very high this week. Please prioritize recovery.`;
     if (v >= 60) return `${label} has been elevated. Keep support routines close.`;
-    if (v >= 40) return `${label} has been manageable, with some pressure.`;
+    if (v >= 40) return `${label} has been manageable.`;
     return `${label} looks stable this week.`;
   }
   if (v >= 80) return `Your ${label.toLowerCase()} has been great. Keep what helps you grounded.`;
