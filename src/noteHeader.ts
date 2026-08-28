@@ -7,6 +7,7 @@ import { openOverlay } from "./overlay";
 
 export class NoteHeaderManager {
   private readonly headerDisposers = new WeakMap<HTMLElement, () => void>();
+  private readonly scrollAnimations = new WeakMap<HTMLElement, number>();
 
   constructor(
     private readonly app: App,
@@ -204,7 +205,36 @@ export class NoteHeaderManager {
     if (cmScroller instanceof HTMLElement) {
       return cmScroller;
     }
+    const readingScroller = content.querySelector(".markdown-reading-view .markdown-preview-view");
+    if (readingScroller instanceof HTMLElement) {
+      return readingScroller;
+    }
     return content;
+  }
+
+  private scrollNoteToTop(scrollHost: HTMLElement): void {
+    const existingAnimation = this.scrollAnimations.get(scrollHost);
+    if (existingAnimation !== undefined) {
+      window.cancelAnimationFrame(existingAnimation);
+    }
+    const startTop = scrollHost.scrollTop;
+    if (startTop <= 0) {
+      return;
+    }
+    const startTime = performance.now();
+    const duration = Math.min(1000, Math.max(320, Math.sqrt(startTop) * 18));
+    const animate = (time: number) => {
+      const progress = Math.min(1, (time - startTime) / duration);
+      const easedProgress = 1 - ((1 - progress) ** 3);
+      scrollHost.scrollTop = Math.round(startTop * (1 - easedProgress));
+      if (progress < 1) {
+        this.scrollAnimations.set(scrollHost, window.requestAnimationFrame(animate));
+        return;
+      }
+      scrollHost.scrollTop = 0;
+      this.scrollAnimations.delete(scrollHost);
+    };
+    this.scrollAnimations.set(scrollHost, window.requestAnimationFrame(animate));
   }
 
   private bindMyNotesCollapseBehavior(content: HTMLElement, header: HTMLElement): () => void {
@@ -216,8 +246,9 @@ export class NoteHeaderManager {
     let collapsed = false;
     let lastTouchY: number | null = null;
     let resizeObserver: ResizeObserver | null = null;
+    let heightSyncFrame: number | null = null;
 
-    const syncStageHeights = () => {
+    const measureStageHeights = () => {
       if (!(stage instanceof HTMLElement) || !(fullHeader instanceof HTMLElement) || !(compactHeader instanceof HTMLElement)) {
         return;
       }
@@ -225,6 +256,16 @@ export class NoteHeaderManager {
       const compactHeight = Math.ceil(compactHeader.scrollHeight);
       stage.style.setProperty("--ng-note-header-full-height", `${fullHeight}px`);
       stage.style.setProperty("--ng-note-header-compact-height", `${compactHeight}px`);
+    };
+
+    const syncStageHeights = () => {
+      if (heightSyncFrame !== null) {
+        window.cancelAnimationFrame(heightSyncFrame);
+      }
+      heightSyncFrame = window.requestAnimationFrame(() => {
+        heightSyncFrame = null;
+        measureStageHeights();
+      });
     };
 
     const setCollapsed = (value: boolean) => {
@@ -333,6 +374,9 @@ export class NoteHeaderManager {
     content.addEventListener("keydown", onKeyDown, true);
 
     return () => {
+      if (heightSyncFrame !== null) {
+        window.cancelAnimationFrame(heightSyncFrame);
+      }
       if (resizeObserver) {
         resizeObserver.disconnect();
       }
@@ -381,25 +425,38 @@ export class NoteHeaderManager {
     toTopButton.setAttribute("title", "Back to top");
     toTopButton.setText("↑");
     toTopButton.addEventListener("click", () => {
-      scrollHost.scrollTo({ top: 0, behavior: "smooth" });
+      this.scrollNoteToTop(scrollHost);
     });
 
     const fullHeader = stage.createDiv({ cls: "ng-note-header-full" });
     fullHeader.createDiv({ cls: "ng-note-header-spacer" });
     const box = fullHeader.createDiv({ cls: "ng-note-header-box" });
 
+    let currentCategory = (await this.myNotesStorage.getNoteCategoriesFresh(file))[0] ?? null;
+    let displayedTopics = this.myNotesStorage.getNoteTopics(file);
+
     const syncCollapsedSummary = async () => {
       collapsedCategories.empty();
-      const activeCategories = await this.myNotesStorage.getNoteCategoriesFresh(file);
       const activeSupport = await this.myNotesStorage.getNoteSupportsFresh(file);
 
-      if (activeCategories.length === 0 && activeSupport.length === 0) {
-        collapsedCategories.createDiv({ cls: "ng-note-header-collapsed-empty", text: "No categories" });
+      if (!currentCategory && displayedTopics.length === 0 && activeSupport.length === 0) {
+        collapsedCategories.createDiv({ cls: "ng-note-header-collapsed-empty", text: "No category or topics" });
         return;
       }
 
-      for (const category of activeCategories) {
-        collapsedCategories.createSpan({ cls: "ng-note-header-mini-pill", text: category });
+      if (currentCategory) {
+        collapsedCategories.createSpan({ cls: "ng-learning-collapsed-category", text: `${currentCategory}:` });
+      }
+      for (const topic of displayedTopics) {
+        const topicPill = collapsedCategories.createSpan({ cls: "ng-note-header-mini-pill", text: topic });
+        topicPill.style.setProperty(
+          "--ng-mylearning-category-color",
+          this.myNotesStorage.getTopicColor(currentCategory ?? "", topic),
+        );
+        topicPill.style.setProperty(
+          "--ng-mynotes-topic-color-muted",
+          this.myNotesStorage.getMutedTopicColor(currentCategory ?? "", topic),
+        );
       }
       for (const support of activeSupport) {
         const supportPill = collapsedCategories.createSpan({ cls: "ng-note-header-mini-pill ng-note-header-mini-pill-support", text: support });
@@ -412,8 +469,8 @@ export class NoteHeaderManager {
 
     await syncCollapsedSummary();
 
-    const categoriesHeader = box.createDiv({ cls: "ng-note-header-categories-row" });
-    categoriesHeader.createEl("h4", { text: "Categories", cls: "ng-mynotes-section-title" });
+    const categoriesHeader = box.createDiv({ cls: "ng-note-header-categories-row ng-mynotes-category-heading-row" });
+    const categoryHeading = categoriesHeader.createEl("h3", { cls: "ng-learning-topic-heading" });
     const categoriesActions = categoriesHeader.createDiv({ cls: "ng-note-header-categories-actions" });
     const addButton = categoriesActions.createEl("button", { cls: "ng-note-header-add-category-icon" });
     addButton.setAttribute("aria-label", "Add Category");
@@ -474,8 +531,12 @@ export class NoteHeaderManager {
       }
     });
 
-    const pillRow = box.createDiv({ cls: "ng-mynotes-pill-row" });
-    await this.renderMyNotesCategoryPills(pillRow, file, undefined, syncCollapsedSummary);
+    const syncCategoryHeading = () => {
+      categoryHeading.setText(currentCategory ?? "Assign a Category");
+      categoryHeading.toggleClass("is-placeholder", !currentCategory);
+    };
+    syncCategoryHeading();
+    let renderTopicPills = async (): Promise<void> => undefined;
 
     const submitNewCategory = async () => {
       const name = addInput.value.trim();
@@ -483,21 +544,135 @@ export class NoteHeaderManager {
         return;
       }
       await this.myNotesStorage.addCategory(name);
-      const active = this.myNotesStorage.getNoteCategories(file);
-      if (!active.includes(name)) {
-        await this.myNotesStorage.toggleNoteCategory(file, name);
-      }
+      await this.myNotesStorage.setNoteCategory(file, name);
+      currentCategory = name;
+      displayedTopics = [];
+      syncCategoryHeading();
       addInput.value = "";
       addRow.hide();
       updateAddButton();
-      await this.renderMyNotesCategoryPills(pillRow, file, name, () => void syncCollapsedSummary());
-      void syncCollapsedSummary();
+      await renderTopicPills();
+      await syncCollapsedSummary();
     };
 
     addInput.addEventListener("keydown", (event) => {
       if (event.key === "Enter") {
         void submitNewCategory();
       }
+    });
+
+    const topicsHeader = box.createDiv({ cls: "ng-note-header-categories-row" });
+    const topicsLeft = topicsHeader.createDiv({ cls: "ng-learning-categories-left" });
+    topicsLeft.createEl("h4", { text: "Topics", cls: "ng-mynotes-section-title" });
+    const addTopicButton = topicsLeft.createEl("button", { cls: "ng-note-header-add-category-icon" });
+    addTopicButton.setAttribute("aria-label", "Add Topic");
+    addTopicButton.setText("+");
+    const topicAddRow = box.createDiv({ cls: "ng-note-header-add-row" });
+    topicAddRow.hide();
+    const topicInput = topicAddRow.createEl("input", { type: "text", placeholder: "Topic name..." });
+    topicInput.addClass("ng-task-input");
+    const topicError = topicAddRow.createDiv({ cls: "ng-overlay-error ng-note-header-input-error" });
+    topicError.hide();
+    const topicPillRow = box.createDiv({ cls: "ng-mynotes-pill-row" });
+
+    renderTopicPills = async (ensureTopic?: string) => {
+      topicPillRow.empty();
+      if (!currentCategory) {
+        topicPillRow.createDiv({ cls: "ng-empty", text: "Assign a category first." });
+        return;
+      }
+      const topics = await this.myNotesStorage.listTopicsForCategory(currentCategory);
+      if (ensureTopic && !topics.includes(ensureTopic)) {
+        topics.push(ensureTopic);
+      }
+      const activeTopics = this.myNotesStorage.getNoteTopics(file);
+      if (ensureTopic && !activeTopics.includes(ensureTopic)) {
+        activeTopics.push(ensureTopic);
+      }
+      displayedTopics = [...activeTopics];
+      if (topics.length === 0) {
+        topicPillRow.createDiv({ cls: "ng-empty", text: "No topics yet." });
+        await syncCollapsedSummary();
+        return;
+      }
+      for (const topic of topics) {
+        const topicPill = topicPillRow.createEl("button", { cls: "ng-mynotes-pill ng-note-header-category-pill" });
+        topicPill.style.setProperty("--ng-mylearning-category-color", this.myNotesStorage.getTopicColor(currentCategory, topic));
+        topicPill.style.setProperty("--ng-mynotes-topic-color-muted", this.myNotesStorage.getMutedTopicColor(currentCategory, topic));
+        topicPill.createSpan({ text: topic });
+        topicPill.toggleClass("is-active", activeTopics.includes(topic));
+        topicPill.addEventListener("click", async () => {
+          const active = await this.myNotesStorage.toggleNoteTopic(file, topic);
+          topicPill.toggleClass("is-active", active);
+          displayedTopics = active
+            ? [...displayedTopics, topic].filter((entry, index, entries) => entries.indexOf(entry) === index)
+            : displayedTopics.filter((entry) => entry !== topic);
+          await syncCollapsedSummary();
+        });
+      }
+      await syncCollapsedSummary();
+    };
+    await renderTopicPills();
+
+    const submitNewTopic = async () => {
+      const topic = topicInput.value.trim();
+      const validationError = getNameValidationError(topic);
+      if (!currentCategory || !topic) {
+        return;
+      }
+      if (validationError) {
+        topicError.setText(validationError);
+        topicError.show();
+        return;
+      }
+      await this.myNotesStorage.addTopic(currentCategory, topic);
+      if (!displayedTopics.includes(topic)) {
+        await this.myNotesStorage.toggleNoteTopic(file, topic);
+      }
+      topicInput.value = "";
+      topicAddRow.hide();
+      updateTopicAddButton();
+      await renderTopicPills(topic);
+    };
+
+    const updateTopicAddButton = () => {
+      const open = topicAddRow.isShown();
+      const hasText = topicInput.value.trim().length > 0;
+      addTopicButton.toggleClass("has-input", open && hasText);
+      addTopicButton.setText(!open ? "+" : hasText ? "\u2713" : "-");
+    };
+    updateTopicAddButton();
+    topicInput.addEventListener("input", () => {
+      updateTopicAddButton();
+      const validationError = getNameValidationError(topicInput.value);
+      topicError.toggle(validationError !== null);
+      topicError.setText(validationError ?? "");
+    });
+    addTopicButton.addEventListener("click", () => {
+      if (!topicAddRow.isShown()) {
+        topicAddRow.show();
+        topicInput.focus();
+        updateTopicAddButton();
+      } else if (topicInput.value.trim()) {
+        void submitNewTopic();
+      } else {
+        topicAddRow.hide();
+        updateTopicAddButton();
+      }
+    });
+    topicInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        void submitNewTopic();
+      }
+    });
+
+    categoryHeading.addEventListener("click", () => {
+      void this.openMyNotesCategoryPicker(file, async (category) => {
+        currentCategory = category;
+        displayedTopics = [];
+        syncCategoryHeading();
+        await renderTopicPills();
+      });
     });
 
     const supportSection = box.createDiv({ cls: "ng-note-header-support" });
@@ -598,7 +773,7 @@ export class NoteHeaderManager {
     toTopButton.setAttribute("title", "Back to top");
     toTopButton.setText("↑");
     toTopButton.addEventListener("click", () => {
-      scrollHost.scrollTo({ top: 0, behavior: "smooth" });
+      this.scrollNoteToTop(scrollHost);
     });
 
     const fullHeader = stage.createDiv({ cls: "ng-note-header-full" });
@@ -830,36 +1005,27 @@ export class NoteHeaderManager {
     });
   }
 
-  private async renderMyNotesCategoryPills(
-    pillRow: HTMLElement,
+  private async openMyNotesCategoryPicker(
     file: TFile,
-    ensureCategory?: string,
-    onToggle?: () => void,
+    onSelect: (category: string) => Promise<void>,
   ): Promise<void> {
-    pillRow.empty();
     const categories = await this.myNotesStorage.loadCategories();
-    if (ensureCategory && !categories.some((category) => category.name === ensureCategory)) {
-      categories.push({ name: ensureCategory, count: 1 });
-    }
-
-    const active = this.myNotesStorage.getNoteCategories(file);
-    if (ensureCategory && !active.includes(ensureCategory)) {
-      active.push(ensureCategory);
-    }
+    const { card, close } = openOverlay("Assign Category");
 
     if (categories.length === 0) {
-      pillRow.createDiv({ cls: "ng-empty", text: "No categories yet." });
+      card.createDiv({ cls: "ng-empty", text: "No categories yet. Create one from the MyNotes view or note header." });
       return;
     }
 
+    const pillRow = card.createDiv({ cls: "ng-mynotes-pill-row" });
     for (const category of categories) {
       const pill = pillRow.createEl("button", { cls: "ng-mynotes-pill ng-note-header-category-pill" });
       pill.createSpan({ text: category.name });
-      pill.toggleClass("is-active", active.includes(category.name));
+      pill.toggleClass("is-active", this.myNotesStorage.getNoteCategory(file) === category.name);
       pill.addEventListener("click", async () => {
-        const nowActive = await this.myNotesStorage.toggleNoteCategory(file, category.name);
-        pill.toggleClass("is-active", nowActive);
-        onToggle?.();
+        await this.myNotesStorage.setNoteCategory(file, category.name);
+        close();
+        await onSelect(category.name);
       });
     }
   }

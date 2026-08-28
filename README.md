@@ -1,135 +1,166 @@
 # Neural Garden
 
-**Neural Garden** is a personal support system built as an Obsidian plugin, combining journaling, energy-aware task management, note organization, and study tracking into one low-friction environment for reducing chaos and supporting self-management.
+Neural Garden is a local-first Obsidian plugin for journaling, energy-aware task management, personal notes, and learning material. It brings these workflows into one visual system while keeping the underlying information in ordinary files inside your vault.
 
----
+No AI service is used. Neural Garden works with local notes, frontmatter, links, and deterministic calculations.
 
-## Installation
+## What Neural Garden Includes
 
-Currently Neural Garden is not yet available on the official Obsidian Community Plugin store. Until then, it can be installed manually. 
+### Home and Task Manager
 
-### Requirements
+The Home view is the starting point for the plugin. It provides direct access to Journaling, MyNotes, MyLearning, and Quick Notes alongside the daily Task Manager.
 
-- Obsidian (desktop or mobile)
-- An existing Obsidian vault
+- Create tasks with Light, Easy, Fair, Hard, or Heavy effort levels.
+- Track the day's total energy load visually.
+- Complete, edit, and remove tasks without leaving Home.
+- Enable Break Mode to lock the task list when the configured energy threshold is reached.
+- Use the guided break timer before returning to unfinished work.
+- Promote tasks prepared in a Weekly Recap into the current task list.
+- Surface relevant support notes and support hints from the latest recap.
 
-### Manual installation
+### Journaling
 
-1. Download and unzip the plugin: on the plugin's GitHub page, click the green **"Code"** button, choose **"Download ZIP"**, then double-click the downloaded file to unzip it.
-2. In Obsidian, go to **Settings → Community Plugins** and turn on **Community plugins** if it isn't already enabled.
-3. Still in **Community Plugins**, click the folder icon next to "Installed plugins" to open your vault's plugins folder directly.
-4. Copy the extracted `neural-garden` folder (from step 1) into that folder.
-5. Back in Obsidian, click the refresh icon in **Community Plugins** to detect the new plugin.
-6. Find **Neural Garden** in the list, and turn it on.
+Journaling combines structured check-ins with free-form writing.
 
-Once enabled, Neural Garden is ready to use, with no further setup required.
+- Browse entries from a calendar-based view.
+- Create today's entry or backfill a recent day.
+- Record wellbeing metrics, emotions, completed tasks, trackers, and written reflections.
+- Create custom trackers with individual colors.
+- Log trackers directly from a journal entry.
+- Review entry previews without opening every note.
 
----
+Journal data remains readable Markdown and frontmatter under the vault's `Journal/` folder.
 
-## Background
+### Weekly Recap
 
-Neural Garden wasn't created to be another productivity tool or journaling app. It started out of necessity, at a point where I felt helpless and heavily dysregulated and needed something that could actually hold that. I've spent the last eight months building it through a lot of trial and error, trying to lower the mental load of managing my own life and make self-management possible even on the hard days.
+Weekly Recap turns recent journal entries into a review of the week.
 
-### Origins
+- Summarize tracked symptoms, emotions, habits, and task load.
+- Highlight difficult days and positive moments.
+- Review changes from the previous week.
+- Select support notes connected to current needs.
+- Prepare tasks for the following week.
+- Save each recap as a Markdown note under `Journal/Weekly/`.
 
-Obsidian felt powerful right from the start, but also overwhelming. Too many possible workflows, too many decisions to make when I barely had the energy for any of them. So the first version of this system was completely manual: I reviewed every journal entry myself, cross-referenced tags by hand, wrote my own summaries. Back then, creating a new topic or category was an enormous effort in itself, tedious enough that every so often I'd end up rebuilding parts of, or the whole, vault from scratch just to keep it manageable. Over time it grew into something more graphical, with sliders that write straight into a note's frontmatter and a Home view that guides me through the vault.
-
-### From overload to structure
-
-The whole plugin exists because of one pattern that kept repeating: I'd push too hard for too long, neglect myself, and eventually crash into a rough stretch of low mood and low function. Journaling is what first helped me see that cycle clearly. I used tags to track my emotions, symptoms, and energy over time, and slowly those tags turned into a map connecting how I felt to what was actually going on around me. Along the way I wrote hundreds of notes about mental health and psychology. Working on the notebook and working on myself literally became the same process.
-
-These days I have a lot less free time than when this started, so the system has shifted to match: capture things fast, and let the background processing do more of the work. The Task Manager is a direct result of that shift, and of the exhaustion I kept running into. It tracks how much I've taken on for the day and forces a break before I push past my limit again.
-
-### A word of thanks
-
-Somewhere along the way, this project quietly turned into something that ran alongside my therapy. A lot of what ended up in the notebook started as something a therapist said in a session, a thought that stuck with me afterward, that I kept turning over until I figured out how to actually build it into the vault. None of them set out to help design a plugin, but in a passive, sometimes unknowing way, they did.
-
-I remember bringing in my very first alpha-alpha-alpha version, rough and barely holding together, and having them believe in it anyway, and in me, well before there was much to show for it. That belief only got stronger once my symptoms actually started to stabilize and they could see it wasn't just an idea I was chasing. Their help with my own life is - in the end - help with this notebook too, since the two were never really separate. This project also exists because they helped me through some of my darkest stretches, alongside a whole series of "happy little accidents," as Bob Ross would call them, that, one by one, kept improving and strengthening it into what it is today. I want to thank every one of them for that.
-
-### Danksagung (für meine nicht englischsprachigen Therapeutinnen)
-
-Dieses Projekt ist mit der Zeit zu einem stillen Begleiter meiner Therapie geworden, auch wenn ich das nie so geplant hatte. Ein großer Teil dessen, was heute im Notizbuch steckt, geht auf jene der Sätze zurück welche mir meine Therapeutinnen und Unterstützer im Laufe unzähliger Sitzungen mitgegeben haben, Gedanken, die mir einfach nicht mehr aus dem Kopf gingen bis ich einen Weg gefunden hatte diese tatsächlich in mein System umzusetzen. Keiner von ihnen hat je an einem Plugin/Projekt aktiv mitgearbeitet, und trotzdem haben sie es auf ihre Weise getan, oft ohne es selbst zu bemerken. 
-
-Ich erinnere mich noch gut daran, wie ich ihnen meine allererste, völlig rohe Frühversion gezeigt habe, kaum mehr als ein Gerüst, und wie sehr an die Idee und an mich geglaubt wurde. Dieser Glaube vertiefte sich (vermutlich), als meine Symptome tatsächlich durchgehend zu stabilisieren begannen und man sehen konnte, dass es eben nicht nur ein kleines Projekt ist, sondern vielmehr ein Fundament welches meine Schwächen unterstützt und meine Stärken festigt. Was sie für mich persönlich getan haben, kommt am Ende genauso diesem Notizbuch zugute, beides lässt sich gar nicht wirklich trennen, weil es inzwischen zu einer Einheit geworden ist. Dieses Projekt existiert, weil sie mich durch einige der dunkelsten Phasen meines Lebens begleitet haben, zusammen mit einer ganzen Reihe "glücklicher kleiner Zufälle", wie Bob Ross sie genannt hätte, die es Stück für Stück verbessert und gestärkt haben bis an den Punkt an dem es heute steht. Dafür möchte ich mich bei jeder und jedem Einzelnen von ihnen von Herzen bedanken.
-
----
-
-## Current Feature Set
-
-### Journaling System
-
-The **Journaling System** is the core reflection layer, capturing the day's state quickly and building it into a clear picture over time.
-
-Key capabilities:
-
-- **Calendar-based Hub**: browse entries by day, each preview summarizing metrics, emotions, tasks, and active trackers.
-- **Same-day and backfill writing**: entries can be written for today or backfilled for "yesterday."
-- **Structured Entry view**: progress bars, emotion selection, a note field, task snapshots, and free-form writing in one capture flow.
-- **Streak-based trackers**: each tracker is its own note, with tracked days shown as colored dots forming a streak line.
-- **One-click tracker creation**: a new tracker is created the moment a name and color are chosen.
-- **In-entry logging**: a minimal tracker view inside the Journal Entry makes daily logging one click.
-
-### Task Manager
-
-The **Task Manager** manages workload around energy expenditure rather than simple completion status.
-
-Key capabilities:
-
-- **Effort-based tasks**: every task carries an effort level instead of being a plain checkbox.
-- **Real-time load tracking**: total daily load updates continuously as tasks are completed.
-- **Forced breaks**: when strain crosses a threshold, a break is triggered automatically.
-- **Lightweight workflow**: tasks can be created, estimated, and completed with minimal overhead.
-- **Adaptive behavior**: data from journal entries lets thresholds adjust to individual patterns over time.
-
-### MyLearning
-
-**MyLearning** is a built-in study companion for organizing, tracking, and revisiting learning material within the vault.
-
-Material is organized into **Topics** (e.g., "School," "Programming") and, within each, into **Categories**.
-
-Key capabilities:
-
-- **At-a-glance overview**: selecting a topic surfaces every associated note, color-coded by category.
-- **Self-assessed progress tracking**: each note has a progress bar for rating comprehension over time.
-- **Dedicated "stuck" flag**: one click files a note under a "help" category, keeping weak spots together.
-- **Fast capture**: new notes can be created in one click, with topic and category pre-filled.
-- **Structural integrity**: renaming or removing topics and categories updates all referencing notes automatically.
+The recap is generated locally from journal data. It does not send entries to an external service.
 
 ### MyNotes
 
-**MyNotes** is the general note management layer, bringing all personal notes into a single organized view.
+MyNotes organizes general-purpose notes with a two-level hierarchy:
 
-Key capabilities:
+1. **Categories** provide the main grouping.
+2. **Topics** organize notes within a selected category.
 
-- **Unified note view**: all notes appear in one place, organized by category and color-coded support categories (such as Mood or Anxiety).
-- **Favoriting and search**: notes can be favorited and searched from the same screen.
-- **Inline creation and deletion**: notes can be created or deleted without leaving MyNotes.
-- **Uncategorized handling**: notes without a category stay in a collapsible section until sorted.
-- **In-note header**: every note gets an injected header for favoriting, category assignment, and Support Note designation.
+Key features include:
 
-### Home View
+- Create, rename, and remove categories and topics.
+- Assign one category and multiple topics to a note.
+- Give topics individual colors for faster visual scanning.
+- Filter notes by category, topic, favourite status, or support type.
+- Search note names and contents.
+- Keep unsorted notes in a dedicated collapsible section.
+- Create notes directly within the current category and topic.
+- Open notes in the current pane or a split pane.
 
-The **Home view** is the plugin's central navigation point, built to make the next action obvious.
+Each MyNotes file receives a collapsible header for category and topic assignment, favourites, and Support Note settings. Category and topic links are also represented in the vault so they can participate in Obsidian's graph.
 
-Key capabilities:
+### MyLearning
 
-- **Direct system access**: one screen links directly to Journaling, Task Manager, MyLearning, MyNotes, and search.
-- **Low-friction design**: the layout minimizes decisions, particularly when mental energy is limited.
+MyLearning provides a similar category/topic structure for study notes and canvases.
 
----
+- Organize learning material by category and topic.
+- Create Markdown notes or Obsidian canvases from the selected context.
+- Assign multiple topics to a learning note.
+- Color topics consistently across the manager and note headers.
+- Set a manual comprehension value from 0 to 100 on each note or canvas.
+- Review progress summaries across categories and topics.
+- Rename or remove structure while updating related entries.
+- Use the Daily Notes category for lightweight recurring learning capture.
 
-## Design Direction
+Learning notes and canvases are stored under `Learning/`. Linking notes used for graph relationships are kept separately from normal learning entries.
 
-The interface favors a calm, transparent visual language: fewer boxes, fewer borders, more open space. Buttons only look like buttons when active, panels let the background show through, and layout stays consistent across desktop and mobile.
+### Note Headers
 
----
+MyNotes and MyLearning Markdown files receive a shared collapsible header.
 
-## Roadmap
+- Navigate back to the relevant manager or Home.
+- Assign categories and topics without editing YAML manually.
+- See active topics and their colors while the header is collapsed.
+- Collapse automatically while writing to preserve editor space.
+- Return to the top of long notes with the animated up-arrow control.
 
-Neural Garden continues to evolve around the same priorities: fewer decisions during moments of stress, clearer feedback over time, and tooling that supports recovery rather than draining attention.
+### Walkthroughs and Appearance
 
----
+- First-run walkthroughs introduce the main workflows.
+- Individual walkthrough sections can be replayed from Settings.
+- General, hover, and highlight colors can be customized.
+- Break Mode can be enabled or disabled independently.
 
-## Closing Note
+## Local Data and Privacy
 
-This plugin exists out of necessity, built to support a part of life that needed it. What began as a personal project has become a broader effort to support its creator first, and perhaps others over time.
+Neural Garden does not require an account, cloud backend, or AI provider. Plugin state and user content remain in the Obsidian vault.
+
+The plugin creates and maintains folders such as:
+
+```text
+Journal/
+Learning/
+Notes/
+Maintenance/
+```
+
+Most information is stored as Markdown, YAML frontmatter, canvas JSON, or Obsidian links. Back up the vault normally before testing major updates or reorganizing generated folders.
+
+## Installation
+
+Neural Garden is not currently available in Obsidian's Community Plugins directory.
+
+### Manual Installation
+
+1. Download the latest Neural Garden release or repository ZIP.
+2. Extract the `neural-garden` plugin folder.
+3. Place it in `<vault>/.obsidian/plugins/`.
+4. Open **Settings -> Community plugins** in Obsidian.
+5. Refresh the installed plugin list and enable **Neural Garden**.
+
+The installed folder must contain at least `manifest.json` and `main.js`.
+
+Neural Garden supports desktop and mobile Obsidian. Some layouts and interactions may vary with screen size and platform.
+
+## Getting Started
+
+1. Enable the plugin and complete the introductory walkthrough.
+2. Open Neural Garden from the ribbon or the **Open Neural Garden Home** command.
+3. Add a task, create a journal entry, or open MyNotes/MyLearning.
+4. Use **Settings -> Neural Garden** to adjust colors, Break Mode, or replay a walkthrough.
+
+## Development
+
+Requirements:
+
+- Node.js
+- npm
+- An Obsidian vault for runtime testing
+
+```bash
+npm install
+npm run dev
+```
+
+Create a production bundle with:
+
+```bash
+npm run build
+```
+
+The build writes the bundled plugin to `main.js`.
+
+## Health Disclaimer
+
+Neural Garden is a personal organization and reflection tool. It is not medical software and does not provide diagnosis, treatment, or emergency support.
+
+## Acknowledgment
+
+Thanks to the therapists and supporters whose guidance helped shape the personal practices behind this project, and to everyone who encouraged its early versions.
+
+Danke an die Therapeutinnen, Therapeuten und Unterstützenden, deren Begleitung die Grundlagen dieses Projekts mitgeprägt hat.

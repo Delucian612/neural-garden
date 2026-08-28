@@ -43,7 +43,8 @@ var JOURNAL_WEEKLY_FOLDER = "Journal/Weekly";
 var JOURNAL_MONTHLY_FOLDER = "Journal/Monthly";
 var TRACKER_FOLDER = "Maintenance/Tracker";
 var NOTES_FOLDER = "Notes";
-var MY_NOTES_MAINTENANCE_FOLDER = "Maintenance/MyNotes";
+var MY_NOTES_INDEX_FILE_PATH = "Notes/Notes.md";
+var MY_NOTES_CATEGORIES_FOLDER = "Notes/Categories";
 var MY_NOTES_CATEGORIES_FILE_PATH = "Maintenance/MyNotes/Categories.md";
 var QUICK_NOTES_CATEGORY = "Quick Notes";
 var MY_LEARNING_MAINTENANCE_FOLDER = "Maintenance/MyLearning";
@@ -2745,6 +2746,15 @@ function injectNeuralGardenStyles() {
       background: color-mix(in srgb, var(--ng-mylearning-category-color) 8%, var(--background-primary));
       box-shadow: 0 0 0 2px color-mix(in srgb, var(--ng-mylearning-category-color) 30%, transparent), 0 0 12px color-mix(in srgb, var(--ng-mylearning-category-color) 20%, transparent);
     }
+    .ng-mynotes .ng-mylearning-category-pill.ng-mynotes-pill:not(.is-active) {
+      border-color: var(--ng-mynotes-topic-color-muted) !important;
+      color: var(--text-normal);
+    }
+    .ng-mynotes .ng-mylearning-category-pill.ng-mynotes-pill:hover,
+    .ng-mynotes .ng-mylearning-category-pill.ng-mynotes-pill.is-active {
+      border-color: var(--ng-mylearning-category-color) !important;
+      color: var(--text-normal);
+    }
     .ng-mylearning .ng-mynotes-pill.is-edit-target {
       border-style: dashed;
       cursor: pointer;
@@ -3260,6 +3270,24 @@ function injectNeuralGardenStyles() {
       align-items: center;
       gap: 10px;
       min-width: 0;
+    }
+    .ng-mynotes-primary-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .ng-mynotes-primary-actions .ng-mylearning-inline-edit {
+      flex: 0 0 21.6px;
+      width: 21.6px;
+      min-width: 21.6px;
+      height: 24px;
+      padding: 0;
+      font-size: 1em;
+      line-height: 1;
+    }
+    .ng-mynotes-primary-actions .ng-mylearning-inline-edit svg {
+      width: 15.6px;
+      height: 15.6px;
     }
     .ng-mynotes-header-actions {
       margin-left: 0;
@@ -3787,6 +3815,17 @@ function injectNeuralGardenStyles() {
       align-items: center;
       gap: 8px;
     }
+    .ng-mynotes-category-heading-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    }
+    .ng-mynotes-category-heading-row .ng-learning-topic-heading {
+      grid-column: 2;
+    }
+    .ng-mynotes-category-heading-row .ng-note-header-categories-actions {
+      grid-column: 3;
+      justify-self: end;
+    }
     .ng-note-header-add-category-icon {
       display: inline-flex;
       align-items: center;
@@ -3907,6 +3946,18 @@ function injectNeuralGardenStyles() {
     .ng-note-header-category-pill {
       border-color: color-mix(in srgb, var(--background-modifier-border) 55%, transparent);
       color: var(--text-muted);
+    }
+    .ng-note-header[data-kind="mynotes"] .ng-note-header-category-pill:not(.is-active) {
+      border-color: var(--ng-mynotes-topic-color-muted) !important;
+      color: var(--text-normal);
+    }
+    .ng-note-header[data-kind="mynotes"] .ng-note-header-category-pill:hover,
+    .ng-note-header[data-kind="mynotes"] .ng-note-header-category-pill.is-active {
+      border-color: var(--ng-mylearning-category-color) !important;
+      color: var(--text-normal);
+    }
+    .ng-note-header[data-kind="mynotes"] .ng-note-header-mini-pill {
+      border-color: var(--ng-mylearning-category-color) !important;
     }
     .ng-learning-note-header .ng-note-header-category-pill {
       border-color: color-mix(in srgb, var(--ng-mylearning-category-color) 34%, var(--background-modifier-border));
@@ -9263,7 +9314,9 @@ var NeuralGardenMyNotesView = class extends import_obsidian7.ItemView {
     this.openHomeView = openHomeView;
     this.openHelp = openHelp;
     this.selectedCategory = null;
-    this.editMode = null;
+    this.selectedTopic = null;
+    this.editMode = false;
+    this.renderVersion = 0;
     this.searchQuery = "";
     this.searchDebounceTimer = null;
     this.uncategorizedExpanded = false;
@@ -9292,10 +9345,10 @@ var NeuralGardenMyNotesView = class extends import_obsidian7.ItemView {
     }
   }
   async render() {
+    const renderVersion = ++this.renderVersion;
     const { contentEl } = this;
-    contentEl.empty();
-    contentEl.addClass("neural-garden-root");
-    const wrapper = contentEl.createDiv({ cls: "ng-mynotes" });
+    const wrapper = document.createElement("div");
+    wrapper.addClass("ng-mynotes");
     const topBar = wrapper.createDiv({ cls: "ng-mynotes-topbar" });
     const homeButton2 = topBar.createEl("button", { text: "Home", cls: "ng-journal-nav-button" });
     homeButton2.addEventListener("click", async () => {
@@ -9303,12 +9356,21 @@ var NeuralGardenMyNotesView = class extends import_obsidian7.ItemView {
     });
     createHelpButton(topBar, this.openHelp);
     wrapper.createEl("h2", { text: "MyNotes", cls: "ng-mynotes-heading" });
-    this.searchHintEl = wrapper.createDiv({ cls: "ng-mynotes-heading-hint" });
+    const searchHintEl = wrapper.createDiv({ cls: "ng-mynotes-heading-hint" });
     this.renderSearchSection(wrapper);
     await this.renderCategoriesSection(wrapper);
+    await this.renderTopicsSection(wrapper);
     this.renderSupportSection(wrapper);
-    this.notesListEl = wrapper.createDiv({ cls: "ng-mynotes-list" });
-    await this.updateNotesList();
+    const notesListEl = wrapper.createDiv({ cls: "ng-mynotes-list" });
+    await this.updateNotesList(notesListEl, searchHintEl);
+    if (renderVersion !== this.renderVersion) {
+      return;
+    }
+    contentEl.empty();
+    contentEl.addClass("neural-garden-root");
+    contentEl.appendChild(wrapper);
+    this.searchHintEl = searchHintEl;
+    this.notesListEl = notesListEl;
   }
   async renderCategoriesSection(parent) {
     const section = parent.createDiv({ cls: "ng-mynotes-categories" });
@@ -9323,21 +9385,22 @@ var NeuralGardenMyNotesView = class extends import_obsidian7.ItemView {
     createCategoryButton.addEventListener("click", () => {
       this.openCreateCategoryOverlay();
     });
-    const editCategoryButton = categoryActions.createEl("button", { cls: "ng-note-header-add-category-icon ng-mylearning-inline-edit" });
-    editCategoryButton.setAttribute("aria-label", "Edit Categories");
-    editCategoryButton.setAttribute("title", "Edit Categories");
-    setEditIcon2(editCategoryButton);
-    editCategoryButton.toggleClass("is-active", this.editMode === "category");
-    editCategoryButton.addEventListener("click", () => {
-      this.editMode = this.editMode === "category" ? null : "category";
-      void this.render();
-    });
-    const newButton = headerRow.createEl("button", { cls: "ng-mynotes-new-button" });
+    const headerActions = headerRow.createDiv({ cls: "ng-mynotes-primary-actions" });
+    const newButton = headerActions.createEl("button", { cls: "ng-mynotes-new-button" });
     const newIcon = newButton.createSpan({ cls: "ng-mynotes-button-icon" });
     (0, import_obsidian7.setIcon)(newIcon, "file-plus-2");
     newButton.createSpan({ text: "New" });
     newButton.addEventListener("click", () => {
       this.openNewNoteOverlay();
+    });
+    const editCategoryButton = headerActions.createEl("button", { cls: "ng-note-header-add-category-icon ng-mylearning-inline-edit" });
+    editCategoryButton.setAttribute("aria-label", "Edit Categories and Topics");
+    editCategoryButton.setAttribute("title", "Edit Categories and Topics");
+    setEditIcon2(editCategoryButton);
+    editCategoryButton.toggleClass("is-active", this.editMode);
+    editCategoryButton.addEventListener("click", () => {
+      this.editMode = !this.editMode;
+      void this.render();
     });
     const pillRow = section.createDiv({ cls: "ng-mynotes-pill-row" });
     this.categoryPillRowEl = pillRow;
@@ -9369,9 +9432,9 @@ var NeuralGardenMyNotesView = class extends import_obsidian7.ItemView {
       if (this.selectedCategory === category.name) {
         pill.addClass("is-active");
       }
-      pill.toggleClass("is-edit-target", this.editMode === "category");
+      pill.toggleClass("is-edit-target", this.editMode);
       pill.addEventListener("click", () => {
-        if (this.editMode === "category") {
+        if (this.editMode) {
           this.openCategoryEditActions(category.name);
           return;
         }
@@ -9404,6 +9467,46 @@ var NeuralGardenMyNotesView = class extends import_obsidian7.ItemView {
       });
     }
   }
+  async renderTopicsSection(parent) {
+    if (!this.selectedCategory || this.isSpecialCategory(this.selectedCategory)) {
+      return;
+    }
+    const section = parent.createDiv({ cls: "ng-mylearning-categories" });
+    const header = section.createDiv({ cls: "ng-mynotes-section-header" });
+    const titleGroup = header.createDiv({ cls: "ng-mylearning-heading-group" });
+    titleGroup.createEl("h4", { text: "Topics", cls: "ng-mynotes-section-title" });
+    const actions = titleGroup.createDiv({ cls: "ng-mylearning-header-actions" });
+    const addButton = actions.createEl("button", { cls: "ng-note-header-add-category-icon ng-mylearning-inline-plus" });
+    addButton.setAttribute("aria-label", "Create Topic");
+    addButton.setText("+");
+    addButton.addEventListener("click", () => {
+      if (this.selectedCategory) {
+        this.openCreateTopicOverlay(this.selectedCategory);
+      }
+    });
+    const row = section.createDiv({ cls: "ng-mynotes-pill-row" });
+    const topics = await this.myNotesStorage.listTopicsForCategory(this.selectedCategory);
+    for (const topic of topics) {
+      const pill = row.createEl("button", { cls: "ng-mynotes-pill ng-mylearning-category-pill" });
+      pill.style.setProperty("--ng-mylearning-category-color", this.myNotesStorage.getTopicColor(this.selectedCategory, topic));
+      pill.style.setProperty("--ng-mynotes-topic-color-muted", this.myNotesStorage.getMutedTopicColor(this.selectedCategory, topic));
+      pill.createSpan({ text: topic });
+      pill.toggleClass("is-active", this.selectedTopic === topic);
+      pill.toggleClass("is-edit-target", this.editMode);
+      pill.addEventListener("click", () => {
+        if (this.editMode) {
+          this.openTopicEditActions(this.selectedCategory, topic);
+          return;
+        }
+        this.selectedTopic = this.selectedTopic === topic ? null : topic;
+        void this.updateNotesList();
+        this.syncTopicSelectionState();
+      });
+    }
+    if (topics.length === 0) {
+      section.createDiv({ cls: "ng-empty", text: "No topics yet. Click the plus button to add one." });
+    }
+  }
   renderSearchSection(parent) {
     const section = parent.createDiv({ cls: "ng-mynotes-search" });
     const input = section.createEl("input", {
@@ -9430,14 +9533,14 @@ var NeuralGardenMyNotesView = class extends import_obsidian7.ItemView {
   }
   async selectCategory(name) {
     this.selectedCategory = this.selectedCategory === name ? null : name;
-    this.syncCategorySelectionState();
-    await this.updateNotesList();
+    this.selectedTopic = null;
+    await this.render();
   }
   async showCategory(name) {
     this.selectedCategory = name;
+    this.selectedTopic = null;
     this.searchQuery = "";
-    this.syncCategorySelectionState();
-    await this.updateNotesList();
+    await this.render();
   }
   syncCategorySelectionState() {
     var _a;
@@ -9446,14 +9549,24 @@ var NeuralGardenMyNotesView = class extends import_obsidian7.ItemView {
       button.toggleClass("is-active", key === this.selectedCategory);
     }
   }
-  async updateNotesList() {
-    const container = this.notesListEl;
+  syncTopicSelectionState() {
+    for (const button of this.contentEl.querySelectorAll(".ng-mylearning-category-pill")) {
+      button.toggleClass("is-active", button.textContent === this.selectedTopic);
+    }
+  }
+  async updateNotesList(targetContainer, targetSearchHint) {
+    var _a;
+    const container = targetContainer != null ? targetContainer : this.notesListEl;
     if (!container) {
       return;
     }
     container.empty();
-    this.syncSearchHint();
+    (_a = targetSearchHint != null ? targetSearchHint : this.searchHintEl) == null ? void 0 : _a.setText("Select a category or search to see notes");
     if (!this.selectedCategory && this.searchQuery.length < 2) {
+      this.renderUncategorizedSection(container);
+      return;
+    }
+    if (this.selectedCategory && !this.isSpecialCategory(this.selectedCategory) && !this.selectedTopic && this.searchQuery.length < 2) {
       this.renderUncategorizedSection(container);
       return;
     }
@@ -9468,7 +9581,10 @@ var NeuralGardenMyNotesView = class extends import_obsidian7.ItemView {
     this.renderUncategorizedSection(container);
   }
   renderUncategorizedSection(container) {
-    const uncategorized = this.myNotesStorage.listNotes().filter((file) => this.myNotesStorage.getNoteCategories(file).length === 0);
+    const uncategorized = this.myNotesStorage.listNotes().filter((file) => {
+      const category = this.myNotesStorage.getNoteCategory(file);
+      return !category || category !== QUICK_NOTES_CATEGORY && this.myNotesStorage.getNoteTopics(file).length === 0;
+    });
     const uncategorizedToggle = container.createEl("button", {
       cls: "ng-mynotes-subheading ng-mynotes-subheading-toggle"
     });
@@ -9500,12 +9616,14 @@ var NeuralGardenMyNotesView = class extends import_obsidian7.ItemView {
     } else if ((_a = this.selectedCategory) == null ? void 0 : _a.startsWith(SUPPORT_PREFIX)) {
       files = this.myNotesStorage.notesWithSupport(this.selectedCategory.slice(SUPPORT_PREFIX.length));
     } else if (this.selectedCategory) {
-      files = await this.myNotesStorage.notesInCategory(this.selectedCategory);
+      files = this.selectedTopic ? this.myNotesStorage.notesInCategoryTopic(this.selectedCategory, this.selectedTopic) : await this.myNotesStorage.notesInCategory(this.selectedCategory);
     }
     const query = this.searchQuery;
     if (query.length >= 2) {
       if (files === null) {
-        return await searchNotesInFolder(this.app, query);
+        const matches = await searchNotesInFolder(this.app, query);
+        const allowed = new Set(this.myNotesStorage.listNotes().map((file) => file.path));
+        return matches.filter((file) => allowed.has(file.path));
       }
       const q = query.toLowerCase();
       return files.filter((file) => file.basename.toLowerCase().includes(q));
@@ -9513,6 +9631,7 @@ var NeuralGardenMyNotesView = class extends import_obsidian7.ItemView {
     return files != null ? files : [];
   }
   renderNoteRow(container, file) {
+    var _a, _b, _c;
     const row = container.createDiv({ cls: "ng-mynotes-note-row" });
     const favouriteButton = row.createEl("button", { cls: "ng-mynotes-note-heart" });
     (0, import_obsidian7.setIcon)(favouriteButton, "heart");
@@ -9530,7 +9649,10 @@ var NeuralGardenMyNotesView = class extends import_obsidian7.ItemView {
         row.remove();
       }
     });
-    row.createDiv({ cls: "ng-mynotes-note-indicator" });
+    const indicator = row.createDiv({ cls: "ng-mynotes-note-indicator" });
+    const category = (_a = this.myNotesStorage.getNoteCategory(file)) != null ? _a : "";
+    const topic = (_c = (_b = this.selectedTopic) != null ? _b : this.myNotesStorage.getNoteTopics(file)[0]) != null ? _c : file.basename;
+    indicator.style.background = this.myNotesStorage.getTopicColor(category, topic);
     row.createDiv({ cls: "ng-mynotes-note-title", text: file.basename });
     const openRightButton = row.createEl("button", { cls: "ng-mynotes-note-open-right" });
     openRightButton.setAttribute("aria-label", "Open to the right");
@@ -9554,7 +9676,7 @@ var NeuralGardenMyNotesView = class extends import_obsidian7.ItemView {
     const { card, close } = openOverlay("Create A Note");
     card.createDiv({ cls: "ng-overlay-subtitle", text: "Write down a name" });
     if (this.selectedCategory && this.selectedCategory !== FAVOURITE_CATEGORY) {
-      const label = this.selectedCategory.startsWith(SUPPORT_PREFIX) ? `Support-Category: ${this.selectedCategory.slice(SUPPORT_PREFIX.length)}` : `Category: ${this.selectedCategory}`;
+      const label = this.selectedCategory.startsWith(SUPPORT_PREFIX) ? `Support-Category: ${this.selectedCategory.slice(SUPPORT_PREFIX.length)}` : `Category: ${this.selectedCategory}${this.selectedTopic ? ` | Topic: ${this.selectedTopic}` : ""}`;
       card.createDiv({ cls: "ng-overlay-text", text: label });
     }
     const input = card.createEl("input", { type: "text", placeholder: "Note name..." });
@@ -9587,7 +9709,10 @@ var NeuralGardenMyNotesView = class extends import_obsidian7.ItemView {
           await this.myNotesStorage.setSupportNote(file, true);
           await this.myNotesStorage.toggleNoteSupport(file, supportName);
         } else {
-          await this.myNotesStorage.toggleNoteCategory(file, this.selectedCategory);
+          await this.myNotesStorage.setNoteCategory(file, this.selectedCategory);
+          if (this.selectedTopic) {
+            await this.myNotesStorage.toggleNoteTopic(file, this.selectedTopic);
+          }
         }
       }
       await this.leaf.openFile(file);
@@ -9628,6 +9753,137 @@ var NeuralGardenMyNotesView = class extends import_obsidian7.ItemView {
     });
     input.focus();
   }
+  openCreateTopicOverlay(category) {
+    const { card, close } = openOverlay("Create Topic");
+    card.createDiv({ cls: "ng-overlay-subtitle", text: `Category: ${category}` });
+    const row = card.createDiv({ cls: "ng-mylearning-category-color-row" });
+    const input = row.createEl("input", { type: "text", placeholder: "Topic name..." });
+    input.addClass("ng-task-input");
+    const colorWrap = row.createDiv({ cls: "ng-mylearning-category-color-wrap" });
+    const colorInput = colorWrap.createEl("input", { type: "color", value: "#ec9a63" });
+    colorInput.addClass("ng-mylearning-color-input");
+    const colorSwatch = colorWrap.createSpan({ cls: "ng-mylearning-color-swatch" });
+    colorSwatch.style.setProperty("--ng-mylearning-picked-color", colorInput.value);
+    colorSwatch.setAttribute("role", "button");
+    colorSwatch.setAttribute("tabindex", "0");
+    colorSwatch.setAttribute("aria-label", "Choose topic color");
+    colorSwatch.addEventListener("click", () => colorInput.click());
+    colorSwatch.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        colorInput.click();
+      }
+    });
+    colorInput.addEventListener("input", () => {
+      colorSwatch.style.setProperty("--ng-mylearning-picked-color", colorInput.value);
+    });
+    const errorEl = card.createDiv({ cls: "ng-overlay-error" });
+    errorEl.hide();
+    const actions = card.createDiv({ cls: "ng-overlay-actions" });
+    const createButton = actions.createEl("button", { text: "Create", cls: "ng-overlay-confirm" });
+    const submit = async () => {
+      const name = input.value.trim();
+      const validationError = getNameValidationError(name);
+      if (!name || validationError) {
+        errorEl.setText(validationError != null ? validationError : "Enter a topic name.");
+        errorEl.show();
+        return;
+      }
+      await this.myNotesStorage.addTopic(category, name, colorInput.value);
+      this.selectedTopic = name;
+      close();
+      await this.render();
+    };
+    createButton.addEventListener("click", () => void submit());
+    input.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        void submit();
+      }
+    });
+    input.focus();
+  }
+  openTopicEditActions(category, topic) {
+    const { card, close } = openOverlay("Edit Topic");
+    card.createDiv({ cls: "ng-overlay-subtitle", text: `${category} | ${topic}` });
+    const actions = card.createDiv({ cls: "ng-overlay-actions" });
+    const renameButton = actions.createEl("button", { text: "Rename", cls: "ng-overlay-confirm" });
+    const colorButton = actions.createEl("button", { text: "Color", cls: "ng-overlay-confirm" });
+    const deleteButton = actions.createEl("button", { text: "Delete", cls: "ng-overlay-danger" });
+    renameButton.addEventListener("click", () => {
+      close();
+      this.openRenameTopicOverlay(category, topic);
+    });
+    colorButton.addEventListener("click", () => {
+      close();
+      this.openTopicColorOverlay(category, topic);
+    });
+    deleteButton.addEventListener("click", async () => {
+      await this.myNotesStorage.deleteTopic(category, topic);
+      if (this.selectedTopic === topic) {
+        this.selectedTopic = null;
+      }
+      this.editMode = false;
+      close();
+      await this.render();
+    });
+  }
+  openRenameTopicOverlay(category, topic) {
+    const { card, close } = openOverlay("Rename Topic");
+    const input = card.createEl("input", { type: "text", value: topic });
+    input.addClass("ng-task-input");
+    const actions = card.createDiv({ cls: "ng-overlay-actions" });
+    const renameButton = actions.createEl("button", { text: "Rename", cls: "ng-overlay-confirm" });
+    renameButton.addEventListener("click", async () => {
+      const next = input.value.trim();
+      if (await this.myNotesStorage.renameTopic(category, topic, next)) {
+        this.selectedTopic = this.selectedTopic === topic ? next : this.selectedTopic;
+        this.editMode = false;
+        close();
+        await this.render();
+      }
+    });
+    input.focus();
+  }
+  openTopicColorOverlay(category, topic) {
+    const { card, close } = openOverlay("Topic Color");
+    card.addClass("ng-mylearning-edit-overlay-wide");
+    card.createDiv({ cls: "ng-overlay-subtitle", text: `${category} | ${topic}` });
+    const row = card.createDiv({ cls: "ng-mylearning-category-color-row is-centered" });
+    const wrap = row.createDiv({ cls: "ng-mylearning-category-color-wrap" });
+    const input = wrap.createEl("input", {
+      type: "color",
+      value: this.myNotesStorage.getTopicColor(category, topic)
+    });
+    input.addClass("ng-mylearning-color-input");
+    const swatch = wrap.createSpan({ cls: "ng-mylearning-color-swatch" });
+    swatch.style.setProperty("--ng-mylearning-picked-color", input.value);
+    swatch.setAttribute("role", "button");
+    swatch.setAttribute("tabindex", "0");
+    swatch.setAttribute("aria-label", "Choose topic color");
+    swatch.addEventListener("click", () => input.click());
+    swatch.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        input.click();
+      }
+    });
+    input.addEventListener("input", () => {
+      swatch.style.setProperty("--ng-mylearning-picked-color", input.value);
+    });
+    const actions = card.createDiv({ cls: "ng-overlay-actions" });
+    const saveButton = actions.createEl("button", { text: "Save", cls: "ng-overlay-confirm" });
+    const cancelButton = actions.createEl("button", { text: "Cancel", cls: "ng-overlay-cancel" });
+    saveButton.addEventListener("click", async () => {
+      await this.myNotesStorage.setTopicColor(category, topic, input.value);
+      this.editMode = false;
+      close();
+      await this.render();
+    });
+    cancelButton.addEventListener("click", () => close());
+  }
+  isSpecialCategory(category) {
+    return category === FAVOURITE_CATEGORY || category === QUICK_NOTES_CATEGORY || category.startsWith(SUPPORT_PREFIX);
+  }
   openCategoryEditActions(category) {
     const { card, close } = openOverlay("Edit Category");
     card.createDiv({ cls: "ng-overlay-subtitle", text: category });
@@ -9662,7 +9918,7 @@ var NeuralGardenMyNotesView = class extends import_obsidian7.ItemView {
       if (this.selectedCategory === previousCategory) {
         this.selectedCategory = nextCategory;
       }
-      this.editMode = null;
+      this.editMode = false;
       close();
       await this.render();
     };
@@ -9692,7 +9948,7 @@ var NeuralGardenMyNotesView = class extends import_obsidian7.ItemView {
       if (this.selectedCategory === category) {
         this.selectedCategory = null;
       }
-      this.editMode = null;
+      this.editMode = false;
       close();
       await this.render();
     };
@@ -10813,6 +11069,10 @@ function stripLink(value) {
 function toLink(name) {
   return `[[${name}]]`;
 }
+function normalizeLinks(value) {
+  const values = Array.isArray(value) ? value : value == null ? [] : [value];
+  return values.map(stripLink).filter((entry, index, entries) => entry.length > 0 && entries.indexOf(entry) === index);
+}
 function parseCategoryMap(value) {
   const trimmed = value.trim();
   if (!trimmed || trimmed === "{}") {
@@ -10887,6 +11147,11 @@ function parseNoteCategoriesFromText(text) {
         continue;
       }
       const inlineValue = (_b = (_a = match[1]) == null ? void 0 : _a.trim()) != null ? _b : "";
+      const normalizedInlineValue = inlineValue.replace(/^['"]|['"]$/g, "");
+      if (normalizedInlineValue.startsWith("[[") && normalizedInlineValue.endsWith("]]")) {
+        const clean = stripLink(normalizedInlineValue);
+        return clean ? [clean] : [];
+      }
       if (inlineValue.startsWith("[") && inlineValue.endsWith("]")) {
         const inner = inlineValue.slice(1, -1);
         for (const entry2 of inner.split(",")) {
@@ -10962,35 +11227,66 @@ function parseSupportFromText(text) {
 var MyNotesStorage = class {
   constructor(app) {
     this.app = app;
+    this.topicColors = {};
+    this.topicColorsLoaded = false;
   }
   toCategoryLinks(names) {
     return names.map((name) => toLink(name));
   }
   async ensureCategoriesFile() {
-    const existing = this.app.vault.getAbstractFileByPath(MY_NOTES_CATEGORIES_FILE_PATH);
+    var _a;
+    const existing = this.app.vault.getAbstractFileByPath(MY_NOTES_INDEX_FILE_PATH);
     if (existing instanceof import_obsidian10.TFile) {
+      const frontmatter = await this.readFrontmatter(existing);
+      let categories = normalizeLinks(frontmatter == null ? void 0 : frontmatter.categories);
+      if ((frontmatter == null ? void 0 : frontmatter.schemaVersion) !== 2) {
+        const legacyCategories2 = await this.loadLegacyCategories();
+        categories = [...categories, ...legacyCategories2].filter((category, index, entries) => entries.indexOf(category) === index);
+        await this.app.fileManager.processFrontMatter(existing, (fm) => {
+          fm.categories = categories.map(toLink);
+          fm.topicColors = this.getTopicColorMap(fm.topicColors);
+          fm.schemaVersion = 2;
+        });
+        await this.migrateExistingNotes();
+      }
+      const topicColors = this.getTopicColorMap(frontmatter.topicColors);
+      this.topicColors = topicColors;
+      this.topicColorsLoaded = true;
+      for (const category of categories) {
+        const knownTopics = [
+          ...Object.keys((_a = topicColors[category]) != null ? _a : {}),
+          ...this.notesInCategorySync(category).flatMap((note) => this.getNoteTopics(note))
+        ].filter((topic, index, topics) => topics.indexOf(topic) === index);
+        await this.ensureCategoryLinkingNote(category, knownTopics);
+      }
       return existing;
     }
-    await this.ensureFolderExists(MY_NOTES_MAINTENANCE_FOLDER);
+    await this.ensureFolderExists(NOTES_FOLDER);
+    const legacyCategories = await this.loadLegacyCategories();
     try {
-      return await this.app.vault.create(MY_NOTES_CATEGORIES_FILE_PATH, "---\ncategories: {}\n---\n# Categories\n");
+      const file = await this.app.vault.create(
+        MY_NOTES_INDEX_FILE_PATH,
+        "---\ncategories: []\ntopicColors: {}\nschemaVersion: 2\n---\n# Notes\n"
+      );
+      this.topicColors = {};
+      this.topicColorsLoaded = true;
+      for (const category of legacyCategories) {
+        await this.addCategory(category);
+      }
+      await this.migrateExistingNotes();
+      return file;
     } catch (e) {
-      const createdByOtherCall = this.app.vault.getAbstractFileByPath(MY_NOTES_CATEGORIES_FILE_PATH);
+      const createdByOtherCall = this.app.vault.getAbstractFileByPath(MY_NOTES_INDEX_FILE_PATH);
       if (createdByOtherCall instanceof import_obsidian10.TFile) {
         return createdByOtherCall;
       }
-      throw new Error(`Failed to create categories file at ${MY_NOTES_CATEGORIES_FILE_PATH}`);
+      throw new Error(`Failed to create MyNotes index at ${MY_NOTES_INDEX_FILE_PATH}`);
     }
   }
   async loadCategories() {
     const file = await this.ensureCategoriesFile();
-    const text = await this.app.vault.read(file);
-    const raw = parseCategoriesFromText(text);
-    const categories = [];
-    for (const [name, count] of Object.entries(raw)) {
-      categories.push({ name, count });
-    }
-    return categories;
+    const raw = (await this.readFrontmatter(file)).categories;
+    return normalizeLinks(raw).sort((a, b) => a.localeCompare(b)).map((name) => ({ name, count: this.notesInCategorySync(name).length }));
   }
   async addCategory(name) {
     const trimmed = name.trim();
@@ -10998,13 +11294,19 @@ var MyNotesStorage = class {
       return;
     }
     const file = await this.ensureCategoriesFile();
+    const existingCategories = normalizeLinks((await this.readFrontmatter(file)).categories);
+    if (existingCategories.includes(trimmed)) {
+      await this.ensureCategoryLinkingNote(trimmed);
+      return;
+    }
     await this.app.fileManager.processFrontMatter(file, (fm) => {
-      const categories = fm.categories && typeof fm.categories === "object" && !Array.isArray(fm.categories) ? fm.categories : {};
-      if (!(trimmed in categories)) {
-        categories[trimmed] = 0;
+      const categories = normalizeLinks(fm.categories);
+      if (!categories.includes(trimmed)) {
+        categories.push(trimmed);
       }
-      fm.categories = categories;
+      fm.categories = categories.map(toLink);
     });
+    await this.ensureCategoryLinkingNote(trimmed);
   }
   async renameCategory(previousName, nextName) {
     const previous = previousName.trim();
@@ -11018,31 +11320,27 @@ var MyNotesStorage = class {
     const file = await this.ensureCategoriesFile();
     let renamed = false;
     await this.app.fileManager.processFrontMatter(file, (fm) => {
-      const categories = fm.categories && typeof fm.categories === "object" && !Array.isArray(fm.categories) ? fm.categories : {};
-      if (!(previous in categories) || next in categories) {
+      var _a;
+      const categories = normalizeLinks(fm.categories);
+      if (!categories.includes(previous) || categories.includes(next)) {
         return;
       }
-      const nextCategories = {};
-      for (const [name, count] of Object.entries(categories)) {
-        if (name === previous) {
-          nextCategories[next] = count;
-        } else {
-          nextCategories[name] = count;
-        }
+      fm.categories = categories.map((name) => toLink(name === previous ? next : name));
+      const topicColors = this.getTopicColorMap(fm.topicColors);
+      if (previous in topicColors) {
+        topicColors[next] = (_a = topicColors[previous]) != null ? _a : {};
+        delete topicColors[previous];
       }
-      fm.categories = nextCategories;
+      fm.topicColors = topicColors;
       renamed = true;
     });
     if (!renamed) {
       return false;
     }
+    await this.renameCategoryLinkingNote(previous, next);
     for (const note of await this.notesInCategory(previous)) {
       await this.app.fileManager.processFrontMatter(note, (fm) => {
-        const current = Array.isArray(fm.category) ? fm.category.map(stripLink).filter(Boolean) : [];
-        if (!current.includes(previous)) {
-          return;
-        }
-        fm.category = this.toCategoryLinks(current.map((name) => name === previous ? next : name));
+        fm.category = toLink(next);
       });
     }
     return true;
@@ -11055,42 +11353,37 @@ var MyNotesStorage = class {
     const file = await this.ensureCategoriesFile();
     let removed = false;
     await this.app.fileManager.processFrontMatter(file, (fm) => {
-      const categories = fm.categories && typeof fm.categories === "object" && !Array.isArray(fm.categories) ? fm.categories : {};
-      if (!(target in categories)) {
+      const categories = normalizeLinks(fm.categories);
+      if (!categories.includes(target)) {
         return;
       }
-      delete categories[target];
-      fm.categories = categories;
+      fm.categories = categories.filter((name2) => name2 !== target).map(toLink);
+      const topicColors = this.getTopicColorMap(fm.topicColors);
+      delete topicColors[target];
+      fm.topicColors = topicColors;
       removed = true;
     });
     if (!removed) {
       return false;
     }
+    await this.deleteCategoryLinkingNote(target);
     for (const note of await this.notesInCategory(target)) {
       await this.app.fileManager.processFrontMatter(note, (fm) => {
-        const current = Array.isArray(fm.category) ? fm.category.map(stripLink).filter(Boolean) : [];
-        if (!current.includes(target)) {
-          return;
-        }
-        fm.category = this.toCategoryLinks(current.filter((entry) => entry !== target));
+        delete fm.category;
+        delete fm.topics;
       });
     }
     return true;
   }
   async adjustCategoryCount(name, delta) {
-    const file = await this.ensureCategoriesFile();
-    await this.app.fileManager.processFrontMatter(file, (fm) => {
-      const categories = fm.categories && typeof fm.categories === "object" && !Array.isArray(fm.categories) ? fm.categories : {};
-      const current = typeof categories[name] === "number" ? categories[name] : 0;
-      categories[name] = Math.max(0, current + delta);
-      fm.categories = categories;
-    });
+    void name;
+    void delta;
   }
   listNotes() {
-    return this.app.vault.getMarkdownFiles().filter((file) => file.path.startsWith(`${NOTES_FOLDER}/`)).sort((a, b) => a.basename.localeCompare(b.basename));
+    return this.app.vault.getMarkdownFiles().filter((file) => file.path.startsWith(`${NOTES_FOLDER}/`) && file.path !== MY_NOTES_INDEX_FILE_PATH && !file.path.startsWith(`${MY_NOTES_CATEGORIES_FOLDER}/`)).sort((a, b) => a.basename.localeCompare(b.basename));
   }
   isNoteFile(file) {
-    return !!file && file.extension === "md" && file.path.startsWith(`${NOTES_FOLDER}/`);
+    return !!file && file.extension === "md" && file.path.startsWith(`${NOTES_FOLDER}/`) && file.path !== MY_NOTES_INDEX_FILE_PATH && !file.path.startsWith(`${MY_NOTES_CATEGORIES_FOLDER}/`);
   }
   noteExists(name) {
     const trimmed = this.sanitizeNoteName(name);
@@ -11113,11 +11406,7 @@ var MyNotesStorage = class {
     return await this.app.vault.create(path, "");
   }
   async deleteNote(file) {
-    const categories = this.getNoteCategories(file);
     await this.app.vault.trash(file, true);
-    for (const category of categories) {
-      await this.adjustCategoryCount(category, -1);
-    }
   }
   sanitizeNoteName(name) {
     return name.trim().replace(/[\\/:*?"<>|#^[\]]/g, "").trim();
@@ -11125,10 +11414,11 @@ var MyNotesStorage = class {
   getNoteCategories(file) {
     var _a, _b;
     const raw = (_b = (_a = this.app.metadataCache.getFileCache(file)) == null ? void 0 : _a.frontmatter) == null ? void 0 : _b.category;
-    if (!Array.isArray(raw)) {
-      return [];
-    }
-    return raw.map(stripLink).filter(Boolean);
+    return normalizeLinks(raw).slice(0, 1);
+  }
+  getNoteCategory(file) {
+    var _a;
+    return (_a = this.getNoteCategories(file)[0]) != null ? _a : null;
   }
   async getNoteCategoriesFresh(file) {
     const text = await this.app.vault.read(file);
@@ -11137,16 +11427,56 @@ var MyNotesStorage = class {
   async toggleNoteCategory(file, name) {
     let nowActive = false;
     await this.app.fileManager.processFrontMatter(file, (fm) => {
-      const current = Array.isArray(fm.category) ? fm.category.map(stripLink).filter(Boolean) : [];
-      if (current.includes(name)) {
-        fm.category = current.filter((entry) => entry !== name).map(toLink);
+      var _a;
+      const current = (_a = normalizeLinks(fm.category)[0]) != null ? _a : null;
+      if (current === name) {
+        delete fm.category;
+        delete fm.topics;
         nowActive = false;
       } else {
-        fm.category = [...current, name].map(toLink);
+        fm.category = toLink(name);
+        fm.topics = [];
         nowActive = true;
       }
     });
-    await this.adjustCategoryCount(name, nowActive ? 1 : -1);
+    if (nowActive) {
+      await this.addCategory(name);
+    }
+    return nowActive;
+  }
+  async setNoteCategory(file, name) {
+    const category = name.trim();
+    if (!category) {
+      return;
+    }
+    await this.addCategory(category);
+    await this.app.fileManager.processFrontMatter(file, (fm) => {
+      const changed = normalizeLinks(fm.category)[0] !== category;
+      fm.category = toLink(category);
+      if (changed) {
+        fm.topics = [];
+      }
+    });
+  }
+  getNoteTopics(file) {
+    var _a, _b;
+    return normalizeLinks((_b = (_a = this.app.metadataCache.getFileCache(file)) == null ? void 0 : _a.frontmatter) == null ? void 0 : _b.topics);
+  }
+  async toggleNoteTopic(file, name) {
+    const topic = name.trim();
+    if (!topic) {
+      return false;
+    }
+    let nowActive = false;
+    await this.app.fileManager.processFrontMatter(file, (fm) => {
+      const current = normalizeLinks(fm.topics);
+      if (current.includes(topic)) {
+        fm.topics = current.filter((entry) => entry !== topic).map(toLink);
+      } else {
+        fm.topics = [...current, topic].map(toLink);
+        nowActive = true;
+      }
+    });
     return nowActive;
   }
   isFavourite(file) {
@@ -11219,21 +11549,272 @@ var MyNotesStorage = class {
     return nowActive;
   }
   async notesInCategory(name) {
-    const files = this.listNotes();
-    const matches = [];
-    for (const file of files) {
-      const text = await this.app.vault.read(file);
-      if (parseNoteCategoriesFromText(text).includes(name)) {
-        matches.push(file);
+    return this.notesInCategorySync(name);
+  }
+  notesInCategoryTopic(category, topic) {
+    return this.notesInCategorySync(category).filter((file) => this.getNoteTopics(file).includes(topic));
+  }
+  async listTopicsForCategory(category) {
+    const note = this.app.vault.getAbstractFileByPath(this.categoryPath(category));
+    if (!(note instanceof import_obsidian10.TFile)) {
+      return [];
+    }
+    return normalizeLinks((await this.readFrontmatter(note)).topics);
+  }
+  async addTopic(categoryName, topicName, color) {
+    const category = categoryName.trim();
+    const topic = topicName.trim();
+    if (!category || !topic) {
+      return;
+    }
+    const note = await this.ensureCategoryLinkingNote(category);
+    await this.app.fileManager.processFrontMatter(note, (fm) => {
+      const topics = normalizeLinks(fm.topics);
+      if (!topics.includes(topic)) {
+        topics.push(topic);
+      }
+      fm.category = toLink(category);
+      fm.topics = topics.map(toLink);
+    });
+    if (color && /^#[0-9a-fA-F]{6}$/.test(color)) {
+      await this.setTopicColor(category, topic, color);
+    }
+  }
+  async renameTopic(category, previous, next) {
+    const note = this.app.vault.getAbstractFileByPath(this.categoryPath(category));
+    if (!(note instanceof import_obsidian10.TFile) || !next.trim()) {
+      return false;
+    }
+    let renamed = false;
+    await this.app.fileManager.processFrontMatter(note, (fm) => {
+      const topics = normalizeLinks(fm.topics);
+      if (!topics.includes(previous) || topics.includes(next)) {
+        return;
+      }
+      fm.topics = topics.map((topic) => toLink(topic === previous ? next : topic));
+      renamed = true;
+    });
+    if (!renamed) {
+      return false;
+    }
+    const index = await this.ensureCategoriesFile();
+    await this.app.fileManager.processFrontMatter(index, (fm) => {
+      var _a;
+      const colors = this.getTopicColorMap(fm.topicColors);
+      const categoryColors = (_a = colors[category]) != null ? _a : {};
+      if (categoryColors[previous]) {
+        categoryColors[next] = categoryColors[previous];
+      }
+      delete categoryColors[previous];
+      colors[category] = categoryColors;
+      fm.topicColors = colors;
+    });
+    for (const file of this.notesInCategoryTopic(category, previous)) {
+      await this.app.fileManager.processFrontMatter(file, (fm) => {
+        fm.topics = normalizeLinks(fm.topics).map((topic) => toLink(topic === previous ? next : topic));
+      });
+    }
+    return true;
+  }
+  async deleteTopic(category, topic) {
+    const note = this.app.vault.getAbstractFileByPath(this.categoryPath(category));
+    if (!(note instanceof import_obsidian10.TFile)) {
+      return false;
+    }
+    let removed = false;
+    await this.app.fileManager.processFrontMatter(note, (fm) => {
+      const topics = normalizeLinks(fm.topics);
+      if (!topics.includes(topic)) {
+        return;
+      }
+      fm.topics = topics.filter((entry) => entry !== topic).map(toLink);
+      removed = true;
+    });
+    if (!removed) {
+      return false;
+    }
+    const index = await this.ensureCategoriesFile();
+    await this.app.fileManager.processFrontMatter(index, (fm) => {
+      var _a;
+      const colors = this.getTopicColorMap(fm.topicColors);
+      const categoryColors = (_a = colors[category]) != null ? _a : {};
+      delete categoryColors[topic];
+      colors[category] = categoryColors;
+      fm.topicColors = colors;
+    });
+    for (const file of this.notesInCategoryTopic(category, topic)) {
+      await this.app.fileManager.processFrontMatter(file, (fm) => {
+        fm.topics = normalizeLinks(fm.topics).filter((entry) => entry !== topic).map(toLink);
+      });
+    }
+    return true;
+  }
+  getTopicColor(category, topic) {
+    var _a, _b, _c, _d;
+    const file = this.app.vault.getAbstractFileByPath(MY_NOTES_INDEX_FILE_PATH);
+    const colors = this.topicColorsLoaded ? this.topicColors : file instanceof import_obsidian10.TFile ? this.getTopicColorMap((_b = (_a = this.app.metadataCache.getFileCache(file)) == null ? void 0 : _a.frontmatter) == null ? void 0 : _b.topicColors) : {};
+    return (_d = (_c = colors[category]) == null ? void 0 : _c[topic]) != null ? _d : this.fallbackColor(`${category}:${topic}`);
+  }
+  getMutedTopicColor(category, topic) {
+    const color = this.getTopicColor(category, topic).replace("#", "");
+    if (!/^[0-9a-fA-F]{6}$/.test(color)) {
+      return this.getTopicColor(category, topic);
+    }
+    const red = parseInt(color.slice(0, 2), 16) / 255;
+    const green = parseInt(color.slice(2, 4), 16) / 255;
+    const blue = parseInt(color.slice(4, 6), 16) / 255;
+    const maximum = Math.max(red, green, blue);
+    const minimum = Math.min(red, green, blue);
+    const delta = maximum - minimum;
+    let hue = 0;
+    if (delta > 0) {
+      if (maximum === red) {
+        hue = 60 * ((green - blue) / delta % 6);
+      } else if (maximum === green) {
+        hue = 60 * ((blue - red) / delta + 2);
+      } else {
+        hue = 60 * ((red - green) / delta + 4);
       }
     }
-    return matches;
+    if (hue < 0) {
+      hue += 360;
+    }
+    const saturation = maximum === 0 ? 0 : delta / maximum * 0.5;
+    const brightness = maximum * 0.5;
+    const chroma = brightness * saturation;
+    const segment = hue / 60;
+    const intermediate = chroma * (1 - Math.abs(segment % 2 - 1));
+    const offset = brightness - chroma;
+    let rgb;
+    if (segment < 1) rgb = [chroma, intermediate, 0];
+    else if (segment < 2) rgb = [intermediate, chroma, 0];
+    else if (segment < 3) rgb = [0, chroma, intermediate];
+    else if (segment < 4) rgb = [0, intermediate, chroma];
+    else if (segment < 5) rgb = [intermediate, 0, chroma];
+    else rgb = [chroma, 0, intermediate];
+    return `#${rgb.map((channel) => Math.round((channel + offset) * 255).toString(16).padStart(2, "0")).join("")}`;
+  }
+  async readFrontmatter(file) {
+    const content = await this.app.vault.read(file);
+    const yaml = (0, import_obsidian10.getFrontMatterInfo)(content).frontmatter;
+    if (!yaml.trim()) {
+      return {};
+    }
+    const parsed = (0, import_obsidian10.parseYaml)(yaml);
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+  }
+  async setTopicColor(category, topic, color) {
+    if (!/^#[0-9a-fA-F]{6}$/.test(color)) {
+      return false;
+    }
+    const file = await this.ensureCategoriesFile();
+    await this.app.fileManager.processFrontMatter(file, (fm) => {
+      var _a;
+      const colors = this.getTopicColorMap(fm.topicColors);
+      colors[category] = { ...(_a = colors[category]) != null ? _a : {}, [topic]: color.toLowerCase() };
+      fm.topicColors = colors;
+      this.topicColors = colors;
+      this.topicColorsLoaded = true;
+    });
+    return true;
   }
   favouriteNotes() {
     return this.listNotes().filter((file) => this.isFavourite(file));
   }
   notesWithSupport(name) {
     return this.listNotes().filter((file) => this.isSupportNote(file) && this.getNoteSupports(file).includes(name));
+  }
+  notesInCategorySync(name) {
+    return this.listNotes().filter((file) => this.getNoteCategory(file) === name);
+  }
+  async loadLegacyCategories() {
+    const file = this.app.vault.getAbstractFileByPath(MY_NOTES_CATEGORIES_FILE_PATH);
+    if (!(file instanceof import_obsidian10.TFile)) {
+      return [];
+    }
+    return Object.keys(parseCategoriesFromText(await this.app.vault.read(file)));
+  }
+  async migrateExistingNotes() {
+    for (const note of this.listNotes()) {
+      await this.app.fileManager.processFrontMatter(note, (fm) => {
+        const category = normalizeLinks(fm.category)[0];
+        if (category) {
+          fm.category = toLink(category);
+        }
+        fm.topics = normalizeLinks(fm.topics).map(toLink);
+      });
+    }
+  }
+  categoryPath(name) {
+    return `${MY_NOTES_CATEGORIES_FOLDER}/${this.sanitizeNoteName(name)}.md`;
+  }
+  async ensureCategoryLinkingNote(name, knownTopics = []) {
+    var _a;
+    await this.ensureFolderExists(MY_NOTES_CATEGORIES_FOLDER);
+    const path = this.categoryPath(name);
+    const existing = this.app.vault.getAbstractFileByPath(path);
+    if (existing instanceof import_obsidian10.TFile) {
+      if (knownTopics.length > 0) {
+        const frontmatter = await this.readFrontmatter(existing);
+        const currentCategory = (_a = normalizeLinks(frontmatter.category)[0]) != null ? _a : null;
+        const currentTopics = normalizeLinks(frontmatter.topics);
+        const mergedTopics = [...currentTopics, ...knownTopics].filter((topic, index, entries) => entries.indexOf(topic) === index);
+        if (currentCategory === name && mergedTopics.length === currentTopics.length) {
+          return existing;
+        }
+        await this.app.fileManager.processFrontMatter(existing, (fm) => {
+          fm.category = toLink(name);
+          fm.topics = mergedTopics.map(toLink);
+        });
+      }
+      return existing;
+    }
+    const topicLines = knownTopics.length > 0 ? `
+${knownTopics.map((topic) => `  - ${JSON.stringify(toLink(topic))}`).join("\n")}` : " []";
+    return this.app.vault.create(
+      path,
+      `---
+category: ${JSON.stringify(toLink(name))}
+topics:${topicLines}
+---
+# ${name}
+`
+    );
+  }
+  async renameCategoryLinkingNote(previous, next) {
+    const source = this.app.vault.getAbstractFileByPath(this.categoryPath(previous));
+    if (!(source instanceof import_obsidian10.TFile)) {
+      await this.ensureCategoryLinkingNote(next);
+      return;
+    }
+    await this.app.vault.rename(source, this.categoryPath(next));
+    const renamed = this.app.vault.getAbstractFileByPath(this.categoryPath(next));
+    if (renamed instanceof import_obsidian10.TFile) {
+      await this.app.fileManager.processFrontMatter(renamed, (fm) => {
+        fm.category = toLink(next);
+      });
+    }
+  }
+  async deleteCategoryLinkingNote(name) {
+    const file = this.app.vault.getAbstractFileByPath(this.categoryPath(name));
+    if (file instanceof import_obsidian10.TFile) {
+      await this.app.vault.trash(file, true);
+    }
+  }
+  getTopicColorMap(value) {
+    if (!value || typeof value !== "object" || Array.isArray(value)) {
+      return {};
+    }
+    return value;
+  }
+  fallbackColor(seed) {
+    var _a;
+    const colors = ["#ec9a63", "#54b8a8", "#e06e73", "#6f9fd8", "#d6ad49", "#8f7ac8"];
+    let hash = 0;
+    for (const char of seed) {
+      hash = (hash << 5) - hash + char.charCodeAt(0) | 0;
+    }
+    return (_a = colors[Math.abs(hash) % colors.length]) != null ? _a : colors[0];
   }
   async ensureFolderExists(path) {
     const segments = path.split("/").filter(Boolean);
@@ -11267,6 +11848,7 @@ var NoteHeaderManager = class {
     this.openMyNotesView = openMyNotesView;
     this.openMyLearningView = openMyLearningView;
     this.headerDisposers = /* @__PURE__ */ new WeakMap();
+    this.scrollAnimations = /* @__PURE__ */ new WeakMap();
   }
   sync() {
     for (const leaf of this.app.workspace.getLeavesOfType("markdown")) {
@@ -11425,7 +12007,35 @@ var NoteHeaderManager = class {
     if (cmScroller instanceof HTMLElement) {
       return cmScroller;
     }
+    const readingScroller = content.querySelector(".markdown-reading-view .markdown-preview-view");
+    if (readingScroller instanceof HTMLElement) {
+      return readingScroller;
+    }
     return content;
+  }
+  scrollNoteToTop(scrollHost) {
+    const existingAnimation = this.scrollAnimations.get(scrollHost);
+    if (existingAnimation !== void 0) {
+      window.cancelAnimationFrame(existingAnimation);
+    }
+    const startTop = scrollHost.scrollTop;
+    if (startTop <= 0) {
+      return;
+    }
+    const startTime = performance.now();
+    const duration = Math.min(1e3, Math.max(320, Math.sqrt(startTop) * 18));
+    const animate = (time) => {
+      const progress = Math.min(1, (time - startTime) / duration);
+      const easedProgress = 1 - (1 - progress) ** 3;
+      scrollHost.scrollTop = Math.round(startTop * (1 - easedProgress));
+      if (progress < 1) {
+        this.scrollAnimations.set(scrollHost, window.requestAnimationFrame(animate));
+        return;
+      }
+      scrollHost.scrollTop = 0;
+      this.scrollAnimations.delete(scrollHost);
+    };
+    this.scrollAnimations.set(scrollHost, window.requestAnimationFrame(animate));
   }
   bindMyNotesCollapseBehavior(content, header) {
     const scrollHost = this.resolveScrollHost(content);
@@ -11436,7 +12046,8 @@ var NoteHeaderManager = class {
     let collapsed = false;
     let lastTouchY = null;
     let resizeObserver = null;
-    const syncStageHeights = () => {
+    let heightSyncFrame = null;
+    const measureStageHeights = () => {
       if (!(stage instanceof HTMLElement) || !(fullHeader instanceof HTMLElement) || !(compactHeader instanceof HTMLElement)) {
         return;
       }
@@ -11444,6 +12055,15 @@ var NoteHeaderManager = class {
       const compactHeight = Math.ceil(compactHeader.scrollHeight);
       stage.style.setProperty("--ng-note-header-full-height", `${fullHeight}px`);
       stage.style.setProperty("--ng-note-header-compact-height", `${compactHeight}px`);
+    };
+    const syncStageHeights = () => {
+      if (heightSyncFrame !== null) {
+        window.cancelAnimationFrame(heightSyncFrame);
+      }
+      heightSyncFrame = window.requestAnimationFrame(() => {
+        heightSyncFrame = null;
+        measureStageHeights();
+      });
     };
     const setCollapsed = (value) => {
       if (collapsed === value) {
@@ -11529,6 +12149,9 @@ var NoteHeaderManager = class {
     scrollHost.addEventListener("touchend", onTouchEnd, { passive: true });
     content.addEventListener("keydown", onKeyDown, true);
     return () => {
+      if (heightSyncFrame !== null) {
+        window.cancelAnimationFrame(heightSyncFrame);
+      }
       if (resizeObserver) {
         resizeObserver.disconnect();
       }
@@ -11541,6 +12164,7 @@ var NoteHeaderManager = class {
     };
   }
   async renderMyNotesHeader(content, leaf, file) {
+    var _a;
     this.disposeHeader(content.querySelector(":scope > .ng-note-header"));
     content.addClass("ng-mynotes-header-host");
     const header = document.createElement("div");
@@ -11570,21 +12194,33 @@ var NoteHeaderManager = class {
     toTopButton.setAttribute("title", "Back to top");
     toTopButton.setText("\u2191");
     toTopButton.addEventListener("click", () => {
-      scrollHost.scrollTo({ top: 0, behavior: "smooth" });
+      this.scrollNoteToTop(scrollHost);
     });
     const fullHeader = stage.createDiv({ cls: "ng-note-header-full" });
     fullHeader.createDiv({ cls: "ng-note-header-spacer" });
     const box = fullHeader.createDiv({ cls: "ng-note-header-box" });
+    let currentCategory = (_a = (await this.myNotesStorage.getNoteCategoriesFresh(file))[0]) != null ? _a : null;
+    let displayedTopics = this.myNotesStorage.getNoteTopics(file);
     const syncCollapsedSummary = async () => {
       collapsedCategories.empty();
-      const activeCategories = await this.myNotesStorage.getNoteCategoriesFresh(file);
       const activeSupport = await this.myNotesStorage.getNoteSupportsFresh(file);
-      if (activeCategories.length === 0 && activeSupport.length === 0) {
-        collapsedCategories.createDiv({ cls: "ng-note-header-collapsed-empty", text: "No categories" });
+      if (!currentCategory && displayedTopics.length === 0 && activeSupport.length === 0) {
+        collapsedCategories.createDiv({ cls: "ng-note-header-collapsed-empty", text: "No category or topics" });
         return;
       }
-      for (const category of activeCategories) {
-        collapsedCategories.createSpan({ cls: "ng-note-header-mini-pill", text: category });
+      if (currentCategory) {
+        collapsedCategories.createSpan({ cls: "ng-learning-collapsed-category", text: `${currentCategory}:` });
+      }
+      for (const topic of displayedTopics) {
+        const topicPill = collapsedCategories.createSpan({ cls: "ng-note-header-mini-pill", text: topic });
+        topicPill.style.setProperty(
+          "--ng-mylearning-category-color",
+          this.myNotesStorage.getTopicColor(currentCategory != null ? currentCategory : "", topic)
+        );
+        topicPill.style.setProperty(
+          "--ng-mynotes-topic-color-muted",
+          this.myNotesStorage.getMutedTopicColor(currentCategory != null ? currentCategory : "", topic)
+        );
       }
       for (const support of activeSupport) {
         const supportPill = collapsedCategories.createSpan({ cls: "ng-note-header-mini-pill ng-note-header-mini-pill-support", text: support });
@@ -11595,8 +12231,8 @@ var NoteHeaderManager = class {
       }
     };
     await syncCollapsedSummary();
-    const categoriesHeader = box.createDiv({ cls: "ng-note-header-categories-row" });
-    categoriesHeader.createEl("h4", { text: "Categories", cls: "ng-mynotes-section-title" });
+    const categoriesHeader = box.createDiv({ cls: "ng-note-header-categories-row ng-mynotes-category-heading-row" });
+    const categoryHeading = categoriesHeader.createEl("h3", { cls: "ng-learning-topic-heading" });
     const categoriesActions = categoriesHeader.createDiv({ cls: "ng-note-header-categories-actions" });
     const addButton = categoriesActions.createEl("button", { cls: "ng-note-header-add-category-icon" });
     addButton.setAttribute("aria-label", "Add Category");
@@ -11651,28 +12287,139 @@ var NoteHeaderManager = class {
         updateAddButton();
       }
     });
-    const pillRow = box.createDiv({ cls: "ng-mynotes-pill-row" });
-    await this.renderMyNotesCategoryPills(pillRow, file, void 0, syncCollapsedSummary);
+    const syncCategoryHeading = () => {
+      categoryHeading.setText(currentCategory != null ? currentCategory : "Assign a Category");
+      categoryHeading.toggleClass("is-placeholder", !currentCategory);
+    };
+    syncCategoryHeading();
+    let renderTopicPills = async () => void 0;
     const submitNewCategory = async () => {
       const name = addInput.value.trim();
       if (!name) {
         return;
       }
       await this.myNotesStorage.addCategory(name);
-      const active = this.myNotesStorage.getNoteCategories(file);
-      if (!active.includes(name)) {
-        await this.myNotesStorage.toggleNoteCategory(file, name);
-      }
+      await this.myNotesStorage.setNoteCategory(file, name);
+      currentCategory = name;
+      displayedTopics = [];
+      syncCategoryHeading();
       addInput.value = "";
       addRow.hide();
       updateAddButton();
-      await this.renderMyNotesCategoryPills(pillRow, file, name, () => void syncCollapsedSummary());
-      void syncCollapsedSummary();
+      await renderTopicPills();
+      await syncCollapsedSummary();
     };
     addInput.addEventListener("keydown", (event) => {
       if (event.key === "Enter") {
         void submitNewCategory();
       }
+    });
+    const topicsHeader = box.createDiv({ cls: "ng-note-header-categories-row" });
+    const topicsLeft = topicsHeader.createDiv({ cls: "ng-learning-categories-left" });
+    topicsLeft.createEl("h4", { text: "Topics", cls: "ng-mynotes-section-title" });
+    const addTopicButton = topicsLeft.createEl("button", { cls: "ng-note-header-add-category-icon" });
+    addTopicButton.setAttribute("aria-label", "Add Topic");
+    addTopicButton.setText("+");
+    const topicAddRow = box.createDiv({ cls: "ng-note-header-add-row" });
+    topicAddRow.hide();
+    const topicInput = topicAddRow.createEl("input", { type: "text", placeholder: "Topic name..." });
+    topicInput.addClass("ng-task-input");
+    const topicError = topicAddRow.createDiv({ cls: "ng-overlay-error ng-note-header-input-error" });
+    topicError.hide();
+    const topicPillRow = box.createDiv({ cls: "ng-mynotes-pill-row" });
+    renderTopicPills = async (ensureTopic) => {
+      topicPillRow.empty();
+      if (!currentCategory) {
+        topicPillRow.createDiv({ cls: "ng-empty", text: "Assign a category first." });
+        return;
+      }
+      const topics = await this.myNotesStorage.listTopicsForCategory(currentCategory);
+      if (ensureTopic && !topics.includes(ensureTopic)) {
+        topics.push(ensureTopic);
+      }
+      const activeTopics = this.myNotesStorage.getNoteTopics(file);
+      if (ensureTopic && !activeTopics.includes(ensureTopic)) {
+        activeTopics.push(ensureTopic);
+      }
+      displayedTopics = [...activeTopics];
+      if (topics.length === 0) {
+        topicPillRow.createDiv({ cls: "ng-empty", text: "No topics yet." });
+        await syncCollapsedSummary();
+        return;
+      }
+      for (const topic of topics) {
+        const topicPill = topicPillRow.createEl("button", { cls: "ng-mynotes-pill ng-note-header-category-pill" });
+        topicPill.style.setProperty("--ng-mylearning-category-color", this.myNotesStorage.getTopicColor(currentCategory, topic));
+        topicPill.style.setProperty("--ng-mynotes-topic-color-muted", this.myNotesStorage.getMutedTopicColor(currentCategory, topic));
+        topicPill.createSpan({ text: topic });
+        topicPill.toggleClass("is-active", activeTopics.includes(topic));
+        topicPill.addEventListener("click", async () => {
+          const active = await this.myNotesStorage.toggleNoteTopic(file, topic);
+          topicPill.toggleClass("is-active", active);
+          displayedTopics = active ? [...displayedTopics, topic].filter((entry, index, entries) => entries.indexOf(entry) === index) : displayedTopics.filter((entry) => entry !== topic);
+          await syncCollapsedSummary();
+        });
+      }
+      await syncCollapsedSummary();
+    };
+    await renderTopicPills();
+    const submitNewTopic = async () => {
+      const topic = topicInput.value.trim();
+      const validationError = getNameValidationError(topic);
+      if (!currentCategory || !topic) {
+        return;
+      }
+      if (validationError) {
+        topicError.setText(validationError);
+        topicError.show();
+        return;
+      }
+      await this.myNotesStorage.addTopic(currentCategory, topic);
+      if (!displayedTopics.includes(topic)) {
+        await this.myNotesStorage.toggleNoteTopic(file, topic);
+      }
+      topicInput.value = "";
+      topicAddRow.hide();
+      updateTopicAddButton();
+      await renderTopicPills(topic);
+    };
+    const updateTopicAddButton = () => {
+      const open = topicAddRow.isShown();
+      const hasText = topicInput.value.trim().length > 0;
+      addTopicButton.toggleClass("has-input", open && hasText);
+      addTopicButton.setText(!open ? "+" : hasText ? "\u2713" : "-");
+    };
+    updateTopicAddButton();
+    topicInput.addEventListener("input", () => {
+      updateTopicAddButton();
+      const validationError = getNameValidationError(topicInput.value);
+      topicError.toggle(validationError !== null);
+      topicError.setText(validationError != null ? validationError : "");
+    });
+    addTopicButton.addEventListener("click", () => {
+      if (!topicAddRow.isShown()) {
+        topicAddRow.show();
+        topicInput.focus();
+        updateTopicAddButton();
+      } else if (topicInput.value.trim()) {
+        void submitNewTopic();
+      } else {
+        topicAddRow.hide();
+        updateTopicAddButton();
+      }
+    });
+    topicInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        void submitNewTopic();
+      }
+    });
+    categoryHeading.addEventListener("click", () => {
+      void this.openMyNotesCategoryPicker(file, async (category) => {
+        currentCategory = category;
+        displayedTopics = [];
+        syncCategoryHeading();
+        await renderTopicPills();
+      });
     });
     const supportSection = box.createDiv({ cls: "ng-note-header-support" });
     supportSection.createEl("h4", { text: "Support Note", cls: "ng-mynotes-section-title" });
@@ -11761,7 +12508,7 @@ var NoteHeaderManager = class {
     toTopButton.setAttribute("title", "Back to top");
     toTopButton.setText("\u2191");
     toTopButton.addEventListener("click", () => {
-      scrollHost.scrollTo({ top: 0, behavior: "smooth" });
+      this.scrollNoteToTop(scrollHost);
     });
     const fullHeader = stage.createDiv({ cls: "ng-note-header-full" });
     const box = fullHeader.createDiv({ cls: "ng-note-header-box ng-learning-note-box" });
@@ -11961,28 +12708,22 @@ var NoteHeaderManager = class {
       content.removeClass("ng-mynotes-header-host");
     });
   }
-  async renderMyNotesCategoryPills(pillRow, file, ensureCategory, onToggle) {
-    pillRow.empty();
+  async openMyNotesCategoryPicker(file, onSelect) {
     const categories = await this.myNotesStorage.loadCategories();
-    if (ensureCategory && !categories.some((category) => category.name === ensureCategory)) {
-      categories.push({ name: ensureCategory, count: 1 });
-    }
-    const active = this.myNotesStorage.getNoteCategories(file);
-    if (ensureCategory && !active.includes(ensureCategory)) {
-      active.push(ensureCategory);
-    }
+    const { card, close } = openOverlay("Assign Category");
     if (categories.length === 0) {
-      pillRow.createDiv({ cls: "ng-empty", text: "No categories yet." });
+      card.createDiv({ cls: "ng-empty", text: "No categories yet. Create one from the MyNotes view or note header." });
       return;
     }
+    const pillRow = card.createDiv({ cls: "ng-mynotes-pill-row" });
     for (const category of categories) {
       const pill = pillRow.createEl("button", { cls: "ng-mynotes-pill ng-note-header-category-pill" });
       pill.createSpan({ text: category.name });
-      pill.toggleClass("is-active", active.includes(category.name));
+      pill.toggleClass("is-active", this.myNotesStorage.getNoteCategory(file) === category.name);
       pill.addEventListener("click", async () => {
-        const nowActive = await this.myNotesStorage.toggleNoteCategory(file, category.name);
-        pill.toggleClass("is-active", nowActive);
-        onToggle == null ? void 0 : onToggle();
+        await this.myNotesStorage.setNoteCategory(file, category.name);
+        close();
+        await onSelect(category.name);
       });
     }
   }
