@@ -24,6 +24,7 @@ import { WalkthroughManager, WalkthroughSection } from "./walkthroughs";
 import { OnboardingDemoSession } from "./onboardingDemo";
 import {
   QUICK_NOTES_CATEGORY,
+  TASK_MANAGER_FILE_PATH,
   VIEW_TYPE_NEURAL_GARDEN_HOME,
   VIEW_TYPE_NEURAL_GARDEN_JOURNALING,
   VIEW_TYPE_NEURAL_GARDEN_JOURNAL_ENTRY,
@@ -42,6 +43,7 @@ export default class NeuralGardenPlugin extends Plugin {
   private weeklyRecapManager!: WeeklyRecapManager;
   private walkthroughManager!: WalkthroughManager;
   private onboardingDemo!: OnboardingDemoSession;
+  private taskManagerRefreshTimer: number | null = null;
   private myLearningSelection: { category: string | null; topic: string | null } = {
     category: null,
     topic: null,
@@ -276,7 +278,24 @@ export default class NeuralGardenPlugin extends Plugin {
       }),
     );
     this.registerEvent(
+      this.app.vault.on("create", (file) => {
+        if (file.path === TASK_MANAGER_FILE_PATH) {
+          this.scheduleTaskManagerRefresh();
+        }
+      }),
+    );
+    this.registerEvent(
+      this.app.vault.on("modify", (file) => {
+        if (file.path === TASK_MANAGER_FILE_PATH) {
+          this.scheduleTaskManagerRefresh();
+        }
+      }),
+    );
+    this.registerEvent(
       this.app.vault.on("rename", async (file, oldPath) => {
+        if (file.path === TASK_MANAGER_FILE_PATH) {
+          this.scheduleTaskManagerRefresh();
+        }
         if (file instanceof TFile) {
           await this.myLearningStorage.handleEntryRename(file, oldPath);
         }
@@ -295,6 +314,10 @@ export default class NeuralGardenPlugin extends Plugin {
   }
 
   onunload() {
+    if (this.taskManagerRefreshTimer !== null) {
+      window.clearTimeout(this.taskManagerRefreshTimer);
+      this.taskManagerRefreshTimer = null;
+    }
     void this.walkthroughManager.close();
     for (const key of APPEARANCE_SETTING_KEYS) {
       document.body.style.removeProperty(APPEARANCE_CSS_VARIABLES[key]);
@@ -398,6 +421,20 @@ export default class NeuralGardenPlugin extends Plugin {
     } catch (error) {
       console.error(`[Neural Garden] Startup step failed: ${label}`, error);
     }
+  }
+
+  private scheduleTaskManagerRefresh(): void {
+    if (this.taskManagerRefreshTimer !== null) {
+      window.clearTimeout(this.taskManagerRefreshTimer);
+    }
+    this.taskManagerRefreshTimer = window.setTimeout(() => {
+      this.taskManagerRefreshTimer = null;
+      for (const leaf of this.app.workspace.getLeavesOfType(VIEW_TYPE_NEURAL_GARDEN_HOME)) {
+        if (leaf.view instanceof NeuralGardenHomeView) {
+          void leaf.view.refresh();
+        }
+      }
+    }, 200);
   }
 
   private openHomeView = async (makeActive: boolean, targetLeaf?: WorkspaceLeaf): Promise<void> => {

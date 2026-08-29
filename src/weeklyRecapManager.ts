@@ -34,6 +34,8 @@ const NEGATIVE_EMOTIONS = new Set([
   "Tense",
 ]);
 
+const MONTHLY_BASELINE_ENERGY = 120;
+
 const SUPPORT_HINTS: Record<string, string[]> = {
   Mood: [
     "A tiny joyful ritual today can stabilize tomorrow.",
@@ -212,18 +214,21 @@ export class WeeklyRecapManager {
     }
     nextBreakLength = clamp(nextBreakLength, 15, 60);
 
-    const completedEnergies = entries.reduce<number[]>((acc, entry: JournalEntryRecord) => {
-      const energies = entry.frontmatter.completedTasks.map((task) => task.energy);
-      return acc.concat(energies);
-    }, []);
-    const weeklyAverageCompletedEnergy = average(completedEnergies.map((value: number) => value));
-    const baseTaskEnergy = taskState.baseTaskEnergy ?? 120;
-    const nextMaxEnergy = clamp(((baseTaskEnergy * 2) + weeklyAverageCompletedEnergy) / 3, 50, 200);
+    const weeklyAverageSpentEnergy = average(entries.map((entry) => entry.frontmatter.spentEnergy));
+    const regulationDelta = regulationEnergyDelta(averages.regulation);
+    const stressDelta = highIsBadEnergyDelta(averages.stress, 0.1, 0.2);
+    const exhaustionDelta = highIsBadEnergyDelta(averages.exhaustion, 0.2, 0.4);
+    const energyRangeFactor = 1 + regulationDelta + stressDelta + exhaustionDelta;
+    const allEnergySymptomsStable = regulationDelta === 0 && stressDelta === 0 && exhaustionDelta === 0;
+    const calculatedMaxEnergy = allEnergySymptomsStable
+      ? ((beforeMaxEnergy * 2) + weeklyAverageSpentEnergy) / 3
+      : (((beforeMaxEnergy * energyRangeFactor) * 2) + weeklyAverageSpentEnergy + MONTHLY_BASELINE_ENERGY) / 4;
+    const nextMaxEnergy = clamp(calculatedMaxEnergy, 50, 200);
 
     taskState.forcedBreakThreshold = round2(nextThreshold);
     taskState.forcedBreakLength = round2(nextBreakLength);
     taskState.maxEnergy = round2(nextMaxEnergy);
-    taskState.baseTaskEnergy = baseTaskEnergy;
+    taskState.baseTaskEnergy = beforeMaxEnergy;
     taskState.lastWeeklyRecap = `${parsed.year}-W${String(parsed.week).padStart(2, "0")}`;
     await this.taskStorage.saveTaskManagerState(taskState);
 
@@ -377,6 +382,20 @@ function tierFactor(value: number): { mode: "high" | "low" | "none"; factor: num
   return { mode: "none", factor: 1 };
 }
 
+function regulationEnergyDelta(value: number): number {
+  if (value < 25) return -0.2;
+  if (value < 35) return -0.1;
+  if (value > 65) return 0.1;
+  return 0;
+}
+
+function highIsBadEnergyDelta(value: number, positiveDelta: number, criticalDelta: number): number {
+  if (value > 75) return -criticalDelta;
+  if (value > 65) return -positiveDelta;
+  if (value < 35) return positiveDelta;
+  return 0;
+}
+
 function buildSupportSignals(
   entries: JournalEntryRecord[],
   averages: Record<SymptomKey, number>,
@@ -393,9 +412,7 @@ function buildSupportSignals(
     const avgThreshold = symptom.highIsBad
       ? (forNotes ? 70 : 60)
       : (forNotes ? 35 : 50);
-    const dailyThreshold = symptom.highIsBad
-      ? (forNotes ? 85 : 80)
-      : (forNotes ? 20 : 30);
+    const dailyThreshold = symptom.highIsBad ? 80 : (forNotes ? 25 : 30);
 
     const avgTriggered = symptom.highIsBad ? avg > avgThreshold : avg < avgThreshold;
     const affectedDaily = values

@@ -434,7 +434,9 @@ export class NeuralGardenJournalEntryView extends ItemView {
       const toggle = async () => {
         const next = await this.journalingStorage.toggleTrackerDate(tracker, dateKey);
         this.trackers = this.trackers.map((candidate) => (candidate.file.path === next.file.path ? next : candidate));
-        this.render();
+        const isNowTracked = next.dates.includes(dateKey);
+        chip.toggleClass("is-active", isNowTracked);
+        chip.setAttribute("aria-pressed", String(isNowTracked));
       };
       chip.addEventListener("click", () => {
         void toggle();
@@ -555,9 +557,8 @@ export class NeuralGardenJournalEntryView extends ItemView {
       for (const emotion of emotions) {
         const button = buttons.createEl("button", { text: emotion });
         button.addClass("ng-journal-emotion-button", className);
-        if (selected.has(emotion)) {
-          button.addClass("is-active");
-        }
+        button.setAttribute("aria-pressed", String(selected.has(emotion)));
+        button.toggleClass("is-active", selected.has(emotion));
         button.addEventListener("click", () => {
           if (selected.has(emotion)) {
             selected.delete(emotion);
@@ -569,7 +570,8 @@ export class NeuralGardenJournalEntryView extends ItemView {
             selected.add(emotion);
           }
           this.entry!.frontmatter.emotions = [...selected];
-          this.render();
+          button.toggleClass("is-active", selected.has(emotion));
+          button.setAttribute("aria-pressed", String(selected.has(emotion)));
           void this.persist();
         });
       }

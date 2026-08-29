@@ -77,8 +77,8 @@ var ENERGY_STOPS = [
   { percent: 0, color: [63, 214, 255] },
   { percent: 60, color: [49, 201, 80] },
   { percent: 90, color: [208, 135, 46] },
-  { percent: 100, color: [251, 44, 54] },
-  { percent: 115, color: [255, 0, 0] }
+  { percent: 100, color: [255, 101, 101] },
+  { percent: 130, color: [255, 101, 101] }
 ];
 var BREAK_MESSAGES = [
   "Have a break, have a kitkat.",
@@ -4681,6 +4681,7 @@ var NeuralGardenHomeView = class extends import_obsidian2.ItemView {
     this.breakMessageEl = null;
     this.lastBreakMessageIndex = null;
     this.supportHintTimer = null;
+    this.supportHintTransitionTimer = null;
     this.supportHintEl = null;
     this.supportHints = [];
     this.lastSupportHintIndex = null;
@@ -4726,6 +4727,11 @@ var NeuralGardenHomeView = class extends import_obsidian2.ItemView {
       window.clearInterval(this.supportHintTimer);
       this.supportHintTimer = null;
     }
+    if (this.supportHintTransitionTimer) {
+      window.clearTimeout(this.supportHintTransitionTimer);
+      this.supportHintTransitionTimer = null;
+    }
+    this.supportHintEl = null;
     this.lastBreakMessageIndex = null;
     this.lastSupportHintIndex = null;
   }
@@ -4740,8 +4746,12 @@ var NeuralGardenHomeView = class extends import_obsidian2.ItemView {
     await this.persistAndRender();
   }
   async refresh() {
-    this.state = await this.storage.loadTaskManagerState();
-    this.render();
+    const nextState = await this.storage.loadTaskManagerState();
+    if (JSON.stringify(nextState) === JSON.stringify(this.state)) {
+      return;
+    }
+    this.state = nextState;
+    this.renderTaskManagerOnly();
   }
   async persistAndRender() {
     recalculateTotals(this.state);
@@ -4891,6 +4901,10 @@ var NeuralGardenHomeView = class extends import_obsidian2.ItemView {
     container.empty();
     const recap = await this.getLatestWeeklyRecapFrontmatter();
     this.supportHints = (_a = recap == null ? void 0 : recap.supportHints) != null ? _a : [];
+    if (this.supportHintTransitionTimer) {
+      window.clearTimeout(this.supportHintTransitionTimer);
+      this.supportHintTransitionTimer = null;
+    }
     if (this.supportHints.length === 0) {
       if (this.supportHintTimer) {
         window.clearInterval(this.supportHintTimer);
@@ -4908,17 +4922,36 @@ var NeuralGardenHomeView = class extends import_obsidian2.ItemView {
       this.supportHintTimer = null;
     }
     this.supportHintTimer = window.setInterval(() => {
-      if (!this.supportHintEl) {
+      const hintEl = this.supportHintEl;
+      if (!hintEl) {
         return;
       }
-      this.supportHintEl.classList.remove("is-visible");
-      window.setTimeout(() => {
-        if (!this.supportHintEl) {
+      hintEl.classList.remove("is-visible");
+      let transitionFinished = false;
+      const revealNextHint = () => {
+        if (transitionFinished) {
           return;
         }
-        this.supportHintEl.textContent = this.getNextSupportHint();
-        this.supportHintEl.classList.add("is-visible");
-      }, 2200);
+        transitionFinished = true;
+        hintEl.removeEventListener("transitionend", handleTransitionEnd);
+        if (this.supportHintTransitionTimer) {
+          window.clearTimeout(this.supportHintTransitionTimer);
+          this.supportHintTransitionTimer = null;
+        }
+        if (this.supportHintEl !== hintEl || !hintEl.isConnected) {
+          return;
+        }
+        hintEl.textContent = this.getNextSupportHint();
+        void hintEl.offsetWidth;
+        hintEl.classList.add("is-visible");
+      };
+      const handleTransitionEnd = (event) => {
+        if (event.target === hintEl && event.propertyName === "opacity") {
+          revealNextHint();
+        }
+      };
+      hintEl.addEventListener("transitionend", handleTransitionEnd);
+      this.supportHintTransitionTimer = window.setTimeout(revealNextHint, 2400);
     }, 7800);
     this.supportHintEl.classList.add("is-visible");
   }
@@ -4982,19 +5015,21 @@ var NeuralGardenHomeView = class extends import_obsidian2.ItemView {
     effortRow.createDiv({ cls: "ng-effort-label", text: "Effort" });
     const progressWrap = effortRow.createDiv({ cls: "ng-progress-wrap" });
     const currentPercent = this.state.maxEnergy > 0 ? this.state.totalEnergy / this.state.maxEnergy * 100 : 0;
-    if (currentPercent >= 115) {
+    if (currentPercent > 150) {
       const warning = progressWrap.createSpan({ cls: "ng-warning" });
       warning.textContent = "\u26A0";
       warning.ariaLabel = "Warning";
     }
     const barOuter = progressWrap.createDiv({ cls: "ng-progress" });
     const barInner = barOuter.createDiv({ cls: "ng-progress-fill" });
-    const targetPercent = Math.max(0, Math.min(currentPercent, 130));
+    const targetPercent = Math.max(0, Math.min(currentPercent, 150));
     const animationStart = this.energyAnimationFromPercent;
     this.energyAnimationFromPercent = null;
-    barInner.style.width = `${animationStart === null ? targetPercent : Math.max(0, Math.min(animationStart, 130))}%`;
-    const pair = getEnergyStopGradientPair(currentPercent);
-    const secondaryColor = darkenColor(pair.secondary, 0.7);
+    barInner.style.width = `${animationStart === null ? targetPercent : Math.max(0, Math.min(animationStart, 150))}%`;
+    const isAlarmRange = currentPercent >= 130;
+    const isSolidRedRange = currentPercent >= 100 && !isAlarmRange;
+    const pair = isAlarmRange ? { primary: "#FF6565", secondary: "#FFFFFF" } : isSolidRedRange ? { primary: "#FF6565", secondary: "#FF6565" } : getEnergyStopGradientPair(currentPercent);
+    const secondaryColor = isAlarmRange || isSolidRedRange ? pair.secondary : darkenColor(pair.secondary, 0.7);
     barInner.style.background = `linear-gradient(120deg, ${pair.primary}, ${secondaryColor}, ${pair.primary})`;
     barInner.style.backgroundSize = "200% 100%";
     if (animationStart !== null) {
@@ -5534,7 +5569,7 @@ function darkenColor(color, lightnessFactor) {
 }
 function getEnergyStopGradientPair(percent) {
   var _a, _b;
-  const stops = ENERGY_STOPS.filter((stop) => stop.percent <= 100);
+  const stops = ENERGY_STOPS;
   if (stops.length === 0) {
     return { primary: "rgb(63, 214, 255)", secondary: "rgb(49, 201, 80)" };
   }
@@ -6009,7 +6044,9 @@ var NeuralGardenJournalEntryView = class extends import_obsidian3.ItemView {
       const toggle = async () => {
         const next = await this.journalingStorage.toggleTrackerDate(tracker, dateKey);
         this.trackers = this.trackers.map((candidate) => candidate.file.path === next.file.path ? next : candidate);
-        this.render();
+        const isNowTracked = next.dates.includes(dateKey);
+        chip.toggleClass("is-active", isNowTracked);
+        chip.setAttribute("aria-pressed", String(isNowTracked));
       };
       chip.addEventListener("click", () => {
         void toggle();
@@ -6116,9 +6153,8 @@ var NeuralGardenJournalEntryView = class extends import_obsidian3.ItemView {
       for (const emotion of emotions) {
         const button = buttons.createEl("button", { text: emotion });
         button.addClass("ng-journal-emotion-button", className);
-        if (selected.has(emotion)) {
-          button.addClass("is-active");
-        }
+        button.setAttribute("aria-pressed", String(selected.has(emotion)));
+        button.toggleClass("is-active", selected.has(emotion));
         button.addEventListener("click", () => {
           if (selected.has(emotion)) {
             selected.delete(emotion);
@@ -6130,7 +6166,8 @@ var NeuralGardenJournalEntryView = class extends import_obsidian3.ItemView {
             selected.add(emotion);
           }
           this.entry.frontmatter.emotions = [...selected];
-          this.render();
+          button.toggleClass("is-active", selected.has(emotion));
+          button.setAttribute("aria-pressed", String(selected.has(emotion)));
           void this.persist();
         });
       }
@@ -12941,6 +12978,7 @@ var NEGATIVE_EMOTIONS = /* @__PURE__ */ new Set([
   "Discouraged",
   "Tense"
 ]);
+var MONTHLY_BASELINE_ENERGY = 120;
 var SUPPORT_HINTS = {
   Mood: [
     "A tiny joyful ritual today can stabilize tomorrow.",
@@ -13041,7 +13079,7 @@ var WeeklyRecapManager = class {
     return highlightsFromEntries(entries.filter((entry) => entry.frontmatter.date >= range.start && entry.frontmatter.date <= range.end));
   }
   async generateWeeklyRecap(file) {
-    var _a, _b, _c, _d, _e;
+    var _a, _b, _c, _d;
     const parsed = parseWeekFile(file.basename);
     if (!parsed) {
       new import_obsidian14.Notice("Invalid weekly recap name.");
@@ -13090,17 +13128,18 @@ var WeeklyRecapManager = class {
       nextBreakLength = beforeBreakLength / exhaustionFactor.factor;
     }
     nextBreakLength = clamp(nextBreakLength, 15, 60);
-    const completedEnergies = entries.reduce((acc, entry) => {
-      const energies = entry.frontmatter.completedTasks.map((task) => task.energy);
-      return acc.concat(energies);
-    }, []);
-    const weeklyAverageCompletedEnergy = average(completedEnergies.map((value) => value));
-    const baseTaskEnergy = (_a = taskState.baseTaskEnergy) != null ? _a : 120;
-    const nextMaxEnergy = clamp((baseTaskEnergy * 2 + weeklyAverageCompletedEnergy) / 3, 50, 200);
+    const weeklyAverageSpentEnergy = average(entries.map((entry) => entry.frontmatter.spentEnergy));
+    const regulationDelta = regulationEnergyDelta(averages.regulation);
+    const stressDelta = highIsBadEnergyDelta(averages.stress, 0.1, 0.2);
+    const exhaustionDelta = highIsBadEnergyDelta(averages.exhaustion, 0.2, 0.4);
+    const energyRangeFactor = 1 + regulationDelta + stressDelta + exhaustionDelta;
+    const allEnergySymptomsStable = regulationDelta === 0 && stressDelta === 0 && exhaustionDelta === 0;
+    const calculatedMaxEnergy = allEnergySymptomsStable ? (beforeMaxEnergy * 2 + weeklyAverageSpentEnergy) / 3 : (beforeMaxEnergy * energyRangeFactor * 2 + weeklyAverageSpentEnergy + MONTHLY_BASELINE_ENERGY) / 4;
+    const nextMaxEnergy = clamp(calculatedMaxEnergy, 50, 200);
     taskState.forcedBreakThreshold = round2(nextThreshold);
     taskState.forcedBreakLength = round2(nextBreakLength);
     taskState.maxEnergy = round2(nextMaxEnergy);
-    taskState.baseTaskEnergy = baseTaskEnergy;
+    taskState.baseTaskEnergy = beforeMaxEnergy;
     taskState.lastWeeklyRecap = `${parsed.year}-W${String(parsed.week).padStart(2, "0")}`;
     await this.taskStorage.saveTaskManagerState(taskState);
     const noteSupportSignals = buildSupportSignals(entries, averages, true);
@@ -13122,8 +13161,8 @@ var WeeklyRecapManager = class {
       year: parsed.year,
       generatedAt: (/* @__PURE__ */ new Date()).toISOString(),
       processedDateRange: {
-        start: (_c = (_b = entries[0]) == null ? void 0 : _b.frontmatter.date) != null ? _c : "",
-        end: (_e = (_d = entries[entries.length - 1]) == null ? void 0 : _d.frontmatter.date) != null ? _e : ""
+        start: (_b = (_a = entries[0]) == null ? void 0 : _a.frontmatter.date) != null ? _b : "",
+        end: (_d = (_c = entries[entries.length - 1]) == null ? void 0 : _c.frontmatter.date) != null ? _d : ""
       },
       journalLinks: entries.map((entry) => `[[${entry.file.basename}]]`),
       supportNotes: supportSelection.notes.map((note) => note.name),
@@ -13235,13 +13274,25 @@ function tierFactor(value) {
   if (value <= 30) return { mode: "low", factor: 1.1 };
   return { mode: "none", factor: 1 };
 }
+function regulationEnergyDelta(value) {
+  if (value < 25) return -0.2;
+  if (value < 35) return -0.1;
+  if (value > 65) return 0.1;
+  return 0;
+}
+function highIsBadEnergyDelta(value, positiveDelta, criticalDelta) {
+  if (value > 75) return -criticalDelta;
+  if (value > 65) return -positiveDelta;
+  if (value < 35) return positiveDelta;
+  return 0;
+}
 function buildSupportSignals(entries, averages, forNotes) {
   const list = [];
   for (const symptom of SYMPTOMS) {
     const avg = averages[symptom.key];
     const values = entries.map((entry) => ({ date: entry.frontmatter.date, value: entry.frontmatter[symptom.key] })).filter((row) => typeof row.value === "number");
     const avgThreshold = symptom.highIsBad ? forNotes ? 70 : 60 : forNotes ? 35 : 50;
-    const dailyThreshold = symptom.highIsBad ? forNotes ? 85 : 80 : forNotes ? 20 : 30;
+    const dailyThreshold = symptom.highIsBad ? 80 : forNotes ? 25 : 30;
     const avgTriggered = symptom.highIsBad ? avg > avgThreshold : avg < avgThreshold;
     const affectedDaily = values.filter((row) => symptom.highIsBad ? row.value > dailyThreshold : row.value < dailyThreshold).map((row) => row.date);
     if (!avgTriggered && affectedDaily.length === 0) {
@@ -14358,6 +14409,7 @@ var NeuralGardenPlugin = class extends import_obsidian16.Plugin {
   constructor() {
     super(...arguments);
     this.settings = { ...DEFAULT_SETTINGS };
+    this.taskManagerRefreshTimer = null;
     this.myLearningSelection = {
       category: null,
       topic: null
@@ -14621,7 +14673,24 @@ var NeuralGardenPlugin = class extends import_obsidian16.Plugin {
       })
     );
     this.registerEvent(
+      this.app.vault.on("create", (file) => {
+        if (file.path === TASK_MANAGER_FILE_PATH) {
+          this.scheduleTaskManagerRefresh();
+        }
+      })
+    );
+    this.registerEvent(
+      this.app.vault.on("modify", (file) => {
+        if (file.path === TASK_MANAGER_FILE_PATH) {
+          this.scheduleTaskManagerRefresh();
+        }
+      })
+    );
+    this.registerEvent(
       this.app.vault.on("rename", async (file, oldPath) => {
+        if (file.path === TASK_MANAGER_FILE_PATH) {
+          this.scheduleTaskManagerRefresh();
+        }
         if (file instanceof import_obsidian16.TFile) {
           await this.myLearningStorage.handleEntryRename(file, oldPath);
         }
@@ -14639,6 +14708,10 @@ var NeuralGardenPlugin = class extends import_obsidian16.Plugin {
     });
   }
   onunload() {
+    if (this.taskManagerRefreshTimer !== null) {
+      window.clearTimeout(this.taskManagerRefreshTimer);
+      this.taskManagerRefreshTimer = null;
+    }
     void this.walkthroughManager.close();
     for (const key of APPEARANCE_SETTING_KEYS) {
       document.body.style.removeProperty(APPEARANCE_CSS_VARIABLES[key]);
@@ -14728,6 +14801,19 @@ var NeuralGardenPlugin = class extends import_obsidian16.Plugin {
     } catch (error) {
       console.error(`[Neural Garden] Startup step failed: ${label}`, error);
     }
+  }
+  scheduleTaskManagerRefresh() {
+    if (this.taskManagerRefreshTimer !== null) {
+      window.clearTimeout(this.taskManagerRefreshTimer);
+    }
+    this.taskManagerRefreshTimer = window.setTimeout(() => {
+      this.taskManagerRefreshTimer = null;
+      for (const leaf of this.app.workspace.getLeavesOfType(VIEW_TYPE_NEURAL_GARDEN_HOME)) {
+        if (leaf.view instanceof NeuralGardenHomeView) {
+          void leaf.view.refresh();
+        }
+      }
+    }, 200);
   }
   async openJournalingView(makeActive, targetLeaf) {
     const leaf = targetLeaf != null ? targetLeaf : this.app.workspace.getLeaf(true);

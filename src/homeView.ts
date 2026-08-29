@@ -39,6 +39,7 @@ export class NeuralGardenHomeView extends ItemView {
   breakMessageEl: HTMLElement | null = null;
   lastBreakMessageIndex: number | null = null;
   supportHintTimer: number | null = null;
+  supportHintTransitionTimer: number | null = null;
   supportHintEl: HTMLElement | null = null;
   supportHints: string[] = [];
   lastSupportHintIndex: number | null = null;
@@ -103,6 +104,11 @@ export class NeuralGardenHomeView extends ItemView {
       window.clearInterval(this.supportHintTimer);
       this.supportHintTimer = null;
     }
+    if (this.supportHintTransitionTimer) {
+      window.clearTimeout(this.supportHintTransitionTimer);
+      this.supportHintTransitionTimer = null;
+    }
+    this.supportHintEl = null;
     this.lastBreakMessageIndex = null;
     this.lastSupportHintIndex = null;
   }
@@ -120,8 +126,12 @@ export class NeuralGardenHomeView extends ItemView {
   }
 
   async refresh(): Promise<void> {
-    this.state = await this.storage.loadTaskManagerState();
-    this.render();
+    const nextState = await this.storage.loadTaskManagerState();
+    if (JSON.stringify(nextState) === JSON.stringify(this.state)) {
+      return;
+    }
+    this.state = nextState;
+    this.renderTaskManagerOnly();
   }
 
   private async persistAndRender(): Promise<void> {
@@ -290,6 +300,10 @@ export class NeuralGardenHomeView extends ItemView {
     container.empty();
     const recap = await this.getLatestWeeklyRecapFrontmatter();
     this.supportHints = recap?.supportHints ?? [];
+    if (this.supportHintTransitionTimer) {
+      window.clearTimeout(this.supportHintTransitionTimer);
+      this.supportHintTransitionTimer = null;
+    }
     if (this.supportHints.length === 0) {
       if (this.supportHintTimer) {
         window.clearInterval(this.supportHintTimer);
@@ -308,17 +322,36 @@ export class NeuralGardenHomeView extends ItemView {
       this.supportHintTimer = null;
     }
     this.supportHintTimer = window.setInterval(() => {
-      if (!this.supportHintEl) {
+      const hintEl = this.supportHintEl;
+      if (!hintEl) {
         return;
       }
-      this.supportHintEl.classList.remove("is-visible");
-      window.setTimeout(() => {
-        if (!this.supportHintEl) {
+      hintEl.classList.remove("is-visible");
+      let transitionFinished = false;
+      const revealNextHint = () => {
+        if (transitionFinished) {
           return;
         }
-        this.supportHintEl.textContent = this.getNextSupportHint();
-        this.supportHintEl.classList.add("is-visible");
-      }, 2200);
+        transitionFinished = true;
+        hintEl.removeEventListener("transitionend", handleTransitionEnd);
+        if (this.supportHintTransitionTimer) {
+          window.clearTimeout(this.supportHintTransitionTimer);
+          this.supportHintTransitionTimer = null;
+        }
+        if (this.supportHintEl !== hintEl || !hintEl.isConnected) {
+          return;
+        }
+        hintEl.textContent = this.getNextSupportHint();
+        void hintEl.offsetWidth;
+        hintEl.classList.add("is-visible");
+      };
+      const handleTransitionEnd = (event: TransitionEvent) => {
+        if (event.target === hintEl && event.propertyName === "opacity") {
+          revealNextHint();
+        }
+      };
+      hintEl.addEventListener("transitionend", handleTransitionEnd);
+      this.supportHintTransitionTimer = window.setTimeout(revealNextHint, 2400);
     }, 7800);
     this.supportHintEl.classList.add("is-visible");
   }
@@ -400,7 +433,7 @@ export class NeuralGardenHomeView extends ItemView {
 
     const currentPercent = this.state.maxEnergy > 0 ? (this.state.totalEnergy / this.state.maxEnergy) * 100 : 0;
 
-    if (currentPercent >= 115) {
+    if (currentPercent > 150) {
       const warning = progressWrap.createSpan({ cls: "ng-warning" });
       warning.textContent = "⚠";
       warning.ariaLabel = "Warning";
@@ -409,12 +442,20 @@ export class NeuralGardenHomeView extends ItemView {
     const barOuter = progressWrap.createDiv({ cls: "ng-progress" });
     const barInner = barOuter.createDiv({ cls: "ng-progress-fill" });
 
-    const targetPercent = Math.max(0, Math.min(currentPercent, 130));
+    const targetPercent = Math.max(0, Math.min(currentPercent, 150));
     const animationStart = this.energyAnimationFromPercent;
     this.energyAnimationFromPercent = null;
-    barInner.style.width = `${animationStart === null ? targetPercent : Math.max(0, Math.min(animationStart, 130))}%`;
-    const pair = getEnergyStopGradientPair(currentPercent);
-    const secondaryColor = darkenColor(pair.secondary, 0.7);
+    barInner.style.width = `${animationStart === null ? targetPercent : Math.max(0, Math.min(animationStart, 150))}%`;
+    const isAlarmRange = currentPercent >= 130;
+    const isSolidRedRange = currentPercent >= 100 && !isAlarmRange;
+    const pair = isAlarmRange
+      ? { primary: "#FF6565", secondary: "#FFFFFF" }
+      : isSolidRedRange
+        ? { primary: "#FF6565", secondary: "#FF6565" }
+        : getEnergyStopGradientPair(currentPercent);
+    const secondaryColor = isAlarmRange || isSolidRedRange
+      ? pair.secondary
+      : darkenColor(pair.secondary, 0.7);
     barInner.style.background = `linear-gradient(120deg, ${pair.primary}, ${secondaryColor}, ${pair.primary})`;
     barInner.style.backgroundSize = "200% 100%";
     if (animationStart !== null) {
@@ -1042,7 +1083,7 @@ function darkenColor(color: string, lightnessFactor: number): string {
 }
 
 function getEnergyStopGradientPair(percent: number): { primary: string; secondary: string } {
-  const stops = ENERGY_STOPS.filter((stop) => stop.percent <= 100);
+  const stops = ENERGY_STOPS;
   if (stops.length === 0) {
     return { primary: "rgb(63, 214, 255)", secondary: "rgb(49, 201, 80)" };
   }
