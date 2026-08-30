@@ -12,6 +12,9 @@ export interface MyNotesCategory {
   count: number;
 }
 
+type MyNotesCanvasSelection = { category: string | null; topics: string[] };
+type MyNotesCanvasMap = Record<string, MyNotesCanvasSelection>;
+
 function stripLink(value: unknown): string {
   if (typeof value !== "string") {
     return "";
@@ -225,6 +228,7 @@ export class MyNotesStorage {
         await this.app.fileManager.processFrontMatter(existing, (fm) => {
           fm.categories = categories.map(toLink);
           fm.topicColors = this.getTopicColorMap(fm.topicColors);
+          fm.canvases = this.getCanvasMap(fm.canvases);
           fm.schemaVersion = 2;
         });
         await this.migrateExistingNotes();
@@ -246,7 +250,7 @@ export class MyNotesStorage {
     try {
       const file = await this.app.vault.create(
         MY_NOTES_INDEX_FILE_PATH,
-        "---\ncategories: []\ntopicColors: {}\nschemaVersion: 2\n---\n# Notes\n",
+        "---\ncategories: []\ntopicColors: {}\ncanvases: {}\nschemaVersion: 2\n---\n# Notes\n",
       );
       this.topicColors = {};
       this.topicColorsLoaded = true;
@@ -269,7 +273,7 @@ export class MyNotesStorage {
     const raw = (await this.readFrontmatter(file)).categories;
     return normalizeLinks(raw)
       .sort((a, b) => a.localeCompare(b))
-      .map((name) => ({ name, count: this.notesInCategorySync(name).length }));
+      .map((name) => ({ name, count: this.entriesInCategory(name).length }));
   }
 
   async addCategory(name: string): Promise<void> {
@@ -317,6 +321,13 @@ export class MyNotesStorage {
         delete topicColors[previous];
       }
       fm.topicColors = topicColors;
+      const canvases = this.getCanvasMap(fm.canvases);
+      for (const metadata of Object.values(canvases)) {
+        if (metadata.category === previous) {
+          metadata.category = next;
+        }
+      }
+      fm.canvases = canvases;
       renamed = true;
     });
 
@@ -351,6 +362,14 @@ export class MyNotesStorage {
       const topicColors = this.getTopicColorMap(fm.topicColors);
       delete topicColors[target];
       fm.topicColors = topicColors;
+      const canvases = this.getCanvasMap(fm.canvases);
+      for (const metadata of Object.values(canvases)) {
+        if (metadata.category === target) {
+          metadata.category = null;
+          metadata.topics = [];
+        }
+      }
+      fm.canvases = canvases;
       removed = true;
     });
 
@@ -385,6 +404,18 @@ export class MyNotesStorage {
       .sort((a, b) => a.basename.localeCompare(b.basename));
   }
 
+  listEntries(): TFile[] {
+    return this.app.vault
+      .getFiles()
+      .filter((file) => (
+        file.path.startsWith(`${NOTES_FOLDER}/`)
+        && file.path !== MY_NOTES_INDEX_FILE_PATH
+        && !file.path.startsWith(`${MY_NOTES_CATEGORIES_FOLDER}/`)
+        && (file.extension === "md" || file.extension === "canvas")
+      ))
+      .sort((a, b) => a.basename.localeCompare(b.basename));
+  }
+
   isNoteFile(file: TFile | null): boolean {
     return !!file
       && file.extension === "md"
@@ -398,7 +429,9 @@ export class MyNotesStorage {
     if (!trimmed) {
       return false;
     }
-    return this.app.vault.getAbstractFileByPath(`${NOTES_FOLDER}/${trimmed}.md`) instanceof TFile;
+    return ["md", "canvas"].some((extension) => (
+      this.app.vault.getAbstractFileByPath(`${NOTES_FOLDER}/${trimmed}.${extension}`) instanceof TFile
+    ));
   }
 
   async createNote(name: string): Promise<TFile | null> {
@@ -415,8 +448,57 @@ export class MyNotesStorage {
     return await this.app.vault.create(path, "");
   }
 
+  async createCanvas(name: string, category: string, topic: string): Promise<TFile | null> {
+    const trimmed = this.sanitizeNoteName(name);
+    const normalizedCategory = category.trim();
+    const normalizedTopic = topic.trim();
+    if (!trimmed || !normalizedCategory || !normalizedTopic) {
+      return null;
+    }
+    const path = `${NOTES_FOLDER}/${trimmed}.canvas`;
+    const existing = this.app.vault.getAbstractFileByPath(path);
+    if (existing instanceof TFile) {
+      return existing;
+    }
+    await this.ensureFolderExists(NOTES_FOLDER);
+    const file = await this.app.vault.create(path, JSON.stringify({ nodes: [], edges: [] }, null, 2));
+    const index = await this.ensureCategoriesFile();
+    await this.app.fileManager.processFrontMatter(index, (fm) => {
+      const canvases = this.getCanvasMap(fm.canvases);
+      canvases[file.path] = { category: normalizedCategory, topics: [normalizedTopic] };
+      fm.canvases = canvases;
+    });
+    await this.syncCanvasTopicLinks(file, [normalizedTopic]);
+    return file;
+  }
+
   async deleteNote(file: TFile): Promise<void> {
+    if (file.extension === "canvas") {
+      const index = await this.ensureCategoriesFile();
+      await this.app.fileManager.processFrontMatter(index, (fm) => {
+        const canvases = this.getCanvasMap(fm.canvases);
+        delete canvases[file.path];
+        fm.canvases = canvases;
+      });
+    }
     await this.app.vault.trash(file, true);
+  }
+
+  async handleEntryRename(file: TFile, oldPath: string): Promise<void> {
+    if (file.extension !== "canvas" || oldPath === file.path) {
+      return;
+    }
+    const index = await this.ensureCategoriesFile();
+    await this.app.fileManager.processFrontMatter(index, (fm) => {
+      const canvases = this.getCanvasMap(fm.canvases);
+      const metadata = canvases[oldPath];
+      if (!metadata) {
+        return;
+      }
+      delete canvases[oldPath];
+      canvases[file.path] = metadata;
+      fm.canvases = canvases;
+    });
   }
 
   private sanitizeNoteName(name: string): string {
@@ -430,6 +512,12 @@ export class MyNotesStorage {
 
   getNoteCategory(file: TFile): string | null {
     return this.getNoteCategories(file)[0] ?? null;
+  }
+
+  getEntryCategory(file: TFile): string | null {
+    return file.extension === "canvas"
+      ? this.getCanvasMetadata(file)?.category ?? null
+      : this.getNoteCategory(file);
   }
 
   async getNoteCategoriesFresh(file: TFile): Promise<string[]> {
@@ -474,6 +562,108 @@ export class MyNotesStorage {
 
   getNoteTopics(file: TFile): string[] {
     return normalizeLinks(this.app.metadataCache.getFileCache(file)?.frontmatter?.topics);
+  }
+
+  getEntryTopics(file: TFile): string[] {
+    if (file.extension === "canvas") {
+      return this.getCanvasMetadata(file)?.topics ?? [];
+    }
+    return this.getNoteTopics(file);
+  }
+
+  getCanvasSelection(file: TFile): MyNotesCanvasSelection | null {
+    return file.extension === "canvas" ? this.getCanvasMetadata(file) : null;
+  }
+
+  async toggleCanvasCategory(file: TFile, name: string): Promise<boolean> {
+    const category = name.trim();
+    if (file.extension !== "canvas" || !category) {
+      return false;
+    }
+    let nowActive = false;
+    const index = await this.ensureCategoriesFile();
+    await this.app.fileManager.processFrontMatter(index, (fm) => {
+      const canvases = this.getCanvasMap(fm.canvases);
+      const selection = canvases[file.path] ?? { category: null, topics: [] };
+      nowActive = selection.category !== category;
+      selection.category = nowActive ? category : null;
+      selection.topics = [];
+      canvases[file.path] = selection;
+      fm.canvases = canvases;
+    });
+    await this.syncCanvasTopicLinks(file, []);
+    return nowActive;
+  }
+
+  async toggleCanvasTopic(file: TFile, name: string): Promise<boolean> {
+    const topic = name.trim();
+    if (file.extension !== "canvas" || !topic) {
+      return false;
+    }
+    let nowActive = false;
+    let selectedTopics: string[] = [];
+    const index = await this.ensureCategoriesFile();
+    await this.app.fileManager.processFrontMatter(index, (fm) => {
+      const canvases = this.getCanvasMap(fm.canvases);
+      const selection = canvases[file.path];
+      if (!selection?.category) {
+        return;
+      }
+      nowActive = !selection.topics.includes(topic);
+      selection.topics = nowActive
+        ? [...selection.topics, topic]
+        : selection.topics.filter((entry) => entry !== topic);
+      selectedTopics = [...selection.topics];
+      fm.canvases = canvases;
+    });
+    await this.syncCanvasTopicLinks(file, selectedTopics);
+    return nowActive;
+  }
+
+  async syncCanvasTopicLinks(file: TFile, topics: string[]): Promise<void> {
+    if (file.extension !== "canvas") {
+      return;
+    }
+    try {
+      const data = JSON.parse(await this.app.vault.cachedRead(file)) as {
+        nodes?: Array<Record<string, unknown>>;
+        edges?: Array<Record<string, unknown>>;
+      };
+      const nodes = Array.isArray(data.nodes) ? data.nodes : [];
+      const nodeId = "neural-garden-mynotes-topic-links";
+      const existingIndex = nodes.findIndex((node) => node.id === nodeId);
+      const normalizedTopics = topics
+        .map((topic) => topic.trim())
+        .filter((topic, index, entries) => topic.length > 0 && entries.indexOf(topic) === index);
+
+      if (normalizedTopics.length === 0) {
+        if (existingIndex < 0) {
+          return;
+        }
+        nodes.splice(existingIndex, 1);
+      } else {
+        const topicNode: Record<string, unknown> = {
+          id: nodeId,
+          type: "text",
+          text: `### Topics\nDo not touch this.\\\n${normalizedTopics.map((topic) => `[[${topic}]]`).join("\n")}`,
+          x: -10000,
+          y: -10000,
+          width: 190,
+          height: Math.max(100, 70 + normalizedTopics.length * 28),
+        };
+        if (existingIndex >= 0) {
+          nodes[existingIndex] = { ...(nodes[existingIndex] ?? {}), ...topicNode };
+        } else {
+          nodes.unshift(topicNode);
+        }
+      }
+
+      data.nodes = nodes;
+      data.edges = Array.isArray(data.edges) ? data.edges : [];
+      await this.app.vault.modify(file, JSON.stringify(data, null, 2));
+    } catch (error) {
+      console.error(`[Neural Garden] Could not update topic links in canvas ${file.path}`, error);
+    }
   }
 
   async toggleNoteTopic(file: TFile, name: string): Promise<boolean> {
@@ -578,6 +768,14 @@ export class MyNotesStorage {
     return this.notesInCategorySync(category).filter((file) => this.getNoteTopics(file).includes(topic));
   }
 
+  entriesInCategory(category: string): TFile[] {
+    return this.listEntries().filter((file) => this.getEntryCategory(file) === category);
+  }
+
+  entriesInCategoryTopic(category: string, topic: string): TFile[] {
+    return this.entriesInCategory(category).filter((file) => this.getEntryTopics(file).includes(topic));
+  }
+
   async listTopicsForCategory(category: string): Promise<string[]> {
     const note = this.app.vault.getAbstractFileByPath(this.categoryPath(category));
     if (!(note instanceof TFile)) {
@@ -633,6 +831,15 @@ export class MyNotesStorage {
       delete categoryColors[previous];
       colors[category] = categoryColors;
       fm.topicColors = colors;
+      const canvases = this.getCanvasMap(fm.canvases);
+      for (const metadata of Object.values(canvases)) {
+        if (metadata.category === category && metadata.topics.includes(previous)) {
+          metadata.topics = metadata.topics
+            .map((topic) => topic === previous ? next : topic)
+            .filter((topic, index, topics) => topics.indexOf(topic) === index);
+        }
+      }
+      fm.canvases = canvases;
     });
     for (const file of this.notesInCategoryTopic(category, previous)) {
       await this.app.fileManager.processFrontMatter(file, (fm) => {
@@ -666,6 +873,13 @@ export class MyNotesStorage {
       delete categoryColors[topic];
       colors[category] = categoryColors;
       fm.topicColors = colors;
+      const canvases = this.getCanvasMap(fm.canvases);
+      for (const metadata of Object.values(canvases)) {
+        if (metadata.category === category) {
+          metadata.topics = metadata.topics.filter((entry) => entry !== topic);
+        }
+      }
+      fm.canvases = canvases;
     });
     for (const file of this.notesInCategoryTopic(category, topic)) {
       await this.app.fileManager.processFrontMatter(file, (fm) => {
@@ -845,6 +1059,33 @@ export class MyNotesStorage {
       return {};
     }
     return value as Record<string, Record<string, string>>;
+  }
+
+  private getCanvasMetadata(file: TFile): MyNotesCanvasSelection | null {
+    const index = this.app.vault.getAbstractFileByPath(MY_NOTES_INDEX_FILE_PATH);
+    if (!(index instanceof TFile)) {
+      return null;
+    }
+    const canvases = this.getCanvasMap(this.app.metadataCache.getFileCache(index)?.frontmatter?.canvases);
+    return canvases[file.path] ?? null;
+  }
+
+  private getCanvasMap(value: unknown): MyNotesCanvasMap {
+    const canvases: MyNotesCanvasMap = {};
+    if (!value || typeof value !== "object" || Array.isArray(value)) {
+      return canvases;
+    }
+    for (const [path, rawMetadata] of Object.entries(value as Record<string, unknown>)) {
+      if (!path.endsWith(".canvas") || !rawMetadata || typeof rawMetadata !== "object" || Array.isArray(rawMetadata)) {
+        continue;
+      }
+      const metadata = rawMetadata as Record<string, unknown>;
+      const category = typeof metadata.category === "string" ? metadata.category.trim() : "";
+      const legacyTopic = typeof metadata.topic === "string" ? metadata.topic.trim() : "";
+      const topics = normalizeLinks(metadata.topics ?? (legacyTopic ? [legacyTopic] : []));
+      canvases[path] = { category: category || null, topics };
+    }
+    return canvases;
   }
 
   private fallbackColor(seed: string): string {

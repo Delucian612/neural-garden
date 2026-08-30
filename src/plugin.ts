@@ -298,6 +298,7 @@ export default class NeuralGardenPlugin extends Plugin {
         }
         if (file instanceof TFile) {
           await this.myLearningStorage.handleEntryRename(file, oldPath);
+          await this.myNotesStorage.handleEntryRename(file, oldPath);
         }
         window.setTimeout(() => {
           for (const leaf of this.app.workspace.getLeavesOfType(VIEW_TYPE_NEURAL_GARDEN_MY_LEARNING)) {

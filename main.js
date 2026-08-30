@@ -1316,11 +1316,12 @@ function injectNeuralGardenStyles() {
       width: auto;
       height: auto;
       padding: 0;
-      border: none !important;
+      display: grid;
+      grid-template-columns: max-content minmax(0, 1fr);
+      column-gap: 10px;
+      row-gap: 7px;
       box-shadow: none !important;
       border-radius: 0;
-      background: transparent !important;
-      color: var(--text-normal);
       font-size: 0.95rem;
       line-height: 1;
       display: inline;
@@ -2876,6 +2877,88 @@ function injectNeuralGardenStyles() {
     .ng-learning-canvas-progress .ng-learning-progress-track {
       width: 134px;
       height: 12px;
+    }
+    .ng-mynotes-canvas-controls {
+      position: absolute;
+      top: 44px;
+      left: 12px;
+      z-index: 30;
+      display: grid;
+      grid-template-columns: max-content minmax(0, 1fr);
+      column-gap: 10px;
+      row-gap: 7px;
+      width: fit-content;
+      max-width: calc(100% - 24px);
+      max-height: min(46vh, 360px);
+      padding: 7px 9px;
+      overflow-x: hidden;
+      overflow-y: auto;
+      border: 1px solid color-mix(in srgb, var(--text-muted) 14%, transparent);
+      border-radius: 6px;
+      background: color-mix(in srgb, var(--background-primary) 28%, transparent);
+      color: var(--text-normal);
+      box-shadow: none;
+      backdrop-filter: blur(2px);
+    }
+    .ng-mynotes-canvas-top {
+      display: contents;
+    }
+    .ng-mynotes-canvas-top > .ng-learning-canvas-back {
+      display: inline-flex;
+      width: auto;
+      min-width: max-content;
+      box-sizing: border-box;
+      align-items: center;
+      justify-content: flex-start;
+      white-space: nowrap;
+    }
+    .ng-mynotes-canvas-categories {
+      min-width: 0;
+      padding-left: 10px;
+      border-left: 1px solid color-mix(in srgb, var(--text-muted) 24%, transparent);
+    }
+    .ng-mynotes-canvas-categories .ng-mynotes-canvas-pills {
+      width: max-content;
+      max-width: 100%;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      scrollbar-width: thin;
+    }
+    .ng-mynotes-canvas-section {
+      display: block;
+    }
+    .ng-mynotes-canvas-empty {
+      color: var(--text-muted);
+      font-size: 0.76rem;
+    }
+    .ng-mynotes-canvas-pills {
+      display: flex;
+      min-width: 0;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+    .ng-mynotes-canvas-pill {
+      min-height: 24px;
+      padding: 2px 7px;
+      border: 1px solid var(--background-modifier-border);
+      border-radius: 6px;
+      background: transparent;
+      color: var(--text-muted);
+      box-shadow: none;
+      font-size: 0.76rem;
+    }
+    .ng-mynotes-canvas-pill:hover,
+    .ng-mynotes-canvas-pill.is-active {
+      border-color: var(--ng-mynotes-canvas-color, var(--ng-color-general));
+      color: var(--text-normal);
+      background: color-mix(in srgb, var(--ng-mynotes-canvas-color, var(--ng-color-general)) 10%, transparent);
+    }
+    @media (max-width: 520px) {
+      .ng-mynotes-canvas-controls {
+        top: 40px;
+        left: 8px;
+        max-width: calc(100% - 16px);
+      }
     }
     .ng-mylearning-grid {
       display: grid;
@@ -9618,9 +9701,9 @@ var NeuralGardenMyNotesView = class extends import_obsidian7.ItemView {
     this.renderUncategorizedSection(container);
   }
   renderUncategorizedSection(container) {
-    const uncategorized = this.myNotesStorage.listNotes().filter((file) => {
-      const category = this.myNotesStorage.getNoteCategory(file);
-      return !category || category !== QUICK_NOTES_CATEGORY && this.myNotesStorage.getNoteTopics(file).length === 0;
+    const uncategorized = this.myNotesStorage.listEntries().filter((file) => {
+      const category = this.myNotesStorage.getEntryCategory(file);
+      return !category || category !== QUICK_NOTES_CATEGORY && this.myNotesStorage.getEntryTopics(file).length === 0;
     });
     const uncategorizedToggle = container.createEl("button", {
       cls: "ng-mynotes-subheading ng-mynotes-subheading-toggle"
@@ -9653,14 +9736,16 @@ var NeuralGardenMyNotesView = class extends import_obsidian7.ItemView {
     } else if ((_a = this.selectedCategory) == null ? void 0 : _a.startsWith(SUPPORT_PREFIX)) {
       files = this.myNotesStorage.notesWithSupport(this.selectedCategory.slice(SUPPORT_PREFIX.length));
     } else if (this.selectedCategory) {
-      files = this.selectedTopic ? this.myNotesStorage.notesInCategoryTopic(this.selectedCategory, this.selectedTopic) : await this.myNotesStorage.notesInCategory(this.selectedCategory);
+      files = this.selectedTopic ? this.myNotesStorage.entriesInCategoryTopic(this.selectedCategory, this.selectedTopic) : this.myNotesStorage.entriesInCategory(this.selectedCategory);
     }
     const query = this.searchQuery;
     if (query.length >= 2) {
       if (files === null) {
         const matches = await searchNotesInFolder(this.app, query);
-        const allowed = new Set(this.myNotesStorage.listNotes().map((file) => file.path));
-        return matches.filter((file) => allowed.has(file.path));
+        const entries = this.myNotesStorage.listEntries();
+        const allowed = new Set(entries.map((file) => file.path));
+        const canvasMatches = entries.filter((file) => file.extension === "canvas" && file.basename.toLowerCase().includes(query.toLowerCase()));
+        return [...matches.filter((file) => allowed.has(file.path)), ...canvasMatches];
       }
       const q = query.toLowerCase();
       return files.filter((file) => file.basename.toLowerCase().includes(q));
@@ -9670,27 +9755,32 @@ var NeuralGardenMyNotesView = class extends import_obsidian7.ItemView {
   renderNoteRow(container, file) {
     var _a, _b, _c;
     const row = container.createDiv({ cls: "ng-mynotes-note-row" });
-    const favouriteButton = row.createEl("button", { cls: "ng-mynotes-note-heart" });
-    (0, import_obsidian7.setIcon)(favouriteButton, "heart");
-    if (this.myNotesStorage.isFavourite(file)) {
-      favouriteButton.addClass("is-favourite");
-    }
-    favouriteButton.addEventListener("click", async (event) => {
-      event.stopPropagation();
-      const nowFavourite = await this.myNotesStorage.toggleFavourite(file);
-      favouriteButton.toggleClass("is-favourite", nowFavourite);
-      favouriteButton.removeClass("ng-heart-pop");
-      void favouriteButton.offsetWidth;
-      favouriteButton.addClass("ng-heart-pop");
-      if (this.selectedCategory === FAVOURITE_CATEGORY && !nowFavourite) {
-        row.remove();
+    if (file.extension === "md") {
+      const favouriteButton = row.createEl("button", { cls: "ng-mynotes-note-heart" });
+      (0, import_obsidian7.setIcon)(favouriteButton, "heart");
+      if (this.myNotesStorage.isFavourite(file)) {
+        favouriteButton.addClass("is-favourite");
       }
-    });
+      favouriteButton.addEventListener("click", async (event) => {
+        event.stopPropagation();
+        const nowFavourite = await this.myNotesStorage.toggleFavourite(file);
+        favouriteButton.toggleClass("is-favourite", nowFavourite);
+        favouriteButton.removeClass("ng-heart-pop");
+        void favouriteButton.offsetWidth;
+        favouriteButton.addClass("ng-heart-pop");
+        if (this.selectedCategory === FAVOURITE_CATEGORY && !nowFavourite) {
+          row.remove();
+        }
+      });
+    }
     const indicator = row.createDiv({ cls: "ng-mynotes-note-indicator" });
-    const category = (_a = this.myNotesStorage.getNoteCategory(file)) != null ? _a : "";
-    const topic = (_c = (_b = this.selectedTopic) != null ? _b : this.myNotesStorage.getNoteTopics(file)[0]) != null ? _c : file.basename;
+    const category = (_a = this.myNotesStorage.getEntryCategory(file)) != null ? _a : "";
+    const topic = (_c = (_b = this.selectedTopic) != null ? _b : this.myNotesStorage.getEntryTopics(file)[0]) != null ? _c : file.basename;
     indicator.style.background = this.myNotesStorage.getTopicColor(category, topic);
     row.createDiv({ cls: "ng-mynotes-note-title", text: file.basename });
+    if (file.extension === "canvas") {
+      row.createSpan({ cls: "ng-mylearning-entry-type", text: "Canvas" });
+    }
     const openRightButton = row.createEl("button", { cls: "ng-mynotes-note-open-right" });
     openRightButton.setAttribute("aria-label", "Open to the right");
     setOpenToRightIcon2(openRightButton);
@@ -9718,6 +9808,17 @@ var NeuralGardenMyNotesView = class extends import_obsidian7.ItemView {
     }
     const input = card.createEl("input", { type: "text", placeholder: "Note name..." });
     input.addClass("ng-task-input");
+    const typeControl = card.createDiv({ cls: "ng-mylearning-type-control" });
+    const markdownButton = typeControl.createEl("button", { text: "Markdown", cls: "is-active" });
+    const canvasButton = typeControl.createEl("button", { text: "Canvas" });
+    let fileType = "markdown";
+    const setFileType = (next) => {
+      fileType = next;
+      markdownButton.toggleClass("is-active", next === "markdown");
+      canvasButton.toggleClass("is-active", next === "canvas");
+    };
+    markdownButton.addEventListener("click", () => setFileType("markdown"));
+    canvasButton.addEventListener("click", () => setFileType("canvas"));
     const errorEl = card.createDiv({ cls: "ng-overlay-error" });
     errorEl.hide();
     const actions = card.createDiv({ cls: "ng-overlay-actions" });
@@ -9728,19 +9829,24 @@ var NeuralGardenMyNotesView = class extends import_obsidian7.ItemView {
         return;
       }
       if (this.myNotesStorage.noteExists(name)) {
-        errorEl.setText("This Note already exists");
+        errorEl.setText("A note or canvas with this name already exists.");
         errorEl.show();
-        input.value = "";
         input.focus();
         return;
       }
-      const file = await this.myNotesStorage.createNote(name);
+      const canCreateCanvas = this.selectedCategory && !this.isSpecialCategory(this.selectedCategory) && this.selectedTopic;
+      if (fileType === "canvas" && !canCreateCanvas) {
+        errorEl.setText("Select a category and topic before creating a canvas.");
+        errorEl.show();
+        return;
+      }
+      const file = fileType === "canvas" ? await this.myNotesStorage.createCanvas(name, this.selectedCategory, this.selectedTopic) : await this.myNotesStorage.createNote(name);
       close();
       if (!file) {
         new import_obsidian7.Notice("Could not create the note. Try a different name.");
         return;
       }
-      if (this.selectedCategory && this.selectedCategory !== FAVOURITE_CATEGORY) {
+      if (file.extension === "md" && this.selectedCategory && this.selectedCategory !== FAVOURITE_CATEGORY) {
         if (this.selectedCategory.startsWith(SUPPORT_PREFIX)) {
           const supportName = this.selectedCategory.slice(SUPPORT_PREFIX.length);
           await this.myNotesStorage.setSupportNote(file, true);
@@ -9755,6 +9861,12 @@ var NeuralGardenMyNotesView = class extends import_obsidian7.ItemView {
       await this.leaf.openFile(file);
     };
     createButton.addEventListener("click", () => void submit());
+    input.addEventListener("input", () => {
+      const validationError = getNameValidationError(input.value);
+      errorEl.toggle(validationError !== null);
+      errorEl.setText(validationError != null ? validationError : "");
+      createButton.disabled = validationError !== null;
+    });
     input.addEventListener("keydown", (event) => {
       if (event.key === "Enter") {
         void submit();
@@ -11282,6 +11394,7 @@ var MyNotesStorage = class {
         await this.app.fileManager.processFrontMatter(existing, (fm) => {
           fm.categories = categories.map(toLink);
           fm.topicColors = this.getTopicColorMap(fm.topicColors);
+          fm.canvases = this.getCanvasMap(fm.canvases);
           fm.schemaVersion = 2;
         });
         await this.migrateExistingNotes();
@@ -11303,7 +11416,7 @@ var MyNotesStorage = class {
     try {
       const file = await this.app.vault.create(
         MY_NOTES_INDEX_FILE_PATH,
-        "---\ncategories: []\ntopicColors: {}\nschemaVersion: 2\n---\n# Notes\n"
+        "---\ncategories: []\ntopicColors: {}\ncanvases: {}\nschemaVersion: 2\n---\n# Notes\n"
       );
       this.topicColors = {};
       this.topicColorsLoaded = true;
@@ -11323,7 +11436,7 @@ var MyNotesStorage = class {
   async loadCategories() {
     const file = await this.ensureCategoriesFile();
     const raw = (await this.readFrontmatter(file)).categories;
-    return normalizeLinks(raw).sort((a, b) => a.localeCompare(b)).map((name) => ({ name, count: this.notesInCategorySync(name).length }));
+    return normalizeLinks(raw).sort((a, b) => a.localeCompare(b)).map((name) => ({ name, count: this.entriesInCategory(name).length }));
   }
   async addCategory(name) {
     const trimmed = name.trim();
@@ -11369,6 +11482,13 @@ var MyNotesStorage = class {
         delete topicColors[previous];
       }
       fm.topicColors = topicColors;
+      const canvases = this.getCanvasMap(fm.canvases);
+      for (const metadata of Object.values(canvases)) {
+        if (metadata.category === previous) {
+          metadata.category = next;
+        }
+      }
+      fm.canvases = canvases;
       renamed = true;
     });
     if (!renamed) {
@@ -11398,6 +11518,14 @@ var MyNotesStorage = class {
       const topicColors = this.getTopicColorMap(fm.topicColors);
       delete topicColors[target];
       fm.topicColors = topicColors;
+      const canvases = this.getCanvasMap(fm.canvases);
+      for (const metadata of Object.values(canvases)) {
+        if (metadata.category === target) {
+          metadata.category = null;
+          metadata.topics = [];
+        }
+      }
+      fm.canvases = canvases;
       removed = true;
     });
     if (!removed) {
@@ -11419,6 +11547,9 @@ var MyNotesStorage = class {
   listNotes() {
     return this.app.vault.getMarkdownFiles().filter((file) => file.path.startsWith(`${NOTES_FOLDER}/`) && file.path !== MY_NOTES_INDEX_FILE_PATH && !file.path.startsWith(`${MY_NOTES_CATEGORIES_FOLDER}/`)).sort((a, b) => a.basename.localeCompare(b.basename));
   }
+  listEntries() {
+    return this.app.vault.getFiles().filter((file) => file.path.startsWith(`${NOTES_FOLDER}/`) && file.path !== MY_NOTES_INDEX_FILE_PATH && !file.path.startsWith(`${MY_NOTES_CATEGORIES_FOLDER}/`) && (file.extension === "md" || file.extension === "canvas")).sort((a, b) => a.basename.localeCompare(b.basename));
+  }
   isNoteFile(file) {
     return !!file && file.extension === "md" && file.path.startsWith(`${NOTES_FOLDER}/`) && file.path !== MY_NOTES_INDEX_FILE_PATH && !file.path.startsWith(`${MY_NOTES_CATEGORIES_FOLDER}/`);
   }
@@ -11427,7 +11558,7 @@ var MyNotesStorage = class {
     if (!trimmed) {
       return false;
     }
-    return this.app.vault.getAbstractFileByPath(`${NOTES_FOLDER}/${trimmed}.md`) instanceof import_obsidian10.TFile;
+    return ["md", "canvas"].some((extension) => this.app.vault.getAbstractFileByPath(`${NOTES_FOLDER}/${trimmed}.${extension}`) instanceof import_obsidian10.TFile);
   }
   async createNote(name) {
     const trimmed = this.sanitizeNoteName(name);
@@ -11442,8 +11573,55 @@ var MyNotesStorage = class {
     await this.ensureFolderExists(NOTES_FOLDER);
     return await this.app.vault.create(path, "");
   }
+  async createCanvas(name, category, topic) {
+    const trimmed = this.sanitizeNoteName(name);
+    const normalizedCategory = category.trim();
+    const normalizedTopic = topic.trim();
+    if (!trimmed || !normalizedCategory || !normalizedTopic) {
+      return null;
+    }
+    const path = `${NOTES_FOLDER}/${trimmed}.canvas`;
+    const existing = this.app.vault.getAbstractFileByPath(path);
+    if (existing instanceof import_obsidian10.TFile) {
+      return existing;
+    }
+    await this.ensureFolderExists(NOTES_FOLDER);
+    const file = await this.app.vault.create(path, JSON.stringify({ nodes: [], edges: [] }, null, 2));
+    const index = await this.ensureCategoriesFile();
+    await this.app.fileManager.processFrontMatter(index, (fm) => {
+      const canvases = this.getCanvasMap(fm.canvases);
+      canvases[file.path] = { category: normalizedCategory, topics: [normalizedTopic] };
+      fm.canvases = canvases;
+    });
+    await this.syncCanvasTopicLinks(file, [normalizedTopic]);
+    return file;
+  }
   async deleteNote(file) {
+    if (file.extension === "canvas") {
+      const index = await this.ensureCategoriesFile();
+      await this.app.fileManager.processFrontMatter(index, (fm) => {
+        const canvases = this.getCanvasMap(fm.canvases);
+        delete canvases[file.path];
+        fm.canvases = canvases;
+      });
+    }
     await this.app.vault.trash(file, true);
+  }
+  async handleEntryRename(file, oldPath) {
+    if (file.extension !== "canvas" || oldPath === file.path) {
+      return;
+    }
+    const index = await this.ensureCategoriesFile();
+    await this.app.fileManager.processFrontMatter(index, (fm) => {
+      const canvases = this.getCanvasMap(fm.canvases);
+      const metadata = canvases[oldPath];
+      if (!metadata) {
+        return;
+      }
+      delete canvases[oldPath];
+      canvases[file.path] = metadata;
+      fm.canvases = canvases;
+    });
   }
   sanitizeNoteName(name) {
     return name.trim().replace(/[\\/:*?"<>|#^[\]]/g, "").trim();
@@ -11456,6 +11634,10 @@ var MyNotesStorage = class {
   getNoteCategory(file) {
     var _a;
     return (_a = this.getNoteCategories(file)[0]) != null ? _a : null;
+  }
+  getEntryCategory(file) {
+    var _a, _b;
+    return file.extension === "canvas" ? (_b = (_a = this.getCanvasMetadata(file)) == null ? void 0 : _a.category) != null ? _b : null : this.getNoteCategory(file);
   }
   async getNoteCategoriesFresh(file) {
     const text = await this.app.vault.read(file);
@@ -11498,6 +11680,99 @@ var MyNotesStorage = class {
   getNoteTopics(file) {
     var _a, _b;
     return normalizeLinks((_b = (_a = this.app.metadataCache.getFileCache(file)) == null ? void 0 : _a.frontmatter) == null ? void 0 : _b.topics);
+  }
+  getEntryTopics(file) {
+    var _a, _b;
+    if (file.extension === "canvas") {
+      return (_b = (_a = this.getCanvasMetadata(file)) == null ? void 0 : _a.topics) != null ? _b : [];
+    }
+    return this.getNoteTopics(file);
+  }
+  getCanvasSelection(file) {
+    return file.extension === "canvas" ? this.getCanvasMetadata(file) : null;
+  }
+  async toggleCanvasCategory(file, name) {
+    const category = name.trim();
+    if (file.extension !== "canvas" || !category) {
+      return false;
+    }
+    let nowActive = false;
+    const index = await this.ensureCategoriesFile();
+    await this.app.fileManager.processFrontMatter(index, (fm) => {
+      var _a;
+      const canvases = this.getCanvasMap(fm.canvases);
+      const selection = (_a = canvases[file.path]) != null ? _a : { category: null, topics: [] };
+      nowActive = selection.category !== category;
+      selection.category = nowActive ? category : null;
+      selection.topics = [];
+      canvases[file.path] = selection;
+      fm.canvases = canvases;
+    });
+    await this.syncCanvasTopicLinks(file, []);
+    return nowActive;
+  }
+  async toggleCanvasTopic(file, name) {
+    const topic = name.trim();
+    if (file.extension !== "canvas" || !topic) {
+      return false;
+    }
+    let nowActive = false;
+    let selectedTopics = [];
+    const index = await this.ensureCategoriesFile();
+    await this.app.fileManager.processFrontMatter(index, (fm) => {
+      const canvases = this.getCanvasMap(fm.canvases);
+      const selection = canvases[file.path];
+      if (!(selection == null ? void 0 : selection.category)) {
+        return;
+      }
+      nowActive = !selection.topics.includes(topic);
+      selection.topics = nowActive ? [...selection.topics, topic] : selection.topics.filter((entry) => entry !== topic);
+      selectedTopics = [...selection.topics];
+      fm.canvases = canvases;
+    });
+    await this.syncCanvasTopicLinks(file, selectedTopics);
+    return nowActive;
+  }
+  async syncCanvasTopicLinks(file, topics) {
+    var _a;
+    if (file.extension !== "canvas") {
+      return;
+    }
+    try {
+      const data = JSON.parse(await this.app.vault.cachedRead(file));
+      const nodes = Array.isArray(data.nodes) ? data.nodes : [];
+      const nodeId = "neural-garden-mynotes-topic-links";
+      const existingIndex = nodes.findIndex((node) => node.id === nodeId);
+      const normalizedTopics = topics.map((topic) => topic.trim()).filter((topic, index, entries) => topic.length > 0 && entries.indexOf(topic) === index);
+      if (normalizedTopics.length === 0) {
+        if (existingIndex < 0) {
+          return;
+        }
+        nodes.splice(existingIndex, 1);
+      } else {
+        const topicNode = {
+          id: nodeId,
+          type: "text",
+          text: `### Topics
+Do not touch this.\\
+${normalizedTopics.map((topic) => `[[${topic}]]`).join("\n")}`,
+          x: -1e4,
+          y: -1e4,
+          width: 190,
+          height: Math.max(100, 70 + normalizedTopics.length * 28)
+        };
+        if (existingIndex >= 0) {
+          nodes[existingIndex] = { ...(_a = nodes[existingIndex]) != null ? _a : {}, ...topicNode };
+        } else {
+          nodes.unshift(topicNode);
+        }
+      }
+      data.nodes = nodes;
+      data.edges = Array.isArray(data.edges) ? data.edges : [];
+      await this.app.vault.modify(file, JSON.stringify(data, null, 2));
+    } catch (error) {
+      console.error(`[Neural Garden] Could not update topic links in canvas ${file.path}`, error);
+    }
   }
   async toggleNoteTopic(file, name) {
     const topic = name.trim();
@@ -11591,6 +11866,12 @@ var MyNotesStorage = class {
   notesInCategoryTopic(category, topic) {
     return this.notesInCategorySync(category).filter((file) => this.getNoteTopics(file).includes(topic));
   }
+  entriesInCategory(category) {
+    return this.listEntries().filter((file) => this.getEntryCategory(file) === category);
+  }
+  entriesInCategoryTopic(category, topic) {
+    return this.entriesInCategory(category).filter((file) => this.getEntryTopics(file).includes(topic));
+  }
   async listTopicsForCategory(category) {
     const note = this.app.vault.getAbstractFileByPath(this.categoryPath(category));
     if (!(note instanceof import_obsidian10.TFile)) {
@@ -11645,6 +11926,13 @@ var MyNotesStorage = class {
       delete categoryColors[previous];
       colors[category] = categoryColors;
       fm.topicColors = colors;
+      const canvases = this.getCanvasMap(fm.canvases);
+      for (const metadata of Object.values(canvases)) {
+        if (metadata.category === category && metadata.topics.includes(previous)) {
+          metadata.topics = metadata.topics.map((topic) => topic === previous ? next : topic).filter((topic, index2, topics) => topics.indexOf(topic) === index2);
+        }
+      }
+      fm.canvases = canvases;
     });
     for (const file of this.notesInCategoryTopic(category, previous)) {
       await this.app.fileManager.processFrontMatter(file, (fm) => {
@@ -11678,6 +11966,13 @@ var MyNotesStorage = class {
       delete categoryColors[topic];
       colors[category] = categoryColors;
       fm.topicColors = colors;
+      const canvases = this.getCanvasMap(fm.canvases);
+      for (const metadata of Object.values(canvases)) {
+        if (metadata.category === category) {
+          metadata.topics = metadata.topics.filter((entry) => entry !== topic);
+        }
+      }
+      fm.canvases = canvases;
     });
     for (const file of this.notesInCategoryTopic(category, topic)) {
       await this.app.fileManager.processFrontMatter(file, (fm) => {
@@ -11844,6 +12139,33 @@ topics:${topicLines}
     }
     return value;
   }
+  getCanvasMetadata(file) {
+    var _a, _b, _c;
+    const index = this.app.vault.getAbstractFileByPath(MY_NOTES_INDEX_FILE_PATH);
+    if (!(index instanceof import_obsidian10.TFile)) {
+      return null;
+    }
+    const canvases = this.getCanvasMap((_b = (_a = this.app.metadataCache.getFileCache(index)) == null ? void 0 : _a.frontmatter) == null ? void 0 : _b.canvases);
+    return (_c = canvases[file.path]) != null ? _c : null;
+  }
+  getCanvasMap(value) {
+    var _a;
+    const canvases = {};
+    if (!value || typeof value !== "object" || Array.isArray(value)) {
+      return canvases;
+    }
+    for (const [path, rawMetadata] of Object.entries(value)) {
+      if (!path.endsWith(".canvas") || !rawMetadata || typeof rawMetadata !== "object" || Array.isArray(rawMetadata)) {
+        continue;
+      }
+      const metadata = rawMetadata;
+      const category = typeof metadata.category === "string" ? metadata.category.trim() : "";
+      const legacyTopic = typeof metadata.topic === "string" ? metadata.topic.trim() : "";
+      const topics = normalizeLinks((_a = metadata.topics) != null ? _a : legacyTopic ? [legacyTopic] : []);
+      canvases[path] = { category: category || null, topics };
+    }
+    return canvases;
+  }
   fallbackColor(seed) {
     var _a;
     const colors = ["#ec9a63", "#54b8a8", "#e06e73", "#6f9fd8", "#d6ad49", "#8f7ac8"];
@@ -11930,7 +12252,7 @@ var NoteHeaderManager = class {
     this.syncCanvasNavigation();
   }
   detachAll() {
-    document.querySelectorAll(".ng-note-header, .ng-learning-canvas-controls").forEach((el) => {
+    document.querySelectorAll(".ng-note-header, .ng-learning-canvas-controls, .ng-mynotes-canvas-controls").forEach((el) => {
       this.disposeHeader(el);
       el.remove();
     });
@@ -11944,22 +12266,38 @@ var NoteHeaderManager = class {
       const state = leaf.getViewState().state;
       const path = typeof (state == null ? void 0 : state.file) === "string" ? state.file : "";
       const file = path ? this.app.vault.getAbstractFileByPath(path) : null;
-      const selection = file instanceof import_obsidian11.TFile ? this.myLearningStorage.getCanvasSelection(file) : null;
-      const existing = container.querySelector(":scope > .ng-learning-canvas-controls");
-      if (!selection) {
+      const learningSelection = file instanceof import_obsidian11.TFile ? this.myLearningStorage.getCanvasSelection(file) : null;
+      const myNotesSelection = file instanceof import_obsidian11.TFile ? this.myNotesStorage.getCanvasSelection(file) : null;
+      const existing = container.querySelector(":scope > .ng-canvas-controls");
+      if (!learningSelection && !myNotesSelection) {
         existing == null ? void 0 : existing.remove();
         continue;
       }
-      if ((existing == null ? void 0 : existing.dataset.path) === file.path) {
+      if (!(file instanceof import_obsidian11.TFile)) {
+        existing == null ? void 0 : existing.remove();
+        continue;
+      }
+      if (learningSelection && (existing == null ? void 0 : existing.dataset.path) === file.path && existing.dataset.kind === "mylearning") {
         const fill = existing.querySelector(".ng-learning-progress-fill");
         if (fill) {
-          fill.style.width = `${selection.progress}%`;
+          fill.style.width = `${learningSelection.progress}%`;
         }
         continue;
       }
+      if (myNotesSelection && (existing == null ? void 0 : existing.dataset.path) === file.path && existing.dataset.kind === "mynotes") {
+        continue;
+      }
       existing == null ? void 0 : existing.remove();
-      const controls = container.createDiv({ cls: "ng-learning-canvas-controls" });
+      if (myNotesSelection) {
+        void this.renderMyNotesCanvasControls(container, leaf, file, myNotesSelection).then(() => {
+          this.focusCanvasOrigin(leaf.view);
+        });
+        continue;
+      }
+      const selection = learningSelection;
+      const controls = container.createDiv({ cls: "ng-learning-canvas-controls ng-canvas-controls" });
       controls.dataset.path = file.path;
+      controls.dataset.kind = "mylearning";
       const button = controls.createEl("button", {
         cls: "ng-learning-canvas-back",
         text: "\u2190 MyLearning"
@@ -12006,11 +12344,71 @@ var NoteHeaderManager = class {
       });
       this.focusCanvasOrigin(leaf.view);
     }
-    document.querySelectorAll(".ng-learning-canvas-controls").forEach((controls) => {
+    document.querySelectorAll(".ng-canvas-controls").forEach((controls) => {
       if (!activeContainers.has(controls.parentElement)) {
         controls.remove();
       }
     });
+  }
+  async renderMyNotesCanvasControls(container, leaf, file, initialSelection) {
+    const controls = container.createDiv({ cls: "ng-mynotes-canvas-controls ng-canvas-controls" });
+    controls.dataset.path = file.path;
+    controls.dataset.kind = "mynotes";
+    await this.myNotesStorage.syncCanvasTopicLinks(file, initialSelection.topics);
+    const render = async (selection) => {
+      controls.empty();
+      const topRow = controls.createDiv({ cls: "ng-mynotes-canvas-top" });
+      const backButton = topRow.createEl("button", {
+        cls: "ng-learning-canvas-back",
+        text: "\u2190 MyNotes"
+      });
+      backButton.setAttribute("aria-label", "Back to MyNotes");
+      backButton.addEventListener("click", async () => {
+        await this.openMyNotesView(true, leaf);
+      });
+      const categorySection = topRow.createDiv({ cls: "ng-mynotes-canvas-section ng-mynotes-canvas-categories" });
+      const categoryRow = categorySection.createDiv({ cls: "ng-mynotes-canvas-pills" });
+      const categories = await this.myNotesStorage.loadCategories();
+      for (const category of categories) {
+        const pill = categoryRow.createEl("button", { cls: "ng-mynotes-canvas-pill", text: category.name });
+        pill.toggleClass("is-active", selection.category === category.name);
+        pill.addEventListener("click", async () => {
+          const active = await this.myNotesStorage.toggleCanvasCategory(file, category.name);
+          await render({ category: active ? category.name : null, topics: [] });
+        });
+      }
+      const topicControlRow = controls.createDiv({ cls: "ng-mynotes-canvas-top" });
+      const homeButton2 = topicControlRow.createEl("button", {
+        cls: "ng-learning-canvas-back",
+        text: "Home"
+      });
+      homeButton2.setAttribute("aria-label", "Back to Home");
+      homeButton2.addEventListener("click", async () => {
+        await this.openHomeView(true, leaf);
+      });
+      const topicSection = topicControlRow.createDiv({ cls: "ng-mynotes-canvas-section ng-mynotes-canvas-categories" });
+      const topicRow = topicSection.createDiv({ cls: "ng-mynotes-canvas-pills" });
+      if (!selection.category) {
+        topicRow.createSpan({ cls: "ng-mynotes-canvas-empty", text: "Select a category" });
+        return;
+      }
+      const topics = await this.myNotesStorage.listTopicsForCategory(selection.category);
+      if (topics.length === 0) {
+        topicRow.createSpan({ cls: "ng-mynotes-canvas-empty", text: "No topics" });
+        return;
+      }
+      for (const topic of topics) {
+        const pill = topicRow.createEl("button", { cls: "ng-mynotes-canvas-pill", text: topic });
+        pill.style.setProperty("--ng-mynotes-canvas-color", this.myNotesStorage.getTopicColor(selection.category, topic));
+        pill.toggleClass("is-active", selection.topics.includes(topic));
+        pill.addEventListener("click", async () => {
+          const active = await this.myNotesStorage.toggleCanvasTopic(file, topic);
+          const nextTopics = active ? [...selection.topics, topic].filter((entry, index, entries) => entries.indexOf(entry) === index) : selection.topics.filter((entry) => entry !== topic);
+          await render({ category: selection.category, topics: nextTopics });
+        });
+      }
+    };
+    await render(initialSelection);
   }
   focusCanvasOrigin(view) {
     const canvas = view.canvas;
@@ -14693,6 +15091,7 @@ var NeuralGardenPlugin = class extends import_obsidian16.Plugin {
         }
         if (file instanceof import_obsidian16.TFile) {
           await this.myLearningStorage.handleEntryRename(file, oldPath);
+          await this.myNotesStorage.handleEntryRename(file, oldPath);
         }
         window.setTimeout(() => {
           for (const leaf of this.app.workspace.getLeavesOfType(VIEW_TYPE_NEURAL_GARDEN_MY_LEARNING)) {

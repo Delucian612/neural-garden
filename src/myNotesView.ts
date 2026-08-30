@@ -355,9 +355,9 @@ export class NeuralGardenMyNotesView extends ItemView {
   }
 
   private renderUncategorizedSection(container: HTMLElement): void {
-    const uncategorized = this.myNotesStorage.listNotes().filter((file) => {
-      const category = this.myNotesStorage.getNoteCategory(file);
-      return !category || (category !== QUICK_NOTES_CATEGORY && this.myNotesStorage.getNoteTopics(file).length === 0);
+    const uncategorized = this.myNotesStorage.listEntries().filter((file) => {
+      const category = this.myNotesStorage.getEntryCategory(file);
+      return !category || (category !== QUICK_NOTES_CATEGORY && this.myNotesStorage.getEntryTopics(file).length === 0);
     });
 
     const uncategorizedToggle = container.createEl("button", {
@@ -394,16 +394,18 @@ export class NeuralGardenMyNotesView extends ItemView {
       files = this.myNotesStorage.notesWithSupport(this.selectedCategory.slice(SUPPORT_PREFIX.length));
     } else if (this.selectedCategory) {
       files = this.selectedTopic
-        ? this.myNotesStorage.notesInCategoryTopic(this.selectedCategory, this.selectedTopic)
-        : await this.myNotesStorage.notesInCategory(this.selectedCategory);
+        ? this.myNotesStorage.entriesInCategoryTopic(this.selectedCategory, this.selectedTopic)
+        : this.myNotesStorage.entriesInCategory(this.selectedCategory);
     }
 
     const query = this.searchQuery;
     if (query.length >= 2) {
       if (files === null) {
         const matches = await searchNotesInFolder(this.app, query);
-        const allowed = new Set(this.myNotesStorage.listNotes().map((file) => file.path));
-        return matches.filter((file) => allowed.has(file.path));
+        const entries = this.myNotesStorage.listEntries();
+        const allowed = new Set(entries.map((file) => file.path));
+        const canvasMatches = entries.filter((file) => file.extension === "canvas" && file.basename.toLowerCase().includes(query.toLowerCase()));
+        return [...matches.filter((file) => allowed.has(file.path)), ...canvasMatches];
       }
       const q = query.toLowerCase();
       return files.filter((file) => file.basename.toLowerCase().includes(q));
@@ -415,29 +417,34 @@ export class NeuralGardenMyNotesView extends ItemView {
   private renderNoteRow(container: HTMLElement, file: TFile): void {
     const row = container.createDiv({ cls: "ng-mynotes-note-row" });
 
-    const favouriteButton = row.createEl("button", { cls: "ng-mynotes-note-heart" });
-    setIcon(favouriteButton, "heart");
-    if (this.myNotesStorage.isFavourite(file)) {
-      favouriteButton.addClass("is-favourite");
-    }
-    favouriteButton.addEventListener("click", async (event) => {
-      event.stopPropagation();
-      const nowFavourite = await this.myNotesStorage.toggleFavourite(file);
-      favouriteButton.toggleClass("is-favourite", nowFavourite);
-      favouriteButton.removeClass("ng-heart-pop");
-      void favouriteButton.offsetWidth;
-      favouriteButton.addClass("ng-heart-pop");
-      if (this.selectedCategory === FAVOURITE_CATEGORY && !nowFavourite) {
-        row.remove();
+    if (file.extension === "md") {
+      const favouriteButton = row.createEl("button", { cls: "ng-mynotes-note-heart" });
+      setIcon(favouriteButton, "heart");
+      if (this.myNotesStorage.isFavourite(file)) {
+        favouriteButton.addClass("is-favourite");
       }
-    });
+      favouriteButton.addEventListener("click", async (event) => {
+        event.stopPropagation();
+        const nowFavourite = await this.myNotesStorage.toggleFavourite(file);
+        favouriteButton.toggleClass("is-favourite", nowFavourite);
+        favouriteButton.removeClass("ng-heart-pop");
+        void favouriteButton.offsetWidth;
+        favouriteButton.addClass("ng-heart-pop");
+        if (this.selectedCategory === FAVOURITE_CATEGORY && !nowFavourite) {
+          row.remove();
+        }
+      });
+    }
 
     const indicator = row.createDiv({ cls: "ng-mynotes-note-indicator" });
-    const category = this.myNotesStorage.getNoteCategory(file) ?? "";
-    const topic = this.selectedTopic ?? this.myNotesStorage.getNoteTopics(file)[0] ?? file.basename;
+    const category = this.myNotesStorage.getEntryCategory(file) ?? "";
+    const topic = this.selectedTopic ?? this.myNotesStorage.getEntryTopics(file)[0] ?? file.basename;
     indicator.style.background = this.myNotesStorage.getTopicColor(category, topic);
 
     row.createDiv({ cls: "ng-mynotes-note-title", text: file.basename });
+    if (file.extension === "canvas") {
+      row.createSpan({ cls: "ng-mylearning-entry-type", text: "Canvas" });
+    }
 
     const openRightButton = row.createEl("button", { cls: "ng-mynotes-note-open-right" });
     openRightButton.setAttribute("aria-label", "Open to the right");
@@ -473,6 +480,19 @@ export class NeuralGardenMyNotesView extends ItemView {
 
     const input = card.createEl("input", { type: "text", placeholder: "Note name..." });
     input.addClass("ng-task-input");
+
+    const typeControl = card.createDiv({ cls: "ng-mylearning-type-control" });
+    const markdownButton = typeControl.createEl("button", { text: "Markdown", cls: "is-active" });
+    const canvasButton = typeControl.createEl("button", { text: "Canvas" });
+    let fileType: "markdown" | "canvas" = "markdown";
+    const setFileType = (next: "markdown" | "canvas") => {
+      fileType = next;
+      markdownButton.toggleClass("is-active", next === "markdown");
+      canvasButton.toggleClass("is-active", next === "canvas");
+    };
+    markdownButton.addEventListener("click", () => setFileType("markdown"));
+    canvasButton.addEventListener("click", () => setFileType("canvas"));
+
     const errorEl = card.createDiv({ cls: "ng-overlay-error" });
     errorEl.hide();
     const actions = card.createDiv({ cls: "ng-overlay-actions" });
@@ -484,20 +504,31 @@ export class NeuralGardenMyNotesView extends ItemView {
         return;
       }
       if (this.myNotesStorage.noteExists(name)) {
-        errorEl.setText("This Note already exists");
+        errorEl.setText("A note or canvas with this name already exists.");
         errorEl.show();
-        input.value = "";
         input.focus();
         return;
       }
-      const file = await this.myNotesStorage.createNote(name);
+
+      const canCreateCanvas = this.selectedCategory
+        && !this.isSpecialCategory(this.selectedCategory)
+        && this.selectedTopic;
+      if (fileType === "canvas" && !canCreateCanvas) {
+        errorEl.setText("Select a category and topic before creating a canvas.");
+        errorEl.show();
+        return;
+      }
+
+      const file = fileType === "canvas"
+        ? await this.myNotesStorage.createCanvas(name, this.selectedCategory!, this.selectedTopic!)
+        : await this.myNotesStorage.createNote(name);
       close();
       if (!file) {
         new Notice("Could not create the note. Try a different name.");
         return;
       }
 
-      if (this.selectedCategory && this.selectedCategory !== FAVOURITE_CATEGORY) {
+      if (file.extension === "md" && this.selectedCategory && this.selectedCategory !== FAVOURITE_CATEGORY) {
         if (this.selectedCategory.startsWith(SUPPORT_PREFIX)) {
           const supportName = this.selectedCategory.slice(SUPPORT_PREFIX.length);
           await this.myNotesStorage.setSupportNote(file, true);
@@ -514,6 +545,12 @@ export class NeuralGardenMyNotesView extends ItemView {
     };
 
     createButton.addEventListener("click", () => void submit());
+    input.addEventListener("input", () => {
+      const validationError = getNameValidationError(input.value);
+      errorEl.toggle(validationError !== null);
+      errorEl.setText(validationError ?? "");
+      createButton.disabled = validationError !== null;
+    });
     input.addEventListener("keydown", (event) => {
       if (event.key === "Enter") {
         void submit();

@@ -1180,11 +1180,12 @@ export function injectNeuralGardenStyles(): void {
       width: auto;
       height: auto;
       padding: 0;
-      border: none !important;
+      display: grid;
+      grid-template-columns: max-content minmax(0, 1fr);
+      column-gap: 10px;
+      row-gap: 7px;
       box-shadow: none !important;
       border-radius: 0;
-      background: transparent !important;
-      color: var(--text-normal);
       font-size: 0.95rem;
       line-height: 1;
       display: inline;
@@ -2740,6 +2741,88 @@ export function injectNeuralGardenStyles(): void {
     .ng-learning-canvas-progress .ng-learning-progress-track {
       width: 134px;
       height: 12px;
+    }
+    .ng-mynotes-canvas-controls {
+      position: absolute;
+      top: 44px;
+      left: 12px;
+      z-index: 30;
+      display: grid;
+      grid-template-columns: max-content minmax(0, 1fr);
+      column-gap: 10px;
+      row-gap: 7px;
+      width: fit-content;
+      max-width: calc(100% - 24px);
+      max-height: min(46vh, 360px);
+      padding: 7px 9px;
+      overflow-x: hidden;
+      overflow-y: auto;
+      border: 1px solid color-mix(in srgb, var(--text-muted) 14%, transparent);
+      border-radius: 6px;
+      background: color-mix(in srgb, var(--background-primary) 28%, transparent);
+      color: var(--text-normal);
+      box-shadow: none;
+      backdrop-filter: blur(2px);
+    }
+    .ng-mynotes-canvas-top {
+      display: contents;
+    }
+    .ng-mynotes-canvas-top > .ng-learning-canvas-back {
+      display: inline-flex;
+      width: auto;
+      min-width: max-content;
+      box-sizing: border-box;
+      align-items: center;
+      justify-content: flex-start;
+      white-space: nowrap;
+    }
+    .ng-mynotes-canvas-categories {
+      min-width: 0;
+      padding-left: 10px;
+      border-left: 1px solid color-mix(in srgb, var(--text-muted) 24%, transparent);
+    }
+    .ng-mynotes-canvas-categories .ng-mynotes-canvas-pills {
+      width: max-content;
+      max-width: 100%;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      scrollbar-width: thin;
+    }
+    .ng-mynotes-canvas-section {
+      display: block;
+    }
+    .ng-mynotes-canvas-empty {
+      color: var(--text-muted);
+      font-size: 0.76rem;
+    }
+    .ng-mynotes-canvas-pills {
+      display: flex;
+      min-width: 0;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+    .ng-mynotes-canvas-pill {
+      min-height: 24px;
+      padding: 2px 7px;
+      border: 1px solid var(--background-modifier-border);
+      border-radius: 6px;
+      background: transparent;
+      color: var(--text-muted);
+      box-shadow: none;
+      font-size: 0.76rem;
+    }
+    .ng-mynotes-canvas-pill:hover,
+    .ng-mynotes-canvas-pill.is-active {
+      border-color: var(--ng-mynotes-canvas-color, var(--ng-color-general));
+      color: var(--text-normal);
+      background: color-mix(in srgb, var(--ng-mynotes-canvas-color, var(--ng-color-general)) 10%, transparent);
+    }
+    @media (max-width: 520px) {
+      .ng-mynotes-canvas-controls {
+        top: 40px;
+        left: 8px;
+        max-width: calc(100% - 16px);
+      }
     }
     .ng-mylearning-grid {
       display: grid;

@@ -75,7 +75,7 @@ export class NoteHeaderManager {
   }
 
   detachAll(): void {
-    document.querySelectorAll(".ng-note-header, .ng-learning-canvas-controls").forEach((el) => {
+    document.querySelectorAll(".ng-note-header, .ng-learning-canvas-controls, .ng-mynotes-canvas-controls").forEach((el) => {
       this.disposeHeader(el);
       el.remove();
     });
@@ -91,24 +91,42 @@ export class NoteHeaderManager {
       const state = leaf.getViewState().state;
       const path = typeof state?.file === "string" ? state.file : "";
       const file = path ? this.app.vault.getAbstractFileByPath(path) : null;
-      const selection = file instanceof TFile ? this.myLearningStorage.getCanvasSelection(file) : null;
-      const existing = container.querySelector<HTMLElement>(":scope > .ng-learning-canvas-controls");
+      const learningSelection = file instanceof TFile ? this.myLearningStorage.getCanvasSelection(file) : null;
+      const myNotesSelection = file instanceof TFile ? this.myNotesStorage.getCanvasSelection(file) : null;
+      const existing = container.querySelector<HTMLElement>(":scope > .ng-canvas-controls");
 
-      if (!selection) {
+      if (!learningSelection && !myNotesSelection) {
         existing?.remove();
         continue;
       }
-      if (existing?.dataset.path === file.path) {
+      if (!(file instanceof TFile)) {
+        existing?.remove();
+        continue;
+      }
+
+      if (learningSelection && existing?.dataset.path === file.path && existing.dataset.kind === "mylearning") {
         const fill = existing.querySelector<HTMLElement>(".ng-learning-progress-fill");
         if (fill) {
-          fill.style.width = `${selection.progress}%`;
+          fill.style.width = `${learningSelection.progress}%`;
         }
+        continue;
+      }
+      if (myNotesSelection && existing?.dataset.path === file.path && existing.dataset.kind === "mynotes") {
         continue;
       }
       existing?.remove();
 
-      const controls = container.createDiv({ cls: "ng-learning-canvas-controls" });
+      if (myNotesSelection) {
+        void this.renderMyNotesCanvasControls(container, leaf, file, myNotesSelection).then(() => {
+          this.focusCanvasOrigin(leaf.view);
+        });
+        continue;
+      }
+
+      const selection = learningSelection!;
+      const controls = container.createDiv({ cls: "ng-learning-canvas-controls ng-canvas-controls" });
       controls.dataset.path = file.path;
+      controls.dataset.kind = "mylearning";
       const button = controls.createEl("button", {
         cls: "ng-learning-canvas-back",
         text: "\u2190 MyLearning",
@@ -159,11 +177,87 @@ export class NoteHeaderManager {
       this.focusCanvasOrigin(leaf.view);
     }
 
-    document.querySelectorAll<HTMLElement>(".ng-learning-canvas-controls").forEach((controls) => {
+    document.querySelectorAll<HTMLElement>(".ng-canvas-controls").forEach((controls) => {
       if (!activeContainers.has(controls.parentElement as HTMLElement)) {
         controls.remove();
       }
     });
+  }
+
+  private async renderMyNotesCanvasControls(
+    container: HTMLElement,
+    leaf: WorkspaceLeaf,
+    file: TFile,
+    initialSelection: { category: string | null; topics: string[] },
+  ): Promise<void> {
+    const controls = container.createDiv({ cls: "ng-mynotes-canvas-controls ng-canvas-controls" });
+    controls.dataset.path = file.path;
+    controls.dataset.kind = "mynotes";
+
+    await this.myNotesStorage.syncCanvasTopicLinks(file, initialSelection.topics);
+
+    const render = async (selection: { category: string | null; topics: string[] }) => {
+      controls.empty();
+
+      const topRow = controls.createDiv({ cls: "ng-mynotes-canvas-top" });
+      const backButton = topRow.createEl("button", {
+        cls: "ng-learning-canvas-back",
+        text: "\u2190 MyNotes",
+      });
+      backButton.setAttribute("aria-label", "Back to MyNotes");
+      backButton.addEventListener("click", async () => {
+        await this.openMyNotesView(true, leaf);
+      });
+
+      const categorySection = topRow.createDiv({ cls: "ng-mynotes-canvas-section ng-mynotes-canvas-categories" });
+      const categoryRow = categorySection.createDiv({ cls: "ng-mynotes-canvas-pills" });
+      const categories = await this.myNotesStorage.loadCategories();
+      for (const category of categories) {
+        const pill = categoryRow.createEl("button", { cls: "ng-mynotes-canvas-pill", text: category.name });
+        pill.toggleClass("is-active", selection.category === category.name);
+        pill.addEventListener("click", async () => {
+          const active = await this.myNotesStorage.toggleCanvasCategory(file, category.name);
+          await render({ category: active ? category.name : null, topics: [] });
+        });
+      }
+
+      const topicControlRow = controls.createDiv({ cls: "ng-mynotes-canvas-top" });
+      const homeButton = topicControlRow.createEl("button", {
+        cls: "ng-learning-canvas-back",
+        text: "Home",
+      });
+      homeButton.setAttribute("aria-label", "Back to Home");
+      homeButton.addEventListener("click", async () => {
+        await this.openHomeView(true, leaf);
+      });
+
+      const topicSection = topicControlRow.createDiv({ cls: "ng-mynotes-canvas-section ng-mynotes-canvas-categories" });
+      const topicRow = topicSection.createDiv({ cls: "ng-mynotes-canvas-pills" });
+      if (!selection.category) {
+        topicRow.createSpan({ cls: "ng-mynotes-canvas-empty", text: "Select a category" });
+        return;
+      }
+
+      const topics = await this.myNotesStorage.listTopicsForCategory(selection.category);
+      if (topics.length === 0) {
+        topicRow.createSpan({ cls: "ng-mynotes-canvas-empty", text: "No topics" });
+        return;
+      }
+      for (const topic of topics) {
+        const pill = topicRow.createEl("button", { cls: "ng-mynotes-canvas-pill", text: topic });
+        pill.style.setProperty("--ng-mynotes-canvas-color", this.myNotesStorage.getTopicColor(selection.category, topic));
+        pill.toggleClass("is-active", selection.topics.includes(topic));
+        pill.addEventListener("click", async () => {
+          const active = await this.myNotesStorage.toggleCanvasTopic(file, topic);
+          const nextTopics = active
+            ? [...selection.topics, topic].filter((entry, index, entries) => entries.indexOf(entry) === index)
+            : selection.topics.filter((entry) => entry !== topic);
+          await render({ category: selection.category, topics: nextTopics });
+        });
+      }
+    };
+
+    await render(initialSelection);
   }
 
   private focusCanvasOrigin(view: unknown): void {
