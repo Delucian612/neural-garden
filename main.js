@@ -2957,6 +2957,12 @@ function injectNeuralGardenStyles() {
       fill: none;
       stroke: rgb(var(--canvas-color, var(--mono-rgb-100, 127, 127, 127))) !important;
     }
+    .workspace-leaf-content[data-type="canvas"] .canvas-edges polygon.canvas-path-end {
+      fill: rgb(var(--canvas-color, var(--mono-rgb-100, 127, 127, 127))) !important;
+    }
+    .workspace-leaf-content[data-type="canvas"] .canvas-menu-container {
+      z-index: 31;
+    }
     @media (max-width: 520px) {
       .ng-mynotes-canvas-controls {
         top: 40px;
