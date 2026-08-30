@@ -417,24 +417,22 @@ export class NeuralGardenMyNotesView extends ItemView {
   private renderNoteRow(container: HTMLElement, file: TFile): void {
     const row = container.createDiv({ cls: "ng-mynotes-note-row" });
 
-    if (file.extension === "md") {
-      const favouriteButton = row.createEl("button", { cls: "ng-mynotes-note-heart" });
-      setIcon(favouriteButton, "heart");
-      if (this.myNotesStorage.isFavourite(file)) {
-        favouriteButton.addClass("is-favourite");
-      }
-      favouriteButton.addEventListener("click", async (event) => {
-        event.stopPropagation();
-        const nowFavourite = await this.myNotesStorage.toggleFavourite(file);
-        favouriteButton.toggleClass("is-favourite", nowFavourite);
-        favouriteButton.removeClass("ng-heart-pop");
-        void favouriteButton.offsetWidth;
-        favouriteButton.addClass("ng-heart-pop");
-        if (this.selectedCategory === FAVOURITE_CATEGORY && !nowFavourite) {
-          row.remove();
-        }
-      });
+    const favouriteButton = row.createEl("button", { cls: "ng-mynotes-note-heart" });
+    setIcon(favouriteButton, "heart");
+    if (this.myNotesStorage.isFavourite(file)) {
+      favouriteButton.addClass("is-favourite");
     }
+    favouriteButton.addEventListener("click", async (event) => {
+      event.stopPropagation();
+      const nowFavourite = await this.myNotesStorage.toggleFavourite(file);
+      favouriteButton.toggleClass("is-favourite", nowFavourite);
+      favouriteButton.removeClass("ng-heart-pop");
+      void favouriteButton.offsetWidth;
+      favouriteButton.addClass("ng-heart-pop");
+      if (this.selectedCategory === FAVOURITE_CATEGORY && !nowFavourite) {
+        row.remove();
+      }
+    });
 
     const indicator = row.createDiv({ cls: "ng-mynotes-note-indicator" });
     const category = this.myNotesStorage.getEntryCategory(file) ?? "";

@@ -2817,6 +2817,10 @@ export function injectNeuralGardenStyles(): void {
       color: var(--text-normal);
       background: color-mix(in srgb, var(--ng-mynotes-canvas-color, var(--ng-color-general)) 10%, transparent);
     }
+    .workspace-leaf-content[data-type="canvas"] .canvas-edges path.canvas-display-path {
+      fill: none;
+      stroke: rgb(var(--canvas-color, var(--mono-rgb-100, 127, 127, 127))) !important;
+    }
     @media (max-width: 520px) {
       .ng-mynotes-canvas-controls {
         top: 40px;

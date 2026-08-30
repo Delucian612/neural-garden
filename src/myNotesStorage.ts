@@ -12,7 +12,7 @@ export interface MyNotesCategory {
   count: number;
 }
 
-type MyNotesCanvasSelection = { category: string | null; topics: string[] };
+type MyNotesCanvasSelection = { category: string | null; topics: string[]; favourite: boolean };
 type MyNotesCanvasMap = Record<string, MyNotesCanvasSelection>;
 
 function stripLink(value: unknown): string {
@@ -465,7 +465,7 @@ export class MyNotesStorage {
     const index = await this.ensureCategoriesFile();
     await this.app.fileManager.processFrontMatter(index, (fm) => {
       const canvases = this.getCanvasMap(fm.canvases);
-      canvases[file.path] = { category: normalizedCategory, topics: [normalizedTopic] };
+      canvases[file.path] = { category: normalizedCategory, topics: [normalizedTopic], favourite: false };
       fm.canvases = canvases;
     });
     await this.syncCanvasTopicLinks(file, [normalizedTopic]);
@@ -584,7 +584,7 @@ export class MyNotesStorage {
     const index = await this.ensureCategoriesFile();
     await this.app.fileManager.processFrontMatter(index, (fm) => {
       const canvases = this.getCanvasMap(fm.canvases);
-      const selection = canvases[file.path] ?? { category: null, topics: [] };
+      const selection = canvases[file.path] ?? { category: null, topics: [], favourite: false };
       nowActive = selection.category !== category;
       selection.category = nowActive ? category : null;
       selection.topics = [];
@@ -685,10 +685,26 @@ export class MyNotesStorage {
   }
 
   isFavourite(file: TFile): boolean {
+    if (file.extension === "canvas") {
+      return this.getCanvasMetadata(file)?.favourite ?? false;
+    }
     return this.app.metadataCache.getFileCache(file)?.frontmatter?.favourite === true;
   }
 
   async toggleFavourite(file: TFile): Promise<boolean> {
+    if (file.extension === "canvas") {
+      let nowFavourite = false;
+      const index = await this.ensureCategoriesFile();
+      await this.app.fileManager.processFrontMatter(index, (fm) => {
+        const canvases = this.getCanvasMap(fm.canvases);
+        const metadata = canvases[file.path] ?? { category: null, topics: [], favourite: false };
+        nowFavourite = !metadata.favourite;
+        metadata.favourite = nowFavourite;
+        canvases[file.path] = metadata;
+        fm.canvases = canvases;
+      });
+      return nowFavourite;
+    }
     let nowFavourite = false;
     await this.app.fileManager.processFrontMatter(file, (fm) => {
       nowFavourite = fm.favourite !== true;
@@ -967,7 +983,7 @@ export class MyNotesStorage {
   }
 
   favouriteNotes(): TFile[] {
-    return this.listNotes().filter((file) => this.isFavourite(file));
+    return this.listEntries().filter((file) => this.isFavourite(file));
   }
 
   notesWithSupport(name: string): TFile[] {
@@ -1083,7 +1099,7 @@ export class MyNotesStorage {
       const category = typeof metadata.category === "string" ? metadata.category.trim() : "";
       const legacyTopic = typeof metadata.topic === "string" ? metadata.topic.trim() : "";
       const topics = normalizeLinks(metadata.topics ?? (legacyTopic ? [legacyTopic] : []));
-      canvases[path] = { category: category || null, topics };
+      canvases[path] = { category: category || null, topics, favourite: metadata.favourite === true };
     }
     return canvases;
   }

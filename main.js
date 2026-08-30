@@ -2953,6 +2953,10 @@ function injectNeuralGardenStyles() {
       color: var(--text-normal);
       background: color-mix(in srgb, var(--ng-mynotes-canvas-color, var(--ng-color-general)) 10%, transparent);
     }
+    .workspace-leaf-content[data-type="canvas"] .canvas-edges path.canvas-display-path {
+      fill: none;
+      stroke: rgb(var(--canvas-color, var(--mono-rgb-100, 127, 127, 127))) !important;
+    }
     @media (max-width: 520px) {
       .ng-mynotes-canvas-controls {
         top: 40px;
@@ -9755,24 +9759,22 @@ var NeuralGardenMyNotesView = class extends import_obsidian7.ItemView {
   renderNoteRow(container, file) {
     var _a, _b, _c;
     const row = container.createDiv({ cls: "ng-mynotes-note-row" });
-    if (file.extension === "md") {
-      const favouriteButton = row.createEl("button", { cls: "ng-mynotes-note-heart" });
-      (0, import_obsidian7.setIcon)(favouriteButton, "heart");
-      if (this.myNotesStorage.isFavourite(file)) {
-        favouriteButton.addClass("is-favourite");
-      }
-      favouriteButton.addEventListener("click", async (event) => {
-        event.stopPropagation();
-        const nowFavourite = await this.myNotesStorage.toggleFavourite(file);
-        favouriteButton.toggleClass("is-favourite", nowFavourite);
-        favouriteButton.removeClass("ng-heart-pop");
-        void favouriteButton.offsetWidth;
-        favouriteButton.addClass("ng-heart-pop");
-        if (this.selectedCategory === FAVOURITE_CATEGORY && !nowFavourite) {
-          row.remove();
-        }
-      });
+    const favouriteButton = row.createEl("button", { cls: "ng-mynotes-note-heart" });
+    (0, import_obsidian7.setIcon)(favouriteButton, "heart");
+    if (this.myNotesStorage.isFavourite(file)) {
+      favouriteButton.addClass("is-favourite");
     }
+    favouriteButton.addEventListener("click", async (event) => {
+      event.stopPropagation();
+      const nowFavourite = await this.myNotesStorage.toggleFavourite(file);
+      favouriteButton.toggleClass("is-favourite", nowFavourite);
+      favouriteButton.removeClass("ng-heart-pop");
+      void favouriteButton.offsetWidth;
+      favouriteButton.addClass("ng-heart-pop");
+      if (this.selectedCategory === FAVOURITE_CATEGORY && !nowFavourite) {
+        row.remove();
+      }
+    });
     const indicator = row.createDiv({ cls: "ng-mynotes-note-indicator" });
     const category = (_a = this.myNotesStorage.getEntryCategory(file)) != null ? _a : "";
     const topic = (_c = (_b = this.selectedTopic) != null ? _b : this.myNotesStorage.getEntryTopics(file)[0]) != null ? _c : file.basename;
@@ -11590,7 +11592,7 @@ var MyNotesStorage = class {
     const index = await this.ensureCategoriesFile();
     await this.app.fileManager.processFrontMatter(index, (fm) => {
       const canvases = this.getCanvasMap(fm.canvases);
-      canvases[file.path] = { category: normalizedCategory, topics: [normalizedTopic] };
+      canvases[file.path] = { category: normalizedCategory, topics: [normalizedTopic], favourite: false };
       fm.canvases = canvases;
     });
     await this.syncCanvasTopicLinks(file, [normalizedTopic]);
@@ -11701,7 +11703,7 @@ var MyNotesStorage = class {
     await this.app.fileManager.processFrontMatter(index, (fm) => {
       var _a;
       const canvases = this.getCanvasMap(fm.canvases);
-      const selection = (_a = canvases[file.path]) != null ? _a : { category: null, topics: [] };
+      const selection = (_a = canvases[file.path]) != null ? _a : { category: null, topics: [], favourite: false };
       nowActive = selection.category !== category;
       selection.category = nowActive ? category : null;
       selection.topics = [];
@@ -11792,10 +11794,27 @@ ${normalizedTopics.map((topic) => `[[${topic}]]`).join("\n")}`,
     return nowActive;
   }
   isFavourite(file) {
-    var _a, _b;
-    return ((_b = (_a = this.app.metadataCache.getFileCache(file)) == null ? void 0 : _a.frontmatter) == null ? void 0 : _b.favourite) === true;
+    var _a, _b, _c, _d;
+    if (file.extension === "canvas") {
+      return (_b = (_a = this.getCanvasMetadata(file)) == null ? void 0 : _a.favourite) != null ? _b : false;
+    }
+    return ((_d = (_c = this.app.metadataCache.getFileCache(file)) == null ? void 0 : _c.frontmatter) == null ? void 0 : _d.favourite) === true;
   }
   async toggleFavourite(file) {
+    if (file.extension === "canvas") {
+      let nowFavourite2 = false;
+      const index = await this.ensureCategoriesFile();
+      await this.app.fileManager.processFrontMatter(index, (fm) => {
+        var _a;
+        const canvases = this.getCanvasMap(fm.canvases);
+        const metadata = (_a = canvases[file.path]) != null ? _a : { category: null, topics: [], favourite: false };
+        nowFavourite2 = !metadata.favourite;
+        metadata.favourite = nowFavourite2;
+        canvases[file.path] = metadata;
+        fm.canvases = canvases;
+      });
+      return nowFavourite2;
+    }
     let nowFavourite = false;
     await this.app.fileManager.processFrontMatter(file, (fm) => {
       nowFavourite = fm.favourite !== true;
@@ -12051,7 +12070,7 @@ ${normalizedTopics.map((topic) => `[[${topic}]]`).join("\n")}`,
     return true;
   }
   favouriteNotes() {
-    return this.listNotes().filter((file) => this.isFavourite(file));
+    return this.listEntries().filter((file) => this.isFavourite(file));
   }
   notesWithSupport(name) {
     return this.listNotes().filter((file) => this.isSupportNote(file) && this.getNoteSupports(file).includes(name));
@@ -12162,7 +12181,7 @@ topics:${topicLines}
       const category = typeof metadata.category === "string" ? metadata.category.trim() : "";
       const legacyTopic = typeof metadata.topic === "string" ? metadata.topic.trim() : "";
       const topics = normalizeLinks((_a = metadata.topics) != null ? _a : legacyTopic ? [legacyTopic] : []);
-      canvases[path] = { category: category || null, topics };
+      canvases[path] = { category: category || null, topics, favourite: metadata.favourite === true };
     }
     return canvases;
   }
