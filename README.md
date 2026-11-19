@@ -134,27 +134,6 @@ Neural Garden supports desktop and mobile Obsidian. Some layouts and interaction
 3. Add a task, create a journal entry, or open MyNotes/MyLearning.
 4. Use **Settings -> Neural Garden** to adjust colors, Break Mode, or replay a walkthrough.
 
-## Development
-
-Requirements:
-
-- Node.js
-- npm
-- An Obsidian vault for runtime testing
-
-```bash
-npm install
-npm run dev
-```
-
-Create a production bundle with:
-
-```bash
-npm run build
-```
-
-The build writes the bundled plugin to `main.js`.
-
 ## Health Disclaimer
 
 Neural Garden is a personal organization and reflection tool. It is not medical software and does not provide diagnosis, treatment, or emergency support.
